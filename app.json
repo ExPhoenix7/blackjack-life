@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "Blackjack",
+    "slug": "blackjack-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/firstscreenbackground.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#031f09"
+    },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/firstscreenbackground.png",
+          "resizeMode": "cover",
+          "backgroundColor": "#031f09",
+          "enableFullScreenImage_legacy": true
+        }
+      ],
+      "expo-audio",
+      "expo-asset"
+    ],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.exphoenix.blackjack"
+    }
+  }
+}
