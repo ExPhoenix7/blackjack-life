@@ -36,6 +36,8 @@ const chipColors = {
 const CARD_BACK = require("./assets/cards/BACK.png");
 const TABLE_FELT = require("./assets/table-felt.png");
 const FIRST_SCREEN_BACKGROUND = require("./assets/firstscreenbackground.png");
+const SOUND_ON_ICON = require("./assets/sound-on.jpg");
+const SOUND_OFF_ICON = require("./assets/sound-off.jpg");
 const CARD_DEAL_SOUND = require("./assets/sounds/card-deal.mp3");
 const CHIP_PLACE_SOUND = require("./assets/sounds/chip-place.mp3");
 const CARD_IMAGES = {
@@ -495,83 +497,6 @@ function Hand({ cards, score, hideDealer, onDeckPress, onDeckTouchStart, showDec
   );
 }
 
-function HomeScreen({ accountName, onPlayBlackjack }) {
-  const ownerName = accountName || "Player";
-
-  return (
-    <View style={styles.homeScreen}>
-      <View style={styles.homeTitleBlock}>
-        <Text numberOfLines={1} style={styles.homeOwner}>{ownerName}</Text>
-        <Text style={styles.homeSubtitle}>Home</Text>
-      </View>
-
-      <View style={styles.homeWorld}>
-        <View style={styles.homeSkyGlow} />
-        <View style={styles.homeDriveway}>
-          <Text style={styles.homeZoneLabel}>Garage</Text>
-          <View style={styles.homeCarSlot}>
-            <View style={styles.homeCarSilhouette}>
-              <View style={styles.homeCarRoof} />
-              <View style={styles.homeCarBody} />
-              <View style={styles.homeCarWheelLeft} />
-              <View style={styles.homeCarWheelRight} />
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.houseWrap}>
-          <View style={styles.houseRoof} />
-          <View style={styles.houseBody}>
-            <View style={styles.houseWindowRow}>
-              <View style={styles.houseWindow} />
-              <View style={styles.houseWindow} />
-            </View>
-            <View style={styles.houseDoor} />
-            <View style={styles.houseUpgradeBadge}>
-              <Text style={styles.houseUpgradeText}>LV 1</Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.furnitureSlots}>
-          <View style={styles.furnitureSlot}>
-            <Text style={styles.furnitureIcon}>TV</Text>
-            <Text style={styles.furnitureLabel}>Media</Text>
-          </View>
-          <View style={styles.furnitureSlot}>
-            <Text style={styles.furnitureIcon}>SOFA</Text>
-            <Text style={styles.furnitureLabel}>Lounge</Text>
-          </View>
-          <View style={styles.furnitureSlot}>
-            <Text style={styles.furnitureIcon}>BED</Text>
-            <Text style={styles.furnitureLabel}>Room</Text>
-          </View>
-        </View>
-      </View>
-
-      <View style={styles.homeActions}>
-        <Pressable onPress={onPlayBlackjack} style={({ pressed }) => [styles.homePrimaryAction, pressed && styles.pressed]}>
-          <Text style={styles.homePrimaryActionText}>Blackjack</Text>
-        </Pressable>
-        <View style={styles.homeActionGrid}>
-          <Pressable style={({ pressed }) => [styles.homeActionButton, pressed && styles.pressed]}>
-            <Text style={styles.homeActionText}>Work</Text>
-          </Pressable>
-          <Pressable style={({ pressed }) => [styles.homeActionButton, pressed && styles.pressed]}>
-            <Text style={styles.homeActionText}>Shop</Text>
-          </Pressable>
-          <Pressable style={({ pressed }) => [styles.homeActionButton, pressed && styles.pressed]}>
-            <Text style={styles.homeActionText}>Garage</Text>
-          </Pressable>
-          <Pressable style={({ pressed }) => [styles.homeActionButton, pressed && styles.pressed]}>
-            <Text style={styles.homeActionText}>Closet</Text>
-          </Pressable>
-        </View>
-      </View>
-    </View>
-  );
-}
-
 export default function App() {
   const [deck, setDeck] = useState(() => shuffle(createDeck()));
   const [dealer, setDealer] = useState([]);
@@ -596,7 +521,6 @@ export default function App() {
   const [hasChosenFirstAccountName, setHasChosenFirstAccountName] = useState(false);
   const [firstAccountName, setFirstAccountName] = useState("");
   const [gameStarted, setGameStarted] = useState(false);
-  const [activeScene, setActiveScene] = useState("home");
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [accountMenuMessage, setAccountMenuMessage] = useState("");
   const [editingAccountId, setEditingAccountId] = useState(null);
@@ -1230,12 +1154,7 @@ export default function App() {
                   </Pressable>
                 </View>
               ) : (
-                <AnimatedPlayButton
-                  onPress={() => {
-                    setActiveScene("home");
-                    setGameStarted(true);
-                  }}
-                />
+                <AnimatedPlayButton onPress={() => setGameStarted(true)} />
               ))}
           </View>
         </SafeAreaView>
@@ -1249,21 +1168,7 @@ export default function App() {
         <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
         <View onTouchStart={resetDeveloperCheat} style={styles.screen}>
         <View style={styles.header}>
-          <View style={styles.headerLeftSlot}>
-            {activeScene === "blackjack" && (
-              <Pressable
-                disabled={accountSwitchLocked}
-                onPress={() => setActiveScene("home")}
-                style={({ pressed }) => [
-                  styles.homeBackButton,
-                  accountSwitchLocked && styles.disabled,
-                  pressed && styles.pressed,
-                ]}
-              >
-                <Text style={styles.homeBackButtonText}>Home</Text>
-              </Pressable>
-            )}
-          </View>
+          <View style={styles.headerLeftSlot} />
           <Pressable
             onPress={() => setSettingsOpen(true)}
             style={({ pressed }) => [styles.settingsButton, pressed && styles.pressed]}
@@ -1322,9 +1227,6 @@ export default function App() {
           </View>
         </View>
 
-        {activeScene === "home" ? (
-          <HomeScreen accountName={activeAccount?.name} onPlayBlackjack={() => setActiveScene("blackjack")} />
-        ) : (
         <View style={styles.table}>
           <Hand
             cards={dealer}
@@ -1440,7 +1342,6 @@ export default function App() {
           <Hand cards={player} score={shownPlayerScore} showScore={inRound} stacked />
           {blackjackCelebration && <BlackjackCelebration />}
         </View>
-        )}
         </View>
 
         <Modal
@@ -1455,7 +1356,11 @@ export default function App() {
                 onPress={() => setSoundEnabled((current) => !current)}
                 style={({ pressed }) => [styles.soundToggleButton, pressed && styles.pressed]}
               >
-                <Text style={styles.soundToggleIcon}>{soundEnabled ? "🔊" : "🔇"}</Text>
+                <Image
+                  resizeMode="contain"
+                  source={soundEnabled ? SOUND_ON_ICON : SOUND_OFF_ICON}
+                  style={styles.soundToggleIcon}
+                />
               </Pressable>
             </Pressable>
           </Pressable>
@@ -1722,20 +1627,7 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   headerLeftSlot: {
-    minWidth: 58,
-  },
-  homeBackButton: {
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.24)",
-    borderRadius: 7,
-    justifyContent: "center",
-    minHeight: 34,
-    paddingHorizontal: 10,
-  },
-  homeBackButtonText: {
-    color: "#ffffff",
-    fontSize: 11,
-    fontWeight: "900",
+    width: 44,
   },
   settingsButton: {
     alignItems: "center",
@@ -1750,9 +1642,9 @@ const styles = StyleSheet.create({
   },
   settingsIcon: {
     color: "#ffffff",
-    fontSize: 26,
+    fontSize: 30,
     fontWeight: "700",
-    lineHeight: 30,
+    lineHeight: 34,
   },
   settingsBackdrop: {
     alignItems: "center",
@@ -1774,15 +1666,17 @@ const styles = StyleSheet.create({
   },
   soundToggleButton: {
     alignItems: "center",
-    backgroundColor: "#17201d",
+    backgroundColor: "#ffffff",
     borderRadius: 8,
+    borderColor: "#111111",
+    borderWidth: 2,
     height: 64,
     justifyContent: "center",
     width: 64,
   },
   soundToggleIcon: {
-    fontSize: 34,
-    lineHeight: 40,
+    height: 46,
+    width: 46,
   },
   headerRight: {
     alignItems: "flex-end",
@@ -2092,264 +1986,6 @@ const styles = StyleSheet.create({
   },
   creditDeltaNegative: {
     color: "#ffdddd",
-  },
-  homeScreen: {
-    flex: 1,
-    gap: 12,
-    paddingBottom: 10,
-  },
-  homeTitleBlock: {
-    alignItems: "center",
-    marginTop: -22,
-  },
-  homeOwner: {
-    color: "#fff07a",
-    fontSize: 28,
-    fontWeight: "900",
-    maxWidth: 260,
-    textAlign: "center",
-    textShadowColor: "rgba(0,0,0,0.45)",
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
-  },
-  homeSubtitle: {
-    color: "#d6ffe7",
-    fontSize: 13,
-    fontWeight: "900",
-    marginTop: 1,
-  },
-  homeWorld: {
-    alignItems: "center",
-    alignSelf: "center",
-    backgroundColor: "rgba(3,31,9,0.34)",
-    borderColor: "rgba(255,255,255,0.16)",
-    borderRadius: 8,
-    borderWidth: 1,
-    flex: 1,
-    justifyContent: "flex-end",
-    maxWidth: 390,
-    minHeight: 430,
-    overflow: "hidden",
-    paddingBottom: 18,
-    position: "relative",
-    width: "100%",
-  },
-  homeSkyGlow: {
-    backgroundColor: "rgba(255,240,122,0.2)",
-    borderRadius: 110,
-    height: 220,
-    position: "absolute",
-    top: 32,
-    width: 220,
-  },
-  homeDriveway: {
-    alignItems: "center",
-    backgroundColor: "rgba(25,29,31,0.48)",
-    borderColor: "rgba(255,255,255,0.16)",
-    borderRadius: 8,
-    borderWidth: 1,
-    bottom: 88,
-    height: 122,
-    justifyContent: "flex-end",
-    paddingBottom: 12,
-    position: "absolute",
-    right: 14,
-    width: 104,
-  },
-  homeZoneLabel: {
-    color: "#ffffff",
-    fontSize: 10,
-    fontWeight: "900",
-    marginBottom: 9,
-  },
-  homeCarSlot: {
-    alignItems: "center",
-    borderColor: "rgba(255,255,255,0.34)",
-    borderRadius: 8,
-    borderStyle: "dashed",
-    borderWidth: 2,
-    height: 58,
-    justifyContent: "center",
-    width: 78,
-  },
-  homeCarSilhouette: {
-    height: 30,
-    position: "relative",
-    width: 58,
-  },
-  homeCarRoof: {
-    alignSelf: "center",
-    backgroundColor: "rgba(255,255,255,0.2)",
-    borderTopLeftRadius: 10,
-    borderTopRightRadius: 10,
-    height: 14,
-    width: 34,
-  },
-  homeCarBody: {
-    backgroundColor: "rgba(255,255,255,0.22)",
-    borderRadius: 8,
-    height: 16,
-    marginTop: -2,
-    width: 58,
-  },
-  homeCarWheelLeft: {
-    backgroundColor: "#111111",
-    borderRadius: 5,
-    bottom: -1,
-    height: 10,
-    left: 9,
-    position: "absolute",
-    width: 10,
-  },
-  homeCarWheelRight: {
-    backgroundColor: "#111111",
-    borderRadius: 5,
-    bottom: -1,
-    height: 10,
-    position: "absolute",
-    right: 9,
-    width: 10,
-  },
-  houseWrap: {
-    alignItems: "center",
-    bottom: 112,
-    position: "absolute",
-  },
-  houseRoof: {
-    borderBottomColor: "#8d332c",
-    borderBottomWidth: 74,
-    borderLeftColor: "transparent",
-    borderLeftWidth: 118,
-    borderRightColor: "transparent",
-    borderRightWidth: 118,
-    height: 0,
-    width: 0,
-  },
-  houseBody: {
-    alignItems: "center",
-    backgroundColor: "#f2d29a",
-    borderColor: "#3a2218",
-    borderRadius: 8,
-    borderTopWidth: 0,
-    borderWidth: 3,
-    height: 156,
-    justifyContent: "flex-end",
-    marginTop: -2,
-    paddingBottom: 0,
-    position: "relative",
-    width: 210,
-  },
-  houseWindowRow: {
-    flexDirection: "row",
-    gap: 54,
-    position: "absolute",
-    top: 34,
-  },
-  houseWindow: {
-    backgroundColor: "#8fd1ff",
-    borderColor: "#3a2218",
-    borderRadius: 5,
-    borderWidth: 3,
-    height: 40,
-    width: 40,
-  },
-  houseDoor: {
-    backgroundColor: "#683a25",
-    borderColor: "#3a2218",
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
-    borderWidth: 3,
-    height: 72,
-    width: 46,
-  },
-  houseUpgradeBadge: {
-    alignItems: "center",
-    backgroundColor: "#fff07a",
-    borderColor: "#17201d",
-    borderRadius: 14,
-    borderWidth: 2,
-    justifyContent: "center",
-    minHeight: 28,
-    minWidth: 54,
-    position: "absolute",
-    right: 10,
-    top: 10,
-  },
-  houseUpgradeText: {
-    color: "#17201d",
-    fontSize: 11,
-    fontWeight: "900",
-  },
-  furnitureSlots: {
-    bottom: 16,
-    flexDirection: "row",
-    gap: 8,
-    justifyContent: "center",
-    left: 12,
-    position: "absolute",
-    right: 12,
-  },
-  furnitureSlot: {
-    alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.12)",
-    borderColor: "rgba(255,255,255,0.34)",
-    borderRadius: 8,
-    borderStyle: "dashed",
-    borderWidth: 2,
-    flex: 1,
-    height: 70,
-    justifyContent: "center",
-    maxWidth: 104,
-  },
-  furnitureIcon: {
-    color: "#ffffff",
-    fontSize: 15,
-    fontWeight: "900",
-  },
-  furnitureLabel: {
-    color: "#d6ffe7",
-    fontSize: 10,
-    fontWeight: "800",
-    marginTop: 4,
-  },
-  homeActions: {
-    alignSelf: "center",
-    gap: 9,
-    maxWidth: 390,
-    width: "100%",
-  },
-  homePrimaryAction: {
-    alignItems: "center",
-    backgroundColor: "#18c96f",
-    borderRadius: 8,
-    justifyContent: "center",
-    minHeight: 56,
-  },
-  homePrimaryActionText: {
-    color: "#ffffff",
-    fontSize: 22,
-    fontWeight: "900",
-  },
-  homeActionGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  homeActionButton: {
-    alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.16)",
-    borderColor: "rgba(255,255,255,0.18)",
-    borderRadius: 8,
-    borderWidth: 1,
-    flexBasis: "48%",
-    flexGrow: 1,
-    justifyContent: "center",
-    minHeight: 46,
-  },
-  homeActionText: {
-    color: "#ffffff",
-    fontSize: 15,
-    fontWeight: "900",
   },
   blackjackCelebration: {
     alignItems: "center",
