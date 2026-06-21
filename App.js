@@ -3,6 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { setAudioModeAsync, useAudioPlayer } from "expo-audio";
 import {
   Animated,
+  Dimensions,
   Image,
   ImageBackground,
   Modal,
@@ -18,28 +19,122 @@ import {
 
 const suits = ["S", "H", "D", "C"];
 const ranks = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-const betOptions = [100, 200, 500, 1000];
+const betOptions = [100, 200, 500, 1000, 5000];
 const startingChips = 1000;
 const firstAccountChips = startingChips;
 const accountsStorageKey = "blackjack-accounts-v4";
 const settingsStorageKey = "blackjack-settings-v1";
 const accountCost = 3000;
 const developerCheatChips = [100, 200, 500];
-const developerCheatReward = 10000;
+const developerCheatReward = 20000;
+const mainTabs = ["store", "blackjack", "money"];
+const mainTabIndex = { store: 0, blackjack: 1, money: 2 };
+const realEstateListings = [
+  { name: "Studio Apartment", price: 5000, rentPerHour: 100 },
+  { name: "Bungalow", price: 10000, rentPerHour: 200 },
+  { name: "Luxury Apartment", price: 20000, rentPerHour: 400 },
+  { name: "Duplex", price: 35000, rentPerHour: 700 },
+  { name: "Penthouse", price: 55000, rentPerHour: 1200 },
+  { name: "Farmhouse", price: 80000, rentPerHour: 1700 },
+  { name: "Beach House", price: 110000, rentPerHour: 2400 },
+  { name: "Luxury Villa", price: 150000, rentPerHour: 3200 },
+  { name: "Mansion", price: 200000, rentPerHour: 4300 },
+  { name: "Hotel", price: 250000, rentPerHour: 5300 },
+];
+const vehicleListings = [
+  { name: "Bicycle", price: 500 },
+  { name: "Motorcycle", price: 3000 },
+  { name: "Hatchback", price: 10000 },
+  { name: "Sedan", price: 20000 },
+  { name: "SUV", price: 30000 },
+  { name: "Sports Car", price: 50000 },
+  { name: "Limousine", price: 75000 },
+  { name: "Supercar", price: 110000 },
+  { name: "Yacht", price: 150000 },
+  { name: "Private Jet", price: 200000 },
+];
+const itemListings = [
+  { name: "Headphones", price: 500 },
+  { name: "Smartphone", price: 1500 },
+  { name: "Gaming Console", price: 2500 },
+  { name: "Tablet", price: 3000 },
+  { name: "Watch", price: 6000 },
+  { name: "Laptop", price: 8000 },
+  { name: "Necklace", price: 8000 },
+  { name: "Ring", price: 10000 },
+  { name: "Pool Table", price: 8000 },
+  { name: "Home Theater", price: 6000 },
+];
+const tabPanelWidth = Math.min(Dimensions.get("window").width - 24, 390);
+const moneyMachineBaseCapacity = 1000;
+const moneyMachineCapacityStep = 1000;
+const moneyMachineBaseTapEarn = 10;
+const moneyMachineTapEarnStep = 2;
+const moneyMachineMaxTapEarn = 100;
+const moneyMachineTapUpgradeBaseCost = 1000;
+const moneyMachineCapacityUpgradeBaseCost = 2000;
+const moneyMachineTapUpgradeCostStep = 200;
+const moneyMachineCapacityUpgradeCostStep = 100;
+const moneyMachineMaxTapLevel = 46;
+const moneyMachineMaxCapacityLevel = 50;
+const moneyMachineTickMs = 60000;
+const moneyMachineEarnPerTick = 50;
+const rentalIncomeCapacity = 50000;
+const rentalIncomeTickMs = 3600000;
 const chipColors = {
   100: "#0f9f5a",
   200: "#2563eb",
   500: "#d62828",
   1000: "#f4c430",
+  5000: "#8b3fc6",
 };
 
 const CARD_BACK = require("./assets/cards/BACK.png");
 const TABLE_FELT = require("./assets/table-felt.png");
 const FIRST_SCREEN_BACKGROUND = require("./assets/firstscreenbackground.png");
-const SOUND_ON_ICON = require("./assets/sound-on.jpg");
-const SOUND_OFF_ICON = require("./assets/sound-off.jpg");
+const SOUND_ON_ICON = require("./assets/sound-on.png");
+const SOUND_OFF_ICON = require("./assets/sound-off.png");
+const TAB_BLACKJACK_ICON = require("./assets/tab-blackjack.png");
+const TAB_STORE_ICON = require("./assets/tab-store.png");
+const TAB_MONEY_ICON = require("./assets/tab-money.png");
 const CARD_DEAL_SOUND = require("./assets/sounds/card-deal.mp3");
 const CHIP_PLACE_SOUND = require("./assets/sounds/chip-place.mp3");
+const PROPERTY_IMAGES = {
+  "Studio Apartment": require("./assets/store/properties/studio-apartment.png"),
+  Bungalow: require("./assets/store/properties/bungalow.png"),
+  "Luxury Apartment": require("./assets/store/properties/luxury-apartment.png"),
+  Duplex: require("./assets/store/properties/duplex.png"),
+  Penthouse: require("./assets/store/properties/penthouse.png"),
+  Farmhouse: require("./assets/store/properties/farmhouse.png"),
+  "Beach House": require("./assets/store/properties/beach-house.png"),
+  "Luxury Villa": require("./assets/store/properties/luxury-villa.png"),
+  Mansion: require("./assets/store/properties/mansion.png"),
+  Hotel: require("./assets/store/properties/hotel.png"),
+};
+const VEHICLE_IMAGES = {
+  Bicycle: require("./assets/store/vehicles/bicycle.png"),
+  Motorcycle: require("./assets/store/vehicles/motorcycle.png"),
+  Hatchback: require("./assets/store/vehicles/hatchback.png"),
+  Sedan: require("./assets/store/vehicles/sedan.png"),
+  SUV: require("./assets/store/vehicles/suv.png"),
+  "Sports Car": require("./assets/store/vehicles/sports-car.png"),
+  Limousine: require("./assets/store/vehicles/limousine.png"),
+  Supercar: require("./assets/store/vehicles/supercar.png"),
+  Yacht: require("./assets/store/vehicles/yacht.png"),
+  "Private Jet": require("./assets/store/vehicles/private-jet.png"),
+};
+const ITEM_IMAGES = {
+  Headphones: require("./assets/store/items/headphones.png"),
+  Smartphone: require("./assets/store/items/smartphone.png"),
+  "Gaming Console": require("./assets/store/items/gaming-console.png"),
+  Tablet: require("./assets/store/items/tablet.png"),
+  Watch: require("./assets/store/items/watch.png"),
+  Laptop: require("./assets/store/items/laptop.png"),
+  Necklace: require("./assets/store/items/necklace.png"),
+  Ring: require("./assets/store/items/ring.png"),
+  "Pool Table": require("./assets/store/items/pool-table.png"),
+  "Home Theater": require("./assets/store/items/home-theater.png"),
+};
 const CARD_IMAGES = {
   AS: require("./assets/cards/AS.png"),
   "2S": require("./assets/cards/2S.png"),
@@ -155,6 +250,101 @@ function suitLabel(suit) {
   }[suit];
 }
 
+function createMoneyMachine(now = Date.now()) {
+  return {
+    stored: 0,
+    lastUpdated: now,
+    tapLevel: 1,
+    capacityLevel: 1,
+  };
+}
+
+function normalizeMoneyMachineLevel(level, maxLevel) {
+  return Number.isFinite(level)
+    ? Math.max(1, Math.min(maxLevel, Math.floor(level)))
+    : 1;
+}
+
+function moneyMachineCapacityForLevel(level) {
+  return moneyMachineBaseCapacity +
+    (normalizeMoneyMachineLevel(level, moneyMachineMaxCapacityLevel) - 1) * moneyMachineCapacityStep;
+}
+
+function moneyMachineTapEarnForLevel(level) {
+  return Math.min(
+    moneyMachineMaxTapEarn,
+    moneyMachineBaseTapEarn +
+      (normalizeMoneyMachineLevel(level, moneyMachineMaxTapLevel) - 1) * moneyMachineTapEarnStep
+  );
+}
+
+function moneyMachineUpgradeCost(type, level) {
+  const maxLevel = type === "tap" ? moneyMachineMaxTapLevel : moneyMachineMaxCapacityLevel;
+  const normalizedLevel = normalizeMoneyMachineLevel(level, maxLevel);
+  const baseCost = type === "tap" ? moneyMachineTapUpgradeBaseCost : moneyMachineCapacityUpgradeBaseCost;
+  const costStep = type === "tap" ? moneyMachineTapUpgradeCostStep : moneyMachineCapacityUpgradeCostStep;
+  return baseCost + (normalizedLevel - 1) * costStep;
+}
+
+function normalizeMoneyMachine(machine, now = Date.now()) {
+  const tapLevel = normalizeMoneyMachineLevel(machine?.tapLevel, moneyMachineMaxTapLevel);
+  const capacityLevel = normalizeMoneyMachineLevel(machine?.capacityLevel, moneyMachineMaxCapacityLevel);
+  const capacity = moneyMachineCapacityForLevel(capacityLevel);
+  const currentStored = Number.isFinite(machine?.stored)
+    ? Math.max(0, Math.min(capacity, Math.floor(machine.stored)))
+    : 0;
+  const currentLastUpdated = Number.isFinite(machine?.lastUpdated) ? machine.lastUpdated : now;
+  const elapsed = Math.max(0, now - currentLastUpdated);
+  const ticks = Math.floor(elapsed / moneyMachineTickMs);
+  const earned = ticks * moneyMachineEarnPerTick;
+  const nextStored = Math.min(capacity, currentStored + earned);
+  const reachedCapacity = nextStored >= capacity;
+
+  return {
+    stored: nextStored,
+    lastUpdated: reachedCapacity ? now : currentLastUpdated + ticks * moneyMachineTickMs,
+    tapLevel,
+    capacityLevel,
+  };
+}
+
+function createRentalIncome(now = Date.now()) {
+  return {
+    stored: 0,
+    lastUpdated: now,
+  };
+}
+
+function rentalRateForProperties(ownedRealEstate) {
+  return realEstateListings.reduce(
+    (total, property) => total + (ownedRealEstate.includes(property.name) ? property.rentPerHour : 0),
+    0
+  );
+}
+
+function normalizeRentalIncome(income, ownedRealEstate, now = Date.now()) {
+  const stored = Number.isFinite(income?.stored) ? Math.max(0, Math.floor(income.stored)) : 0;
+  const lastUpdated = Number.isFinite(income?.lastUpdated) ? income.lastUpdated : now;
+  const elapsed = Math.max(0, now - lastUpdated);
+  const hourlyRate = rentalRateForProperties(ownedRealEstate);
+  const completedHours = Math.floor(elapsed / rentalIncomeTickMs);
+
+  if (hourlyRate <= 0) {
+    return {
+      stored: Math.min(rentalIncomeCapacity, stored),
+      lastUpdated: now,
+    };
+  }
+
+  const nextStored = Math.min(rentalIncomeCapacity, stored + completedHours * hourlyRate);
+
+  return {
+    stored: nextStored,
+    lastUpdated:
+      nextStored >= rentalIncomeCapacity ? now : lastUpdated + completedHours * rentalIncomeTickMs,
+  };
+}
+
 function Chip({ amount, small }) {
   return (
     <View
@@ -169,7 +359,13 @@ function Chip({ amount, small }) {
       <View style={styles.chipStripeBottom} />
       <View style={styles.chipStripeLeft} />
       <View style={[styles.chipInner, small && styles.chipInnerSmall]}>
-        <Text style={[styles.chipText, small && styles.chipTextSmall]}>
+        <Text
+          style={[
+            styles.chipText,
+            small && styles.chipTextSmall,
+            amount === 5000 && (small ? styles.chipText5000Small : styles.chipText5000),
+          ]}
+        >
           {amount}
         </Text>
       </View>
@@ -224,6 +420,431 @@ function DeckShoe({ onPress, onTouchStart }) {
         </View>
       ))}
     </Pressable>
+  );
+}
+
+function PropertyThumbnail({ name }) {
+  return (
+    <View style={styles.propertyThumbnail}>
+      <Image resizeMode="cover" source={PROPERTY_IMAGES[name]} style={styles.storeThumbnailImage} />
+    </View>
+  );
+}
+
+function VehicleThumbnail({ name }) {
+  return (
+    <View style={styles.vehicleThumbnail}>
+      <Image resizeMode="cover" source={VEHICLE_IMAGES[name]} style={styles.storeThumbnailImage} />
+    </View>
+  );
+}
+
+function ItemThumbnail({ name }) {
+  return (
+    <View style={styles.itemThumbnail}>
+      <Image resizeMode="cover" source={ITEM_IMAGES[name]} style={styles.storeThumbnailImage} />
+    </View>
+  );
+}
+
+function OwnedRentLabel({ rentPerHour, showCheck }) {
+  const transition = useRef(new Animated.Value(showCheck ? 0 : 1)).current;
+
+  useEffect(() => {
+    Animated.timing(transition, {
+      toValue: showCheck ? 0 : 1,
+      duration: 450,
+      useNativeDriver: true,
+    }).start();
+  }, [showCheck, transition]);
+
+  const checkOpacity = transition.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 0],
+  });
+  const checkScale = transition.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 0.82],
+  });
+  const rentTranslateY = transition.interpolate({
+    inputRange: [0, 1],
+    outputRange: [3, 0],
+  });
+
+  return (
+    <View style={styles.storeOwnedLabel}>
+      <Animated.Text
+        style={[
+          styles.storeOwnedCheck,
+          styles.storeOwnedLabelText,
+          { opacity: checkOpacity, transform: [{ scale: checkScale }] },
+        ]}
+      >
+        ✓
+      </Animated.Text>
+      <Animated.Text
+        style={[
+          styles.storeRentRate,
+          styles.storeOwnedLabelText,
+          { opacity: transition, transform: [{ translateY: rentTranslateY }] },
+        ]}
+      >
+        +${rentPerHour.toLocaleString("en-US")}/hr
+      </Animated.Text>
+    </View>
+  );
+}
+
+function StorePanel({
+  credit,
+  ownedItems,
+  ownedRealEstate,
+  ownedVehicles,
+  onBuyItem,
+  onBuyRealEstate,
+  onBuyVehicle,
+  onCollectRentalIncome,
+  rentalIncome,
+  rentalRate,
+  visible,
+}) {
+  const [category, setCategory] = useState("realEstate");
+  const [showOwnedChecks, setShowOwnedChecks] = useState(true);
+
+  useEffect(() => {
+    if (!visible || category !== "realEstate") {
+      return undefined;
+    }
+
+    setShowOwnedChecks(true);
+    const timer = setTimeout(() => setShowOwnedChecks(false), 1000);
+    return () => clearTimeout(timer);
+  }, [category, ownedRealEstate, visible]);
+
+  return (
+    <View style={styles.storeScreen}>
+      <Text style={styles.storeTitle}>Store</Text>
+      <View style={styles.storeCategories}>
+        <Pressable
+          disabled={category === "realEstate"}
+          onPress={() => setCategory("realEstate")}
+          style={({ pressed }) => [
+            styles.storeCategoryButton,
+            category === "realEstate" && styles.storeCategoryButtonSelected,
+            pressed && styles.pressed,
+          ]}
+        >
+          <Text
+            style={[
+              styles.storeCategoryText,
+              category === "realEstate" && styles.storeCategoryTextSelected,
+            ]}
+          >
+            Real Estate
+          </Text>
+        </Pressable>
+        <Pressable
+          disabled={category === "cars"}
+          onPress={() => setCategory("cars")}
+          style={({ pressed }) => [
+            styles.storeCategoryButton,
+            category === "cars" && styles.storeCategoryButtonSelected,
+            pressed && styles.pressed,
+          ]}
+        >
+          <Text
+            style={[styles.storeCategoryText, category === "cars" && styles.storeCategoryTextSelected]}
+          >
+            Cars
+          </Text>
+        </Pressable>
+        <Pressable
+          disabled={category === "items"}
+          onPress={() => setCategory("items")}
+          style={({ pressed }) => [
+            styles.storeCategoryButton,
+            category === "items" && styles.storeCategoryButtonSelected,
+            pressed && styles.pressed,
+          ]}
+        >
+          <Text
+            style={[styles.storeCategoryText, category === "items" && styles.storeCategoryTextSelected]}
+          >
+            Items
+          </Text>
+        </Pressable>
+      </View>
+
+      {category === "realEstate" ? (
+        <ScrollView
+          contentContainerStyle={styles.storeListContent}
+          showsVerticalScrollIndicator={false}
+          style={styles.storeList}
+        >
+          {realEstateListings.map((property, index) => {
+            const owned = ownedRealEstate.includes(property.name);
+            const affordable = credit >= property.price;
+
+            return (
+              <View key={property.name} style={styles.storeListing}>
+                <View style={styles.storeListingInfo}>
+                  <PropertyThumbnail name={property.name} />
+                  <View style={styles.storeListingLabel}>
+                    <Text style={styles.storeListingTier}>{String(index + 1).padStart(2, "0")}</Text>
+                    <Text numberOfLines={1} style={styles.storeListingName}>
+                      {property.name}
+                    </Text>
+                  </View>
+                </View>
+                <Pressable
+                  disabled={owned || !affordable}
+                  onPress={() => onBuyRealEstate(property)}
+                  style={({ pressed }) => [
+                    styles.storeBuyButton,
+                    owned && styles.storeBuyButtonOwned,
+                    !owned && !affordable && styles.storeBuyButtonDisabled,
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  {owned ? (
+                    <OwnedRentLabel rentPerHour={property.rentPerHour} showCheck={showOwnedChecks} />
+                  ) : (
+                    <Text style={styles.storeListingPrice}>${property.price.toLocaleString("en-US")}</Text>
+                  )}
+                </Pressable>
+              </View>
+            );
+          })}
+        </ScrollView>
+      ) : category === "cars" ? (
+        <ScrollView
+          contentContainerStyle={styles.storeListContent}
+          showsVerticalScrollIndicator={false}
+          style={styles.storeList}
+        >
+          {vehicleListings.map((vehicle, index) => {
+            const owned = ownedVehicles.includes(vehicle.name);
+            const affordable = credit >= vehicle.price;
+
+            return (
+              <View key={vehicle.name} style={styles.storeListing}>
+                <View style={styles.storeListingInfo}>
+                  <VehicleThumbnail name={vehicle.name} />
+                  <View style={styles.storeListingLabel}>
+                    <Text style={styles.storeListingTier}>{String(index + 1).padStart(2, "0")}</Text>
+                    <Text numberOfLines={1} style={styles.storeListingName}>
+                      {vehicle.name}
+                    </Text>
+                  </View>
+                </View>
+                <Pressable
+                  disabled={owned || !affordable}
+                  onPress={() => onBuyVehicle(vehicle)}
+                  style={({ pressed }) => [
+                    styles.storeBuyButton,
+                    owned && styles.storeBuyButtonOwned,
+                    !owned && !affordable && styles.storeBuyButtonDisabled,
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  <Text style={[styles.storeListingPrice, owned && styles.storeOwnedCheck]}>
+                    {owned ? "✓" : `$${vehicle.price.toLocaleString("en-US")}`}
+                  </Text>
+                </Pressable>
+              </View>
+            );
+          })}
+        </ScrollView>
+      ) : (
+        <ScrollView
+          contentContainerStyle={styles.storeListContent}
+          showsVerticalScrollIndicator={false}
+          style={styles.storeList}
+        >
+          {itemListings.map((item, index) => {
+            const owned = ownedItems.includes(item.name);
+            const affordable = credit >= item.price;
+
+            return (
+              <View key={item.name} style={styles.storeListing}>
+                <View style={styles.storeListingInfo}>
+                  <ItemThumbnail name={item.name} />
+                  <View style={styles.storeListingLabel}>
+                    <Text style={styles.storeListingTier}>{String(index + 1).padStart(2, "0")}</Text>
+                    <Text numberOfLines={1} style={styles.storeListingName}>
+                      {item.name}
+                    </Text>
+                  </View>
+                </View>
+                <Pressable
+                  disabled={owned || !affordable}
+                  onPress={() => onBuyItem(item)}
+                  style={({ pressed }) => [
+                    styles.storeBuyButton,
+                    owned && styles.storeBuyButtonOwned,
+                    !owned && !affordable && styles.storeBuyButtonDisabled,
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  <Text style={[styles.storeListingPrice, owned && styles.storeOwnedCheck]}>
+                    {owned ? "✓" : `$${item.price.toLocaleString("en-US")}`}
+                  </Text>
+                </Pressable>
+              </View>
+            );
+          })}
+        </ScrollView>
+      )}
+      <View style={styles.rentalPanel}>
+        <View style={styles.rentalPanelInfo}>
+          <Text style={styles.rentalPanelTitle}>Rental Income</Text>
+          <Text style={styles.rentalPanelRate}>+${rentalRate.toLocaleString("en-US")}/hr</Text>
+          <Text style={styles.rentalPanelCapacity}>MAX ${rentalIncomeCapacity.toLocaleString("en-US")}</Text>
+        </View>
+        <Text style={styles.rentalPanelAmount}>${rentalIncome.toLocaleString("en-US")}</Text>
+        <Pressable
+          disabled={rentalIncome <= 0}
+          onPress={onCollectRentalIncome}
+          style={({ pressed }) => [
+            styles.rentalCollectButton,
+            rentalIncome <= 0 && styles.disabled,
+            pressed && styles.pressed,
+          ]}
+        >
+          <Text style={styles.rentalCollectText}>Collect</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+function MoneyMachinePanel({
+  stored,
+  capacity,
+  tapEarn,
+  tapLevel,
+  capacityLevel,
+  credit,
+  onCollect,
+  onTapEarn,
+  onUpgradeTap,
+  onUpgradeCapacity,
+}) {
+  const progress = Math.min(1, stored / capacity);
+  const machineFull = stored >= capacity;
+  const tapAtMax = tapLevel >= moneyMachineMaxTapLevel;
+  const capacityAtMax = capacityLevel >= moneyMachineMaxCapacityLevel;
+  const tapUpgradeCost = moneyMachineUpgradeCost("tap", tapLevel);
+  const capacityUpgradeCost = moneyMachineUpgradeCost("capacity", capacityLevel);
+
+  return (
+    <View style={styles.moneyMachineScreen}>
+      <Pressable
+        disabled={machineFull}
+        onPress={onTapEarn}
+        style={({ pressed }) => [
+          styles.moneyMachineTapZone,
+          machineFull && styles.moneyMachineTapZoneFull,
+          pressed && styles.moneyMachineTapZonePressed,
+        ]}
+      >
+        <Text style={styles.moneyMachineTapText}>{machineFull ? "FULL" : "Tap here to make money"}</Text>
+        {!machineFull && <Text style={styles.moneyMachineTapValue}>+${tapEarn}</Text>}
+      </Pressable>
+      <View style={styles.moneyMachineUpgrades}>
+        <Pressable
+          disabled={tapAtMax || credit < tapUpgradeCost}
+          onPress={onUpgradeTap}
+          style={({ pressed }) => [
+            styles.moneyMachineUpgrade,
+            (tapAtMax || credit < tapUpgradeCost) && styles.moneyMachineUpgradeDisabled,
+            pressed && styles.pressed,
+          ]}
+        >
+          <Text style={styles.moneyMachineUpgradeTitle}>Tap Power</Text>
+          <Text style={styles.moneyMachineUpgradeEffect}>
+            {tapAtMax
+              ? `+$${tapEarn} per tap`
+              : `+$${tapEarn}  >  +$${Math.min(moneyMachineMaxTapEarn, tapEarn + moneyMachineTapEarnStep)}`}
+          </Text>
+          <Text style={styles.moneyMachineUpgradeCost}>{tapAtMax ? "MAX LEVEL" : `Upgrade  $${tapUpgradeCost}`}</Text>
+        </Pressable>
+        <Pressable
+          disabled={capacityAtMax || credit < capacityUpgradeCost}
+          onPress={onUpgradeCapacity}
+          style={({ pressed }) => [
+            styles.moneyMachineUpgrade,
+            (capacityAtMax || credit < capacityUpgradeCost) && styles.moneyMachineUpgradeDisabled,
+            pressed && styles.pressed,
+          ]}
+        >
+          <Text style={styles.moneyMachineUpgradeTitle}>Storage</Text>
+          <Text style={styles.moneyMachineUpgradeEffect}>
+            {capacityAtMax ? `$${capacity} capacity` : `$${capacity}  >  $${capacity + moneyMachineCapacityStep}`}
+          </Text>
+          <Text style={styles.moneyMachineUpgradeCost}>
+            {capacityAtMax ? "MAX LEVEL" : `Upgrade  $${capacityUpgradeCost}`}
+          </Text>
+        </Pressable>
+      </View>
+      <View style={styles.moneyMachineStation}>
+        <Text style={styles.moneyMachineStationTitle}>Money Machine</Text>
+        <View style={styles.moneyMachineBox}>
+          <View style={styles.moneyMachineTopLight} />
+          <View style={styles.moneyMachineWindow}>
+            <View style={styles.moneyMachineAmountRow}>
+              <Text style={styles.moneyMachineAmount}>${stored}</Text>
+              <Text style={styles.moneyMachinePassiveRate}>+${moneyMachineEarnPerTick}/min</Text>
+            </View>
+          </View>
+          <View style={styles.moneyMachineProgressTrack}>
+            <View style={[styles.moneyMachineProgressFill, { width: `${progress * 100}%` }]} />
+          </View>
+          <Text style={styles.moneyMachineCapacity}>MAX ${capacity}</Text>
+        </View>
+        <Pressable
+          disabled={stored <= 0}
+          onPress={onCollect}
+          style={({ pressed }) => [
+            styles.moneyMachineCollect,
+            stored <= 0 && styles.disabled,
+            pressed && styles.pressed,
+          ]}
+        >
+          <Text style={styles.moneyMachineCollectText}>Collect</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+function BottomTabs({ activeTab, onSelect }) {
+  return (
+    <View style={styles.bottomTabs}>
+      {mainTabs.map((tab) => {
+        const selected = tab === activeTab;
+        const icon = tab === "store" ? TAB_STORE_ICON : tab === "blackjack" ? TAB_BLACKJACK_ICON : TAB_MONEY_ICON;
+
+        return (
+          <Pressable
+            disabled={selected}
+            key={tab}
+            onPress={() => onSelect(tab)}
+            style={({ pressed }) => [
+              styles.bottomTabButton,
+              selected && styles.bottomTabButtonSelected,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Image
+              resizeMode="contain"
+              source={icon}
+              style={[styles.bottomTabIcon, selected && styles.bottomTabIconSelected]}
+            />
+          </Pressable>
+        );
+      })}
+    </View>
   );
 }
 
@@ -517,6 +1138,11 @@ export default function App() {
   const [shownDealerScore, setShownDealerScore] = useState(0);
   const [accounts, setAccounts] = useState([]);
   const [activeAccountId, setActiveAccountId] = useState(null);
+  const [moneyMachine, setMoneyMachine] = useState(() => createMoneyMachine());
+  const [rentalIncome, setRentalIncome] = useState(() => createRentalIncome());
+  const [ownedItems, setOwnedItems] = useState([]);
+  const [ownedRealEstate, setOwnedRealEstate] = useState([]);
+  const [ownedVehicles, setOwnedVehicles] = useState([]);
   const [accountsLoaded, setAccountsLoaded] = useState(false);
   const [hasChosenFirstAccountName, setHasChosenFirstAccountName] = useState(false);
   const [firstAccountName, setFirstAccountName] = useState("");
@@ -525,22 +1151,42 @@ export default function App() {
   const [accountMenuMessage, setAccountMenuMessage] = useState("");
   const [editingAccountId, setEditingAccountId] = useState(null);
   const [editingAccountName, setEditingAccountName] = useState("");
-  const [creditResetOpen, setCreditResetOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [blackjackCelebration, setBlackjackCelebration] = useState(false);
+  const [activeTab, setActiveTab] = useState("blackjack");
   const resultTimer = useRef(null);
   const nextRoundTimer = useRef(null);
   const developerCheatStep = useRef(0);
   const developerDeckTaps = useRef(0);
+  const tabSlide = useRef(new Animated.Value(mainTabIndex.blackjack)).current;
   const cardSoundPlayer = useAudioPlayer(CARD_DEAL_SOUND);
   const chipSoundPlayer = useAudioPlayer(CHIP_PLACE_SOUND);
 
   const playerScore = useMemo(() => handValue(player), [player]);
   const dealerScore = useMemo(() => handValue(dealer), [dealer]);
   const activeAccount = accounts.find((account) => account.id === activeAccountId);
+  const moneyMachineStored = Math.floor(moneyMachine.stored || 0);
+  const moneyMachineTapLevel = normalizeMoneyMachineLevel(moneyMachine.tapLevel, moneyMachineMaxTapLevel);
+  const moneyMachineCapacityLevel = normalizeMoneyMachineLevel(
+    moneyMachine.capacityLevel,
+    moneyMachineMaxCapacityLevel
+  );
+  const activeMoneyMachineCapacity = moneyMachineCapacityForLevel(moneyMachineCapacityLevel);
+  const activeMoneyMachineTapEarn = moneyMachineTapEarnForLevel(moneyMachineTapLevel);
+  const rentalRate = rentalRateForProperties(ownedRealEstate);
+  const rentalIncomeStored = Math.min(rentalIncomeCapacity, Math.floor(rentalIncome.stored || 0));
   const accountSwitchLocked =
     inRound || dealing || resolvingDealer || betweenRounds || resultDelta !== null || creditDelta !== null;
+  const showBottomTabs =
+    !inRound &&
+    !dealing &&
+    !resolvingDealer &&
+    !betweenRounds &&
+    !outOfCredit &&
+    resultDelta === null &&
+    !blackjackCelebration;
+  const showBlackjackTable =
+    activeTab === "blackjack" || inRound || dealing || resolvingDealer || resultDelta !== null || blackjackCelebration;
 
   useEffect(() => {
     setAudioModeAsync({ playsInSilentMode: true }).catch(() => {});
@@ -583,13 +1229,40 @@ export default function App() {
     async function loadAccounts() {
       try {
         const savedAccounts = await AsyncStorage.getItem(accountsStorageKey);
+        const now = Date.now();
         let loadedAccounts = [];
         let loadedActiveId = null;
         let loadedHasChosenName = false;
+        let loadedMoneyMachine = null;
+        let loadedRentalIncome = null;
+        let loadedOwnedItems = [];
+        let loadedOwnedRealEstate = [];
+        let loadedOwnedVehicles = [];
 
         if (savedAccounts !== null) {
           const parsedSave = JSON.parse(savedAccounts);
           loadedHasChosenName = parsedSave.hasChosenFirstAccountName === true;
+          if (parsedSave.moneyMachine) {
+            loadedMoneyMachine = normalizeMoneyMachine(parsedSave.moneyMachine, now);
+          }
+          if (parsedSave.rentalIncome) {
+            loadedRentalIncome = parsedSave.rentalIncome;
+          }
+          if (Array.isArray(parsedSave.ownedRealEstate)) {
+            loadedOwnedRealEstate = parsedSave.ownedRealEstate.filter((name) =>
+              realEstateListings.some((property) => property.name === name)
+            );
+          }
+          if (Array.isArray(parsedSave.ownedItems)) {
+            loadedOwnedItems = parsedSave.ownedItems.filter((name) =>
+              itemListings.some((item) => item.name === name)
+            );
+          }
+          if (Array.isArray(parsedSave.ownedVehicles)) {
+            loadedOwnedVehicles = parsedSave.ownedVehicles.filter((name) =>
+              vehicleListings.some((vehicle) => vehicle.name === name)
+            );
+          }
           if (Array.isArray(parsedSave.accounts) && parsedSave.accounts.length > 0) {
             loadedAccounts = parsedSave.accounts.filter(
               (account) =>
@@ -603,25 +1276,51 @@ export default function App() {
         }
 
         if (loadedAccounts.length === 0) {
-          loadedAccounts = [{ id: "account-1", name: "Account 1", credit: firstAccountChips }];
+          loadedAccounts = [
+            { id: "account-1", name: "Account 1", credit: firstAccountChips },
+          ];
           loadedActiveId = "account-1";
         }
 
         const selectedAccount =
           loadedAccounts.find((account) => account.id === loadedActiveId) || loadedAccounts[0];
+        loadedMoneyMachine = normalizeMoneyMachine(
+          loadedMoneyMachine || selectedAccount.moneyMachine || createMoneyMachine(now),
+          now
+        );
+        loadedRentalIncome = normalizeRentalIncome(
+          loadedRentalIncome || createRentalIncome(now),
+          loadedOwnedRealEstate,
+          now
+        );
+        loadedAccounts = loadedAccounts.map(({ moneyMachine: legacyMoneyMachine, ...account }) => account);
 
         if (active) {
           setAccounts(loadedAccounts);
           setActiveAccountId(selectedAccount.id);
+          setMoneyMachine(loadedMoneyMachine);
+          setRentalIncome(loadedRentalIncome);
+          setOwnedItems(loadedOwnedItems);
+          setOwnedRealEstate(loadedOwnedRealEstate);
+          setOwnedVehicles(loadedOwnedVehicles);
           setChips(selectedAccount.credit);
           setOutOfCredit(selectedAccount.credit <= 0);
           setHasChosenFirstAccountName(loadedHasChosenName);
         }
       } catch {
-        const fallbackAccount = { id: "account-1", name: "Account 1", credit: firstAccountChips };
+        const fallbackAccount = {
+          id: "account-1",
+          name: "Account 1",
+          credit: firstAccountChips,
+        };
         if (active) {
           setAccounts([fallbackAccount]);
           setActiveAccountId(fallbackAccount.id);
+          setMoneyMachine(createMoneyMachine());
+          setRentalIncome(createRentalIncome());
+          setOwnedItems([]);
+          setOwnedRealEstate([]);
+          setOwnedVehicles([]);
           setChips(fallbackAccount.credit);
         }
       } finally {
@@ -641,10 +1340,42 @@ export default function App() {
     if (accountsLoaded && activeAccountId && accounts.length > 0) {
       AsyncStorage.setItem(
         accountsStorageKey,
-        JSON.stringify({ accounts, activeAccountId, hasChosenFirstAccountName })
+        JSON.stringify({
+          accounts,
+          activeAccountId,
+          hasChosenFirstAccountName,
+          moneyMachine,
+          rentalIncome,
+          ownedItems,
+          ownedRealEstate,
+          ownedVehicles,
+        })
       );
     }
-  }, [accounts, activeAccountId, accountsLoaded, hasChosenFirstAccountName]);
+  }, [
+    accounts,
+    activeAccountId,
+    accountsLoaded,
+    hasChosenFirstAccountName,
+    moneyMachine,
+    rentalIncome,
+    ownedItems,
+    ownedRealEstate,
+    ownedVehicles,
+  ]);
+
+  useEffect(() => {
+    if (!accountsLoaded) {
+      return undefined;
+    }
+
+    const timer = setInterval(() => {
+      setMoneyMachine((current) => normalizeMoneyMachine(current));
+      setRentalIncome((current) => normalizeRentalIncome(current, ownedRealEstate));
+    }, moneyMachineTickMs);
+
+    return () => clearInterval(timer);
+  }, [accountsLoaded, ownedRealEstate]);
 
   useEffect(() => {
     return () => {
@@ -661,6 +1392,174 @@ export default function App() {
     setAccounts((current) =>
       current.map((account) => (account.id === activeAccountId ? { ...account, credit: nextCredit } : account))
     );
+  }
+
+  function selectTab(tab) {
+    if (!showBottomTabs || tab === activeTab) {
+      return;
+    }
+
+    setActiveTab(tab);
+    Animated.spring(tabSlide, {
+      toValue: mainTabIndex[tab],
+      useNativeDriver: true,
+      damping: 18,
+      stiffness: 170,
+      mass: 0.7,
+    }).start();
+  }
+
+  function collectMoneyMachine() {
+    if (!activeAccount || moneyMachineStored <= 0 || creditDelta !== null) {
+      return;
+    }
+
+    const now = Date.now();
+    const nextCredit = chips + moneyMachineStored;
+    const normalizedMachine = normalizeMoneyMachine(moneyMachine, now);
+
+    setAccounts((current) =>
+      current.map((account) =>
+        account.id === activeAccountId ? { ...account, credit: nextCredit } : account
+      )
+    );
+    setMoneyMachine({
+      ...normalizedMachine,
+      stored: 0,
+      lastUpdated: now,
+    });
+    setOutOfCredit(false);
+    setCreditDelta(moneyMachineStored);
+  }
+
+  function tapMoneyMachine() {
+    if (!activeAccount || moneyMachineStored >= activeMoneyMachineCapacity) {
+      return;
+    }
+
+    const now = Date.now();
+
+    setMoneyMachine((current) => {
+      const normalizedMachine = normalizeMoneyMachine(current, now);
+        const capacity = moneyMachineCapacityForLevel(normalizedMachine.capacityLevel);
+        const tapEarn = moneyMachineTapEarnForLevel(normalizedMachine.tapLevel);
+
+      return {
+        ...normalizedMachine,
+        stored: Math.min(capacity, normalizedMachine.stored + tapEarn),
+        lastUpdated: now,
+      };
+    });
+  }
+
+  function upgradeMoneyMachine(type) {
+    if (!activeAccount || creditDelta !== null) {
+      return;
+    }
+
+    const now = Date.now();
+    const normalizedMachine = normalizeMoneyMachine(moneyMachine, now);
+    const levelKey = type === "tap" ? "tapLevel" : "capacityLevel";
+    const currentLevel = normalizedMachine[levelKey];
+    const maxLevel = type === "tap" ? moneyMachineMaxTapLevel : moneyMachineMaxCapacityLevel;
+    const cost = moneyMachineUpgradeCost(type, currentLevel);
+
+    if (currentLevel >= maxLevel || chips < cost) {
+      return;
+    }
+
+    const nextCredit = chips - cost;
+
+    setAccounts((current) =>
+      current.map((account) =>
+        account.id === activeAccountId
+          ? {
+              ...account,
+              credit: nextCredit,
+            }
+          : account
+      )
+    );
+    setMoneyMachine({
+      ...normalizedMachine,
+      [levelKey]: currentLevel + 1,
+    });
+    setChips(nextCredit);
+  }
+
+  function buyRealEstate(property) {
+    if (
+      !activeAccount ||
+      ownedRealEstate.includes(property.name) ||
+      chips < property.price ||
+      creditDelta !== null
+    ) {
+      return;
+    }
+
+    const now = Date.now();
+    const nextCredit = chips - property.price;
+    setRentalIncome((current) => ({
+      ...normalizeRentalIncome(current, ownedRealEstate, now),
+      lastUpdated: now,
+    }));
+    setChips(nextCredit);
+    saveActiveAccountCredit(nextCredit);
+    setOwnedRealEstate((current) => [...current, property.name]);
+  }
+
+  function collectRentalIncome() {
+    if (!activeAccount || creditDelta !== null) {
+      return;
+    }
+
+    const now = Date.now();
+    const normalizedIncome = normalizeRentalIncome(rentalIncome, ownedRealEstate, now);
+    const amount = Math.floor(normalizedIncome.stored);
+
+    if (amount <= 0) {
+      return;
+    }
+
+    const nextCredit = chips + amount;
+    setAccounts((current) =>
+      current.map((account) =>
+        account.id === activeAccountId ? { ...account, credit: nextCredit } : account
+      )
+    );
+    setRentalIncome({
+      stored: normalizedIncome.stored - amount,
+      lastUpdated: now,
+    });
+    setOutOfCredit(false);
+    setCreditDelta(amount);
+  }
+
+  function buyVehicle(vehicle) {
+    if (
+      !activeAccount ||
+      ownedVehicles.includes(vehicle.name) ||
+      chips < vehicle.price ||
+      creditDelta !== null
+    ) {
+      return;
+    }
+
+    const nextCredit = chips - vehicle.price;
+    setChips(nextCredit);
+    saveActiveAccountCredit(nextCredit);
+    setOwnedVehicles((current) => [...current, vehicle.name]);
+  }
+
+  function buyItem(item) {
+    if (!activeAccount || ownedItems.includes(item.name) || chips < item.price || creditDelta !== null) {
+      return;
+    }
+
+    const nextCredit = chips - item.price;
+    setChips(nextCredit);
+    saveActiveAccountCredit(nextCredit);
+    setOwnedItems((current) => [...current, item.name]);
   }
 
   function resetDeveloperCheat() {
@@ -835,14 +1734,6 @@ export default function App() {
     setOutOfCredit(false);
     setAccountMenuMessage("");
     setAccountMenuOpen(false);
-  }
-
-  function resetActiveCredit() {
-    resetTable();
-    setChips(startingChips);
-    saveActiveAccountCredit(startingChips);
-    setOutOfCredit(false);
-    setCreditResetOpen(false);
   }
 
   function finishRound(text, payout, options = {}) {
@@ -1112,6 +2003,23 @@ export default function App() {
     resolveDealer(playerScore);
   }
 
+  const tabTrackTranslateX = tabSlide.interpolate({
+    inputRange: [0, 1, 2],
+    outputRange: [0, -tabPanelWidth, -tabPanelWidth * 2],
+  });
+  const blackjackOverlayTranslateX = tabSlide.interpolate({
+    inputRange: [0, 1, 2],
+    outputRange: [tabPanelWidth, 0, -tabPanelWidth],
+  });
+  const storeOverlayTranslateX = tabSlide.interpolate({
+    inputRange: [0, 1, 2],
+    outputRange: [0, -tabPanelWidth, -tabPanelWidth * 2],
+  });
+  const moneyOverlayTranslateX = tabSlide.interpolate({
+    inputRange: [0, 1, 2],
+    outputRange: [tabPanelWidth * 2, tabPanelWidth, 0],
+  });
+
   if (!gameStarted) {
     return (
       <ImageBackground
@@ -1170,10 +2078,14 @@ export default function App() {
         <View style={styles.header}>
           <View style={styles.headerLeftSlot} />
           <Pressable
-            onPress={() => setSettingsOpen(true)}
-            style={({ pressed }) => [styles.settingsButton, pressed && styles.pressed]}
+            onPress={() => setSoundEnabled((current) => !current)}
+            style={({ pressed }) => [styles.soundHeaderButton, pressed && styles.pressed]}
           >
-            <Text style={styles.settingsIcon}>⚙︎</Text>
+            <Image
+              resizeMode="contain"
+              source={soundEnabled ? SOUND_ON_ICON : SOUND_OFF_ICON}
+              style={styles.soundHeaderIcon}
+            />
           </Pressable>
           <View style={styles.headerRight}>
           <Pressable
@@ -1194,17 +2106,6 @@ export default function App() {
           </Pressable>
           <View style={styles.wallet}>
             <View style={styles.walletLabelRow}>
-              <Pressable
-                disabled={accountSwitchLocked}
-                onPress={() => setCreditResetOpen(true)}
-                style={({ pressed }) => [
-                  styles.creditResetIconButton,
-                  accountSwitchLocked && styles.disabled,
-                  pressed && styles.pressed,
-                ]}
-              >
-                <Text style={styles.creditResetIcon}>↻</Text>
-              </Pressable>
               <Pressable
                 onPress={handleDeveloperCreditPress}
                 onTouchStart={stopDeveloperTouchPropagation}
@@ -1228,28 +2129,178 @@ export default function App() {
         </View>
 
         <View style={styles.table}>
-          <Hand
-            cards={dealer}
-            score={shownDealerScore}
-            hideDealer={inRound && !revealDealer}
-            onDeckPress={
-              !inRound && !dealing && !betweenRounds && resultDelta === null && !outOfCredit
-                ? handleDeveloperDeckPress
-                : undefined
-            }
-            onDeckTouchStart={stopDeveloperTouchPropagation}
-            showDeck
-            showScore={inRound}
-            stacked
-            compactStack
-          />
+          <View
+            pointerEvents={showBlackjackTable ? "auto" : "none"}
+            style={[styles.blackjackHandClip, { width: tabPanelWidth }]}
+          >
+            <Animated.View style={{ transform: [{ translateX: blackjackOverlayTranslateX }] }}>
+              <Hand
+                cards={dealer}
+                score={shownDealerScore}
+                hideDealer={inRound && !revealDealer}
+                onDeckPress={
+                  !inRound && !dealing && !betweenRounds && resultDelta === null && !outOfCredit
+                    ? handleDeveloperDeckPress
+                    : undefined
+                }
+                onDeckTouchStart={stopDeveloperTouchPropagation}
+                showDeck
+                showScore={inRound}
+                stacked
+                compactStack
+              />
+            </Animated.View>
+          </View>
 
           <View style={styles.centerControls}>
-            <Text style={styles.message}>{message}</Text>
-            <BetStack chips={betChips} />
+            {showBottomTabs ? (
+              <>
+                <View style={[styles.tabArea, { width: tabPanelWidth }]}>
+                  <View style={[styles.tabViewport, { width: tabPanelWidth }]}>
+                    <Animated.View
+                      style={[
+                        styles.tabTrack,
+                        {
+                          width: tabPanelWidth * mainTabs.length,
+                          transform: [{ translateX: tabTrackTranslateX }],
+                        },
+                      ]}
+                    >
+                      <View style={[styles.tabPanel, { width: tabPanelWidth }]} />
+                      <View style={[styles.tabPanel, { width: tabPanelWidth }]} />
+                      <View style={[styles.tabPanel, { width: tabPanelWidth }]} />
+                    </Animated.View>
+                  </View>
+                  <View
+                    pointerEvents={activeTab === "store" ? "auto" : "none"}
+                    style={[styles.storeOverlayClip, { width: tabPanelWidth }]}
+                  >
+                    <Animated.View
+                      style={[
+                        styles.storeOverlay,
+                        { transform: [{ translateX: storeOverlayTranslateX }] },
+                      ]}
+                    >
+                      <StorePanel
+                        credit={chips}
+                        ownedItems={ownedItems}
+                        ownedRealEstate={ownedRealEstate}
+                        ownedVehicles={ownedVehicles}
+                        rentalIncome={rentalIncomeStored}
+                        rentalRate={rentalRate}
+                        onBuyRealEstate={buyRealEstate}
+                        onBuyVehicle={buyVehicle}
+                        onBuyItem={buyItem}
+                        onCollectRentalIncome={collectRentalIncome}
+                        visible={activeTab === "store"}
+                      />
+                    </Animated.View>
+                  </View>
+                  <View
+                    pointerEvents={activeTab === "blackjack" ? "box-none" : "none"}
+                    style={[styles.blackjackOverlayClip, { width: tabPanelWidth }]}
+                  >
+                    <Animated.View
+                      style={[
+                        styles.blackjackBetOverlay,
+                        { transform: [{ translateX: blackjackOverlayTranslateX }] },
+                      ]}
+                    >
+                        <Text style={styles.message}>{message}</Text>
+                        <BetStack chips={betChips} />
 
-            {resultDelta !== null ? (
-              <ResultSplash delta={resultDelta} />
+                        {outOfCredit ? (
+                          <View style={styles.creditPanel}>
+                            <Text style={styles.creditTitle}>Out of credit</Text>
+                            <Pressable onPress={buyCredit} style={({ pressed }) => [styles.creditButton, pressed && styles.pressed]}>
+                              <Text style={styles.creditButtonText}>Get credit</Text>
+                            </Pressable>
+                          </View>
+                        ) : betweenRounds ? (
+                          <RoundLoader />
+                        ) : (
+                          <>
+                            <View style={styles.betRow}>
+                              {betOptions.map((amount, index) => (
+                                <Pressable
+                                  key={amount}
+                                  onPress={() => addBetChip(amount)}
+                                  onTouchStart={stopDeveloperTouchPropagation}
+                                  style={({ pressed }) => [
+                                    styles.chipButton,
+                                    styles[`chipButton${index}`],
+                                    pressed && styles.pressed,
+                                  ]}
+                                >
+                                  <Chip amount={amount} />
+                                </Pressable>
+                              ))}
+                            </View>
+                            <View style={styles.betActions}>
+                              <Pressable
+                                disabled={bet <= 0}
+                                onPress={clearBet}
+                                style={({ pressed }) => [
+                                  styles.clearButton,
+                                  bet <= 0 && styles.disabled,
+                                  pressed && styles.pressed,
+                                ]}
+                              >
+                                <Text style={styles.clearButtonText}>Clear</Text>
+                              </Pressable>
+                              <View style={styles.totalBetBadge}>
+                                <Text style={[styles.totalBetText, bet >= 10000 && styles.totalBetTextCompact]}>
+                                  ${bet}
+                                </Text>
+                              </View>
+                              <Pressable
+                                disabled={bet <= 0}
+                                onPress={startRound}
+                                style={({ pressed }) => [
+                                  styles.dealButton,
+                                  bet <= 0 && styles.disabled,
+                                  pressed && styles.pressed,
+                                ]}
+                              >
+                                <Text style={styles.dealButtonText}>Ready</Text>
+                              </Pressable>
+                            </View>
+                          </>
+                      )}
+                    </Animated.View>
+                  </View>
+                  <View
+                    pointerEvents={activeTab === "money" ? "auto" : "none"}
+                    style={[styles.moneyOverlayClip, { width: tabPanelWidth }]}
+                  >
+                    <Animated.View
+                      style={[
+                        styles.moneyOverlay,
+                        { transform: [{ translateX: moneyOverlayTranslateX }] },
+                      ]}
+                    >
+                      <MoneyMachinePanel
+                        stored={moneyMachineStored}
+                        capacity={activeMoneyMachineCapacity}
+                        tapEarn={activeMoneyMachineTapEarn}
+                        tapLevel={moneyMachineTapLevel}
+                        capacityLevel={moneyMachineCapacityLevel}
+                        credit={chips}
+                        onCollect={collectMoneyMachine}
+                        onTapEarn={tapMoneyMachine}
+                        onUpgradeTap={() => upgradeMoneyMachine("tap")}
+                        onUpgradeCapacity={() => upgradeMoneyMachine("capacity")}
+                      />
+                    </Animated.View>
+                  </View>
+                </View>
+                <BottomTabs activeTab={activeTab} onSelect={selectTab} />
+              </>
+            ) : resultDelta !== null ? (
+              <>
+                <BetStack chips={betChips} />
+                <ResultSplash delta={resultDelta} />
+              </>
             ) : outOfCredit ? (
               <View style={styles.creditPanel}>
                 <Text style={styles.creditTitle}>Out of credit</Text>
@@ -1260,139 +2311,49 @@ export default function App() {
             ) : betweenRounds ? (
               <RoundLoader />
             ) : dealing ? (
-              <View style={styles.dealingSpace} />
-            ) : !inRound ? (
               <>
-                <View style={styles.betRow}>
-                  {betOptions.map((amount, index) => (
-                    <Pressable
-                      key={amount}
-                      onPress={() => addBetChip(amount)}
-                      onTouchStart={stopDeveloperTouchPropagation}
-                      style={({ pressed }) => [
-                        styles.chipButton,
-                        styles[`chipButton${index}`],
-                        pressed && styles.pressed,
-                      ]}
-                    >
-                      <Chip amount={amount} />
-                    </Pressable>
-                  ))}
-                </View>
-                <View style={styles.betActions}>
+                <BetStack chips={betChips} />
+                <View style={styles.dealingSpace} />
+              </>
+            ) : (
+              <>
+                <BetStack chips={betChips} />
+                <View style={styles.actionRow}>
                   <Pressable
-                    disabled={bet <= 0}
-                    onPress={clearBet}
+                    disabled={resolvingDealer || dealing}
+                    onPress={hit}
                     style={({ pressed }) => [
-                      styles.clearButton,
-                      bet <= 0 && styles.disabled,
+                      styles.actionButton,
+                      styles.hitButton,
+                      (resolvingDealer || dealing) && styles.disabled,
                       pressed && styles.pressed,
                     ]}
                   >
-                    <Text style={styles.clearButtonText}>Clear</Text>
+                    <Text style={styles.actionText}>Hit</Text>
                   </Pressable>
-                  <View style={styles.totalBetBadge}>
-                    <Text style={[styles.totalBetText, bet >= 10000 && styles.totalBetTextCompact]}>
-                      ${bet}
-                    </Text>
-                  </View>
                   <Pressable
-                    disabled={bet <= 0}
-                    onPress={startRound}
+                    disabled={resolvingDealer || dealing}
+                    onPress={stand}
                     style={({ pressed }) => [
-                      styles.dealButton,
-                      bet <= 0 && styles.disabled,
+                      styles.actionButton,
+                      styles.standButton,
+                      (resolvingDealer || dealing) && styles.disabled,
                       pressed && styles.pressed,
                     ]}
                   >
-                    <Text style={styles.dealButtonText}>Ready</Text>
+                    <Text style={styles.actionText}>Stand</Text>
                   </Pressable>
                 </View>
               </>
-            ) : (
-              <View style={styles.actionRow}>
-                <Pressable
-                  disabled={resolvingDealer || dealing}
-                  onPress={hit}
-                  style={({ pressed }) => [
-                    styles.actionButton,
-                    styles.hitButton,
-                    (resolvingDealer || dealing) && styles.disabled,
-                    pressed && styles.pressed,
-                  ]}
-                >
-                  <Text style={styles.actionText}>Hit</Text>
-                </Pressable>
-                <Pressable
-                  disabled={resolvingDealer || dealing}
-                  onPress={stand}
-                  style={({ pressed }) => [
-                    styles.actionButton,
-                    styles.standButton,
-                    (resolvingDealer || dealing) && styles.disabled,
-                    pressed && styles.pressed,
-                  ]}
-                >
-                  <Text style={styles.actionText}>Stand</Text>
-                </Pressable>
-              </View>
             )}
           </View>
 
-          <Hand cards={player} score={shownPlayerScore} showScore={inRound} stacked />
+          {!showBottomTabs && showBlackjackTable ? (
+            <Hand cards={player} score={shownPlayerScore} showScore={inRound} stacked />
+          ) : null}
           {blackjackCelebration && <BlackjackCelebration />}
         </View>
         </View>
-
-        <Modal
-          animationType="fade"
-          onRequestClose={() => setSettingsOpen(false)}
-          transparent
-          visible={settingsOpen}
-        >
-          <Pressable style={styles.settingsBackdrop} onPress={() => setSettingsOpen(false)}>
-            <Pressable onPress={() => {}} style={styles.settingsPanel}>
-              <Pressable
-                onPress={() => setSoundEnabled((current) => !current)}
-                style={({ pressed }) => [styles.soundToggleButton, pressed && styles.pressed]}
-              >
-                <Image
-                  resizeMode="contain"
-                  source={soundEnabled ? SOUND_ON_ICON : SOUND_OFF_ICON}
-                  style={styles.soundToggleIcon}
-                />
-              </Pressable>
-            </Pressable>
-          </Pressable>
-        </Modal>
-
-        <Modal
-          animationType="fade"
-          onRequestClose={() => setCreditResetOpen(false)}
-          transparent
-          visible={creditResetOpen}
-        >
-          <View style={styles.creditResetBackdrop}>
-            <View style={styles.creditResetPanel}>
-              <Text style={styles.creditResetTitle}>Reset credit?</Text>
-              <Text style={styles.creditResetMessage}>Set this account's credit to $1000?</Text>
-              <View style={styles.creditResetActions}>
-                <Pressable
-                  onPress={() => setCreditResetOpen(false)}
-                  style={({ pressed }) => [styles.creditResetCancel, pressed && styles.pressed]}
-                >
-                  <Text style={styles.creditResetCancelText}>Cancel</Text>
-                </Pressable>
-                <Pressable
-                  onPress={resetActiveCredit}
-                  style={({ pressed }) => [styles.creditResetConfirm, pressed && styles.pressed]}
-                >
-                  <Text style={styles.creditResetConfirmText}>Reset</Text>
-                </Pressable>
-              </View>
-            </View>
-          </View>
-        </Modal>
 
         <Modal
           animationType="fade"
@@ -1629,54 +2590,21 @@ const styles = StyleSheet.create({
   headerLeftSlot: {
     width: 44,
   },
-  settingsButton: {
+  soundHeaderButton: {
     alignItems: "center",
     backgroundColor: "transparent",
-    height: 44,
+    height: 50,
     justifyContent: "center",
     left: "50%",
-    marginLeft: -22,
+    marginLeft: -25,
     position: "absolute",
     top: 0,
-    width: 44,
+    width: 50,
   },
-  settingsIcon: {
-    color: "#ffffff",
-    fontSize: 30,
-    fontWeight: "700",
-    lineHeight: 34,
-  },
-  settingsBackdrop: {
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.52)",
-    flex: 1,
-    justifyContent: "flex-start",
-    paddingTop: 86,
-  },
-  settingsPanel: {
-    alignItems: "center",
-    backgroundColor: "#f7f9f4",
-    borderColor: "#111111",
-    borderRadius: 8,
-    borderWidth: 2,
-    justifyContent: "center",
-    minHeight: 96,
-    padding: 16,
-    width: 120,
-  },
-  soundToggleButton: {
-    alignItems: "center",
-    backgroundColor: "#ffffff",
-    borderRadius: 8,
-    borderColor: "#111111",
-    borderWidth: 2,
-    height: 64,
-    justifyContent: "center",
-    width: 64,
-  },
-  soundToggleIcon: {
-    height: 46,
-    width: 46,
+  soundHeaderIcon: {
+    borderRadius: 4,
+    height: 36,
+    width: 36,
   },
   headerRight: {
     alignItems: "flex-end",
@@ -1892,18 +2820,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 4,
   },
-  creditResetIconButton: {
-    alignItems: "center",
-    height: 18,
-    justifyContent: "center",
-    width: 18,
-  },
-  creditResetIcon: {
-    color: "#d6ffe7",
-    fontSize: 15,
-    fontWeight: "900",
-    lineHeight: 17,
-  },
   walletLabel: {
     color: "#d6ffe7",
     fontSize: 12,
@@ -1920,66 +2836,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 0,
     top: 38,
-  },
-  creditResetBackdrop: {
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.64)",
-    flex: 1,
-    justifyContent: "center",
-    paddingHorizontal: 24,
-  },
-  creditResetPanel: {
-    backgroundColor: "#f7f9f4",
-    borderColor: "#111111",
-    borderRadius: 8,
-    borderWidth: 2,
-    gap: 10,
-    maxWidth: 340,
-    padding: 18,
-    width: "100%",
-  },
-  creditResetTitle: {
-    color: "#17201d",
-    fontSize: 22,
-    fontWeight: "900",
-    textAlign: "center",
-  },
-  creditResetMessage: {
-    color: "#53605a",
-    fontSize: 14,
-    fontWeight: "700",
-    textAlign: "center",
-  },
-  creditResetActions: {
-    flexDirection: "row",
-    gap: 10,
-    marginTop: 8,
-  },
-  creditResetCancel: {
-    alignItems: "center",
-    backgroundColor: "#d8dedb",
-    borderRadius: 8,
-    flex: 1,
-    justifyContent: "center",
-    minHeight: 50,
-  },
-  creditResetCancelText: {
-    color: "#17201d",
-    fontSize: 15,
-    fontWeight: "900",
-  },
-  creditResetConfirm: {
-    alignItems: "center",
-    backgroundColor: "#d63d3d",
-    borderRadius: 8,
-    flex: 1,
-    justifyContent: "center",
-    minHeight: 50,
-  },
-  creditResetConfirmText: {
-    color: "#ffffff",
-    fontSize: 15,
-    fontWeight: "900",
   },
   creditDeltaPositive: {
     color: "#fff07a",
@@ -2214,10 +3070,522 @@ const styles = StyleSheet.create({
   redCard: {
     color: "#d54848",
   },
+  blackjackHandClip: {
+    alignSelf: "center",
+    minHeight: 198,
+    overflow: "hidden",
+  },
   centerControls: {
     alignItems: "center",
     justifyContent: "center",
     minHeight: 190,
+  },
+  tabArea: {
+    height: 286,
+    position: "relative",
+  },
+  tabViewport: {
+    alignSelf: "center",
+    height: 286,
+    overflow: "hidden",
+  },
+  tabTrack: {
+    flexDirection: "row",
+    height: "100%",
+  },
+  tabPanel: {
+    alignItems: "center",
+    height: "100%",
+    justifyContent: "center",
+  },
+  blackjackOverlayClip: {
+    height: 378,
+    left: 0,
+    overflow: "hidden",
+    position: "absolute",
+    top: -92,
+  },
+  blackjackBetOverlay: {
+    alignItems: "center",
+    justifyContent: "center",
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 34,
+  },
+  storeOverlayClip: {
+    height: 532,
+    left: 0,
+    overflow: "hidden",
+    position: "absolute",
+    top: -246,
+  },
+  storeOverlay: {
+    height: 509,
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 3,
+  },
+  moneyOverlayClip: {
+    height: 507,
+    left: 0,
+    overflow: "hidden",
+    position: "absolute",
+    top: -221,
+  },
+  moneyOverlay: {
+    height: 484,
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 23,
+  },
+  storeScreen: {
+    alignItems: "center",
+    height: "100%",
+    paddingBottom: 7,
+    paddingTop: 8,
+  },
+  storeTitle: {
+    color: "#fff07a",
+    fontSize: 24,
+    fontWeight: "900",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  storeCategories: {
+    backgroundColor: "rgba(0,0,0,0.24)",
+    borderColor: "rgba(255,255,255,0.18)",
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 6,
+    marginBottom: 8,
+    padding: 4,
+    width: "92%",
+  },
+  storeCategoryButton: {
+    alignItems: "center",
+    borderRadius: 6,
+    flex: 1,
+    justifyContent: "center",
+    minHeight: 38,
+    paddingHorizontal: 8,
+  },
+  storeCategoryButtonSelected: {
+    backgroundColor: "#fff07a",
+  },
+  storeCategoryText: {
+    color: "#ffffff",
+    fontSize: 12,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  storeCategoryTextSelected: {
+    color: "#17201d",
+  },
+  storeList: {
+    backgroundColor: "rgba(0,0,0,0.22)",
+    borderColor: "rgba(255,255,255,0.18)",
+    borderRadius: 8,
+    borderWidth: 1,
+    flex: 1,
+    width: "92%",
+  },
+  storeListContent: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
+  storeListing: {
+    alignItems: "center",
+    borderBottomColor: "rgba(255,255,255,0.14)",
+    borderBottomWidth: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    minHeight: 58,
+    paddingHorizontal: 4,
+  },
+  storeListingInfo: {
+    alignItems: "center",
+    flexDirection: "row",
+    flex: 1,
+    flexShrink: 1,
+  },
+  storeListingLabel: {
+    flexShrink: 1,
+    marginLeft: 9,
+  },
+  storeListingTier: {
+    color: "rgba(255,255,255,0.48)",
+    fontSize: 9,
+    fontWeight: "900",
+  },
+  storeListingName: {
+    color: "#ffffff",
+    flexShrink: 1,
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  storeListingPrice: {
+    color: "#fff07a",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  storeBuyButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(255,240,122,0.1)",
+    borderColor: "#fff07a",
+    borderRadius: 6,
+    borderWidth: 2,
+    justifyContent: "center",
+    marginLeft: 8,
+    minHeight: 34,
+    minWidth: 88,
+    paddingHorizontal: 7,
+  },
+  storeBuyButtonOwned: {
+    backgroundColor: "rgba(44,226,135,0.2)",
+    borderColor: "#2ce287",
+  },
+  storeBuyButtonDisabled: {
+    opacity: 0.42,
+  },
+  storeOwnedCheck: {
+    color: "#2ce287",
+    fontSize: 19,
+    fontWeight: "900",
+  },
+  storeRentRate: {
+    color: "#2ce287",
+    fontSize: 10,
+    fontWeight: "900",
+  },
+  storeOwnedLabel: {
+    alignItems: "center",
+    height: 24,
+    justifyContent: "center",
+    width: 74,
+  },
+  storeOwnedLabelText: {
+    position: "absolute",
+    textAlign: "center",
+    width: "100%",
+  },
+  propertyThumbnail: {
+    alignItems: "center",
+    backgroundColor: "#17201d",
+    borderColor: "rgba(255,255,255,0.76)",
+    borderRadius: 5,
+    borderWidth: 2,
+    height: 44,
+    justifyContent: "center",
+    overflow: "hidden",
+    width: 44,
+  },
+  vehicleThumbnail: {
+    alignItems: "center",
+    backgroundColor: "#17201d",
+    borderColor: "rgba(255,255,255,0.76)",
+    borderRadius: 5,
+    borderWidth: 2,
+    height: 44,
+    justifyContent: "center",
+    width: 44,
+  },
+  itemThumbnail: {
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderColor: "rgba(255,255,255,0.76)",
+    borderRadius: 5,
+    borderWidth: 2,
+    height: 44,
+    justifyContent: "center",
+    width: 44,
+  },
+  storeThumbnailImage: {
+    height: "100%",
+    width: "100%",
+  },
+  storeEmptyCategory: {
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.22)",
+    borderColor: "rgba(255,255,255,0.18)",
+    borderRadius: 8,
+    borderWidth: 1,
+    flex: 1,
+    justifyContent: "center",
+    width: "92%",
+  },
+  storeEmptyTitle: {
+    color: "#ffffff",
+    fontSize: 22,
+    fontWeight: "900",
+  },
+  storeEmptyText: {
+    color: "#d6ffe7",
+    fontSize: 13,
+    fontWeight: "800",
+    marginTop: 6,
+  },
+  rentalPanel: {
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.34)",
+    borderColor: "rgba(255,255,255,0.24)",
+    borderRadius: 8,
+    borderWidth: 2,
+    flexDirection: "row",
+    marginTop: 7,
+    minHeight: 58,
+    paddingHorizontal: 9,
+    width: "92%",
+  },
+  rentalPanelInfo: {
+    flex: 1,
+  },
+  rentalPanelTitle: {
+    color: "#ffffff",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  rentalPanelRate: {
+    color: "#2ce287",
+    fontSize: 10,
+    fontWeight: "900",
+    marginTop: 2,
+  },
+  rentalPanelCapacity: {
+    color: "rgba(255,255,255,0.56)",
+    fontSize: 8,
+    fontWeight: "900",
+    marginTop: 1,
+  },
+  rentalPanelAmount: {
+    color: "#fff07a",
+    fontSize: 15,
+    fontWeight: "900",
+    marginHorizontal: 8,
+  },
+  rentalCollectButton: {
+    alignItems: "center",
+    backgroundColor: "#18c96f",
+    borderRadius: 7,
+    justifyContent: "center",
+    minHeight: 32,
+    paddingHorizontal: 12,
+  },
+  rentalCollectText: {
+    color: "#ffffff",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  moneyMachineScreen: {
+    alignItems: "center",
+    height: "100%",
+    justifyContent: "space-between",
+    paddingBottom: 6,
+    paddingTop: 8,
+  },
+  moneyMachineStation: {
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.25)",
+    borderColor: "rgba(255,255,255,0.22)",
+    borderRadius: 8,
+    borderWidth: 2,
+    gap: 5,
+    height: 164,
+    justifyContent: "center",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    width: "88%",
+  },
+  moneyMachineStationTitle: {
+    color: "#fff07a",
+    fontSize: 19,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  moneyMachineBox: {
+    alignItems: "center",
+    backgroundColor: "#17201d",
+    borderColor: "#fff07a",
+    borderRadius: 8,
+    borderWidth: 2,
+    gap: 5,
+    minHeight: 88,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    width: 220,
+  },
+  moneyMachineTapZone: {
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.13)",
+    borderColor: "rgba(255,255,255,0.3)",
+    borderRadius: 8,
+    borderWidth: 2,
+    height: 220,
+    justifyContent: "center",
+    transform: [{ translateY: -23 }],
+    width: "92%",
+  },
+  moneyMachineTapZoneFull: {
+    opacity: 0.55,
+  },
+  moneyMachineTapZonePressed: {
+    backgroundColor: "rgba(255,240,122,0.28)",
+    transform: [{ translateY: -23 }, { scale: 0.985 }],
+  },
+  moneyMachineTapText: {
+    color: "#ffffff",
+    fontSize: 23,
+    fontWeight: "900",
+    maxWidth: 260,
+    textAlign: "center",
+  },
+  moneyMachineTapValue: {
+    color: "#fff07a",
+    fontSize: 18,
+    fontWeight: "900",
+    marginTop: 10,
+  },
+  moneyMachineUpgrades: {
+    flexDirection: "row",
+    gap: 8,
+    height: 68,
+    justifyContent: "center",
+    transform: [{ translateY: -12 }],
+    width: "92%",
+  },
+  moneyMachineUpgrade: {
+    alignItems: "center",
+    backgroundColor: "rgba(255,240,122,0.18)",
+    borderColor: "#fff07a",
+    borderRadius: 7,
+    borderWidth: 2,
+    flex: 1,
+    justifyContent: "center",
+    paddingHorizontal: 4,
+  },
+  moneyMachineUpgradeDisabled: {
+    opacity: 0.48,
+  },
+  moneyMachineUpgradeTitle: {
+    color: "#ffffff",
+    fontSize: 13,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  moneyMachineUpgradeEffect: {
+    color: "#d6ffe7",
+    fontSize: 10,
+    fontWeight: "800",
+    marginTop: 2,
+    textAlign: "center",
+  },
+  moneyMachineUpgradeCost: {
+    color: "#fff07a",
+    fontSize: 10,
+    fontWeight: "900",
+    marginTop: 2,
+    textAlign: "center",
+  },
+  moneyMachineTopLight: {
+    backgroundColor: "#18c96f",
+    borderRadius: 6,
+    height: 9,
+    width: 38,
+  },
+  moneyMachineWindow: {
+    alignItems: "center",
+    backgroundColor: "#06110b",
+    borderColor: "#2ce287",
+    borderRadius: 7,
+    borderWidth: 2,
+    justifyContent: "center",
+    minHeight: 34,
+    width: "100%",
+  },
+  moneyMachineAmount: {
+    color: "#2ce287",
+    fontSize: 22,
+    fontWeight: "900",
+  },
+  moneyMachineAmountRow: {
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+    width: "100%",
+  },
+  moneyMachinePassiveRate: {
+    color: "#fff07a",
+    fontSize: 9,
+    fontWeight: "900",
+    position: "absolute",
+    right: 8,
+  },
+  moneyMachineProgressTrack: {
+    backgroundColor: "rgba(255,255,255,0.16)",
+    borderRadius: 6,
+    height: 10,
+    overflow: "hidden",
+    width: "100%",
+  },
+  moneyMachineProgressFill: {
+    backgroundColor: "#fff07a",
+    borderRadius: 6,
+    height: "100%",
+  },
+  moneyMachineCapacity: {
+    color: "#d6ffe7",
+    fontSize: 10,
+    fontWeight: "900",
+  },
+  moneyMachineCollect: {
+    alignItems: "center",
+    backgroundColor: "#18c96f",
+    borderRadius: 8,
+    justifyContent: "center",
+    minHeight: 28,
+    paddingHorizontal: 32,
+  },
+  moneyMachineCollectText: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  bottomTabs: {
+    alignSelf: "center",
+    backgroundColor: "rgba(0,0,0,0.28)",
+    borderColor: "rgba(255,255,255,0.14)",
+    borderRadius: 8,
+    borderWidth: 2,
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    width: 291,
+  },
+  bottomTabButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.14)",
+    borderRadius: 7,
+    height: 85,
+    justifyContent: "center",
+    width: 85,
+  },
+  bottomTabButtonSelected: {
+    backgroundColor: "rgba(255,240,122,0.86)",
+  },
+  bottomTabIcon: {
+    height: 48,
+    opacity: 0.9,
+    tintColor: "#ffffff",
+    width: 48,
+  },
+  bottomTabIconSelected: {
+    opacity: 1,
+    tintColor: "#17201d",
   },
   message: {
     minHeight: 24,
@@ -2252,16 +3620,19 @@ const styles = StyleSheet.create({
     borderRadius: 38,
   },
   chipButton0: {
-    transform: [{ translateY: 18 }, { rotate: "-10deg" }],
+    transform: [{ translateY: 22 }, { rotate: "-12deg" }],
   },
   chipButton1: {
-    transform: [{ translateY: -8 }, { rotate: "-4deg" }],
+    transform: [{ translateY: 1 }, { rotate: "-6deg" }],
   },
   chipButton2: {
-    transform: [{ translateY: -8 }, { rotate: "4deg" }],
+    transform: [{ translateY: -9 }],
   },
   chipButton3: {
-    transform: [{ translateY: 18 }, { rotate: "10deg" }],
+    transform: [{ translateY: 1 }, { rotate: "6deg" }],
+  },
+  chipButton4: {
+    transform: [{ translateY: 22 }, { rotate: "12deg" }],
   },
   chipOuter: {
     alignItems: "center",
@@ -2332,6 +3703,12 @@ const styles = StyleSheet.create({
   },
   chipTextSmall: {
     fontSize: 14,
+  },
+  chipText5000: {
+    fontSize: 14,
+  },
+  chipText5000Small: {
+    fontSize: 11,
   },
   betActions: {
     alignItems: "center",
