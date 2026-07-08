@@ -91,7 +91,6 @@ const chipColors = {
 
 const CARD_BACK = require("./assets/cards/BACK.png");
 const TABLE_FELT = require("./assets/table-felt.png");
-const FIRST_SCREEN_BACKGROUND = require("./assets/firstscreenbackground.png");
 const SOUND_ON_ICON = require("./assets/sound-on.png");
 const SOUND_OFF_ICON = require("./assets/sound-off.png");
 const TAB_BLACKJACK_ICON = require("./assets/tab-blackjack.png");
@@ -345,6 +344,20 @@ function normalizeRentalIncome(income, ownedRealEstate, now = Date.now()) {
   };
 }
 
+function formatRentalCountdown(ms) {
+  const totalMinutes = Math.max(1, Math.ceil(ms / 60000));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours > 0 && minutes > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+  if (hours > 0) {
+    return `${hours}h`;
+  }
+  return `${minutes}m`;
+}
+
 function Chip({ amount, small }) {
   return (
     <View
@@ -505,7 +518,9 @@ function StorePanel({
   onBuyVehicle,
   onCollectRentalIncome,
   rentalIncome,
+  rentalProgress,
   rentalRate,
+  rentalCountdownText,
   visible,
 }) {
   const [category, setCategory] = useState("realEstate");
@@ -700,6 +715,10 @@ function StorePanel({
           <Text style={styles.rentalPanelTitle}>Rental Income</Text>
           <Text style={styles.rentalPanelRate}>+${rentalRate.toLocaleString("en-US")}/hr</Text>
           <Text style={styles.rentalPanelCapacity}>MAX ${rentalIncomeCapacity.toLocaleString("en-US")}</Text>
+          <View style={styles.rentalProgressTrack}>
+            <View style={[styles.rentalProgressFill, { width: `${rentalProgress * 100}%` }]} />
+          </View>
+          <Text style={styles.rentalCountdown}>{rentalCountdownText}</Text>
         </View>
         <Text style={styles.rentalPanelAmount}>${rentalIncome.toLocaleString("en-US")}</Text>
         <Pressable
@@ -1009,42 +1028,6 @@ function CreditDelta({ amount, onDone }) {
   );
 }
 
-function AnimatedPlayButton({ onPress }) {
-  const entrance = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    entrance.setValue(0);
-    const animation = Animated.timing(entrance, {
-      delay: 1000,
-      duration: 450,
-      toValue: 1,
-      useNativeDriver: true,
-    });
-    animation.start();
-    return () => animation.stop();
-  }, [entrance]);
-
-  return (
-    <Animated.View
-      style={{
-        opacity: entrance,
-        transform: [
-          { translateY: entrance.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) },
-          { scale: entrance.interpolate({ inputRange: [0, 1], outputRange: [0.97, 1] }) },
-        ],
-      }}
-    >
-      <Pressable onPress={onPress} style={({ pressed }) => [pressed && styles.pressed]}>
-        <View style={styles.playButtonOuter}>
-          <View style={styles.playButtonInner}>
-            <Text style={styles.playButtonText}>PLAY</Text>
-          </View>
-        </View>
-      </Pressable>
-    </Animated.View>
-  );
-}
-
 function Card({ card, hidden, index, compact, fast }) {
   const animated = useRef(new Animated.Value(0)).current;
   const rotation = `${index - 1}deg`;
@@ -1146,7 +1129,6 @@ export default function App() {
   const [accountsLoaded, setAccountsLoaded] = useState(false);
   const [hasChosenFirstAccountName, setHasChosenFirstAccountName] = useState(false);
   const [firstAccountName, setFirstAccountName] = useState("");
-  const [gameStarted, setGameStarted] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [accountMenuMessage, setAccountMenuMessage] = useState("");
   const [editingAccountId, setEditingAccountId] = useState(null);
@@ -1175,6 +1157,16 @@ export default function App() {
   const activeMoneyMachineTapEarn = moneyMachineTapEarnForLevel(moneyMachineTapLevel);
   const rentalRate = rentalRateForProperties(ownedRealEstate);
   const rentalIncomeStored = Math.min(rentalIncomeCapacity, Math.floor(rentalIncome.stored || 0));
+  const rentalIncomeFull = rentalIncomeStored >= rentalIncomeCapacity;
+  const rentalElapsed = Math.max(0, Date.now() - (rentalIncome.lastUpdated || Date.now()));
+  const rentalPayoutProgress =
+    rentalRate > 0 ? (rentalIncomeFull ? 1 : Math.min(1, rentalElapsed / rentalIncomeTickMs)) : 0;
+  const rentalCountdownText =
+    rentalRate <= 0
+      ? "Buy real estate"
+      : rentalIncomeFull
+        ? "FULL"
+        : `Next in ${formatRentalCountdown(rentalIncomeTickMs - rentalElapsed)}`;
   const accountSwitchLocked =
     inRound || dealing || resolvingDealer || betweenRounds || resultDelta !== null || creditDelta !== null;
   const showBottomTabs =
@@ -2020,61 +2012,38 @@ export default function App() {
     outputRange: [tabPanelWidth * 2, tabPanelWidth, 0],
   });
 
-  if (!gameStarted) {
-    return (
-      <ImageBackground
-        defaultSource={FIRST_SCREEN_BACKGROUND}
-        fadeDuration={0}
-        resizeMode="cover"
-        source={FIRST_SCREEN_BACKGROUND}
-        style={styles.startScreen}
-      >
-        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-        <SafeAreaView style={styles.startScreenSafeArea}>
-          <View style={styles.startScreenControls}>
-            {accountsLoaded &&
-              (!hasChosenFirstAccountName ? (
-                <View style={styles.startNameEntry}>
-                  <View style={styles.startNameInputOuter}>
-                    <TextInput
-                      autoCapitalize="words"
-                      autoCorrect={false}
-                      maxLength={10}
-                      onChangeText={setFirstAccountName}
-                      onSubmitEditing={saveFirstAccountName}
-                      placeholder="ENTER YOUR NAME"
-                      placeholderTextColor="rgba(255,255,255,0.64)"
-                      returnKeyType="done"
-                      style={styles.startNameInput}
-                      value={firstAccountName}
-                    />
-                  </View>
-                  <Pressable
-                    disabled={!firstAccountName.trim()}
-                    onPress={saveFirstAccountName}
-                    style={({ pressed }) => [
-                      styles.startNameConfirmButton,
-                      !firstAccountName.trim() && styles.startNameConfirmButtonDisabled,
-                      pressed && styles.pressed,
-                    ]}
-                  >
-                    <Text style={styles.startNameConfirmText}>CONFIRM</Text>
-                  </Pressable>
-                </View>
-              ) : (
-                <AnimatedPlayButton onPress={() => setGameStarted(true)} />
-              ))}
-          </View>
-        </SafeAreaView>
-      </ImageBackground>
-    );
-  }
-
   return (
     <ImageBackground resizeMode="cover" source={TABLE_FELT} style={styles.background}>
       <SafeAreaView style={styles.safeArea}>
         <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
         <View onTouchStart={resetDeveloperCheat} style={styles.screen}>
+        {accountsLoaded && !hasChosenFirstAccountName ? (
+          <View onTouchStart={stopDeveloperTouchPropagation} style={styles.inlineNamePanel}>
+            <TextInput
+              autoCapitalize="words"
+              autoCorrect={false}
+              maxLength={10}
+              onChangeText={setFirstAccountName}
+              onSubmitEditing={saveFirstAccountName}
+              placeholder="Enter name"
+              placeholderTextColor="rgba(255,255,255,0.62)"
+              returnKeyType="done"
+              style={styles.inlineNameInput}
+              value={firstAccountName}
+            />
+            <Pressable
+              disabled={!firstAccountName.trim()}
+              onPress={saveFirstAccountName}
+              style={({ pressed }) => [
+                styles.inlineNameConfirm,
+                !firstAccountName.trim() && styles.disabled,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text style={styles.inlineNameConfirmText}>OK</Text>
+            </Pressable>
+          </View>
+        ) : null}
         <View style={styles.header}>
           <View style={styles.headerLeftSlot} />
           <Pressable
@@ -2187,7 +2156,9 @@ export default function App() {
                         ownedRealEstate={ownedRealEstate}
                         ownedVehicles={ownedVehicles}
                         rentalIncome={rentalIncomeStored}
+                        rentalProgress={rentalPayoutProgress}
                         rentalRate={rentalRate}
+                        rentalCountdownText={rentalCountdownText}
                         onBuyRealEstate={buyRealEstate}
                         onBuyVehicle={buyVehicle}
                         onBuyItem={buyItem}
@@ -2472,100 +2443,47 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  startScreen: {
-    backgroundColor: "#031f09",
-    flex: 1,
-  },
-  startScreenSafeArea: {
-    flex: 1,
-  },
-  startScreenControls: {
+  inlineNamePanel: {
     alignItems: "center",
-    flex: 1,
-    justifyContent: "center",
-    paddingHorizontal: 28,
-  },
-  startNameEntry: {
-    alignItems: "center",
-    gap: 14,
-  },
-  startNameInputOuter: {
-    borderColor: "#35ff20",
+    alignSelf: "center",
+    backgroundColor: "rgba(0,0,0,0.42)",
+    borderColor: "rgba(255,240,122,0.74)",
     borderRadius: 8,
     borderWidth: 2,
-    height: 76,
-    padding: 4,
-    shadowColor: "#35ff20",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.95,
-    shadowRadius: 10,
-    width: 270,
+    flexDirection: "row",
+    gap: 8,
+    minHeight: 44,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    position: "absolute",
+    top: 72,
+    zIndex: 30,
   },
-  startNameInput: {
-    backgroundColor: "rgba(0,16,5,0.7)",
-    borderColor: "#35ff20",
-    borderRadius: 5,
-    borderWidth: 2,
+  inlineNameInput: {
+    backgroundColor: "rgba(255,255,255,0.12)",
+    borderColor: "rgba(255,255,255,0.22)",
+    borderRadius: 6,
+    borderWidth: 1,
     color: "#ffffff",
-    fontSize: 18,
-    flex: 1,
+    fontSize: 14,
     fontWeight: "900",
-    paddingHorizontal: 16,
+    height: 34,
+    paddingHorizontal: 10,
     textAlign: "center",
+    width: 150,
   },
-  startNameConfirmButton: {
+  inlineNameConfirm: {
     alignItems: "center",
-    backgroundColor: "rgba(0,16,5,0.72)",
-    borderColor: "#35ff20",
-    borderRadius: 7,
-    borderWidth: 2,
-    height: 50,
+    backgroundColor: "#fff07a",
+    borderRadius: 6,
+    height: 34,
     justifyContent: "center",
-    shadowColor: "#35ff20",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.9,
-    shadowRadius: 8,
-    width: 180,
+    paddingHorizontal: 14,
   },
-  startNameConfirmButtonDisabled: {
-    opacity: 0.36,
-  },
-  startNameConfirmText: {
-    color: "#ffffff",
-    fontSize: 17,
+  inlineNameConfirmText: {
+    color: "#17201d",
+    fontSize: 13,
     fontWeight: "900",
-    textShadowColor: "#35ff20",
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 7,
-  },
-  playButtonOuter: {
-    borderColor: "#35ff20",
-    borderRadius: 8,
-    borderWidth: 2,
-    height: 76,
-    padding: 4,
-    shadowColor: "#35ff20",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.95,
-    shadowRadius: 10,
-    width: 270,
-  },
-  playButtonInner: {
-    alignItems: "center",
-    backgroundColor: "rgba(0,16,5,0.68)",
-    borderColor: "#35ff20",
-    borderRadius: 5,
-    borderWidth: 2,
-    flex: 1,
-    justifyContent: "center",
-  },
-  playButtonText: {
-    color: "#ffffff",
-    fontSize: 28,
-    fontWeight: "900",
-    textShadowColor: "#35ff20",
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 8,
   },
   background: {
     backgroundColor: "#095c39",
@@ -3336,8 +3254,9 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     flexDirection: "row",
     marginTop: 7,
-    minHeight: 58,
+    minHeight: 68,
     paddingHorizontal: 9,
+    paddingVertical: 6,
     width: "92%",
   },
   rentalPanelInfo: {
@@ -3359,6 +3278,25 @@ const styles = StyleSheet.create({
     fontSize: 8,
     fontWeight: "900",
     marginTop: 1,
+  },
+  rentalProgressTrack: {
+    backgroundColor: "rgba(255,255,255,0.14)",
+    borderRadius: 5,
+    height: 6,
+    marginTop: 4,
+    overflow: "hidden",
+    width: 98,
+  },
+  rentalProgressFill: {
+    backgroundColor: "#2ce287",
+    borderRadius: 5,
+    height: "100%",
+  },
+  rentalCountdown: {
+    color: "rgba(255,255,255,0.72)",
+    fontSize: 8,
+    fontWeight: "900",
+    marginTop: 2,
   },
   rentalPanelAmount: {
     color: "#fff07a",
