@@ -23,6 +23,7 @@ const ranks = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]
 const betOptions = [100, 200, 500, 1000, 5000];
 const startingChips = 1000;
 const firstAccountChips = startingChips;
+// Keep this key stable. Changing it intentionally resets every saved account/progress.
 const accountsStorageKey = "blackjack-accounts-v6";
 const settingsStorageKey = "blackjack-settings-v1";
 const accountCost = 3000;
