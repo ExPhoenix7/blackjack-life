@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Asset } from "expo-asset";
 import { setAudioModeAsync, useAudioPlayer } from "expo-audio";
 import {
   Animated,
@@ -22,48 +23,49 @@ const ranks = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]
 const betOptions = [100, 200, 500, 1000, 5000];
 const startingChips = 1000;
 const firstAccountChips = startingChips;
-const accountsStorageKey = "blackjack-accounts-v4";
+const accountsStorageKey = "blackjack-accounts-v6";
 const settingsStorageKey = "blackjack-settings-v1";
 const accountCost = 3000;
+const accountLimit = 3;
 const developerCheatChips = [100, 200, 500];
-const developerCheatReward = 20000;
+const developerCheatReward = 50000;
 const mainTabs = ["store", "blackjack", "money"];
 const mainTabIndex = { store: 0, blackjack: 1, money: 2 };
 const realEstateListings = [
-  { name: "Studio Apartment", price: 5000, rentPerHour: 100 },
-  { name: "Bungalow", price: 10000, rentPerHour: 200 },
-  { name: "Luxury Apartment", price: 20000, rentPerHour: 400 },
-  { name: "Duplex", price: 35000, rentPerHour: 700 },
-  { name: "Penthouse", price: 55000, rentPerHour: 1200 },
-  { name: "Farmhouse", price: 80000, rentPerHour: 1700 },
-  { name: "Beach House", price: 110000, rentPerHour: 2400 },
-  { name: "Luxury Villa", price: 150000, rentPerHour: 3200 },
-  { name: "Mansion", price: 200000, rentPerHour: 4300 },
-  { name: "Hotel", price: 250000, rentPerHour: 5300 },
+  { name: "Studio Apartment", price: 5000, rentPerHour: 200 },
+  { name: "Bungalow", price: 10000, rentPerHour: 400 },
+  { name: "Luxury Apartment", price: 20000, rentPerHour: 750 },
+  { name: "Duplex", price: 35000, rentPerHour: 1200 },
+  { name: "Penthouse", price: 55000, rentPerHour: 1900 },
+  { name: "Farmhouse", price: 80000, rentPerHour: 2700 },
+  { name: "Beach House", price: 110000, rentPerHour: 3700 },
+  { name: "Luxury Villa", price: 150000, rentPerHour: 4800 },
+  { name: "Mansion", price: 200000, rentPerHour: 6300 },
+  { name: "Hotel", price: 250000, rentPerHour: 8000 },
 ];
 const vehicleListings = [
-  { name: "Bicycle", price: 500 },
-  { name: "Motorcycle", price: 3000 },
-  { name: "Hatchback", price: 10000 },
-  { name: "Sedan", price: 20000 },
-  { name: "SUV", price: 30000 },
-  { name: "Sports Car", price: 50000 },
-  { name: "Limousine", price: 75000 },
-  { name: "Supercar", price: 110000 },
-  { name: "Yacht", price: 150000 },
-  { name: "Private Jet", price: 200000 },
+  { name: "Bicycle", price: 500, bonus: { tap: 10 } },
+  { name: "Motorcycle", price: 3000, bonus: { capacity: 500 } },
+  { name: "Hatchback", price: 10000, bonus: { rentalPercent: 2 } },
+  { name: "Sedan", price: 20000, bonus: { passive: 10 } },
+  { name: "SUV", price: 30000, bonus: { capacity: 1500 } },
+  { name: "Sports Car", price: 50000, bonus: { tap: 30 } },
+  { name: "Limousine", price: 75000, bonus: { rentalPercent: 4 } },
+  { name: "Supercar", price: 110000, bonus: { tap: 50 } },
+  { name: "Yacht", price: 150000, bonus: { rentalPercent: 8 } },
+  { name: "Private Jet", price: 200000, bonus: { passive: 30 } },
 ];
 const itemListings = [
-  { name: "Headphones", price: 500 },
-  { name: "Smartphone", price: 1500 },
-  { name: "Gaming Console", price: 2500 },
-  { name: "Tablet", price: 3000 },
-  { name: "Watch", price: 6000 },
-  { name: "Laptop", price: 8000 },
-  { name: "Necklace", price: 8000 },
-  { name: "Ring", price: 10000 },
-  { name: "Pool Table", price: 8000 },
-  { name: "Home Theater", price: 6000 },
+  { name: "Headphones", price: 500, bonus: { passive: 10 } },
+  { name: "Smartphone", price: 1500, bonus: { tap: 10 } },
+  { name: "Gaming Console", price: 2500, bonus: { passive: 13 } },
+  { name: "Tablet", price: 3000, bonus: { rentalPercent: 3 } },
+  { name: "Watch", price: 6000, bonus: { tap: 20 } },
+  { name: "Laptop", price: 8000, bonus: { capacity: 2000 } },
+  { name: "Necklace", price: 8000, bonus: { rentalPercent: 4 } },
+  { name: "Ring", price: 10000, bonus: { rentalPercent: 5 } },
+  { name: "Pool Table", price: 8000, bonus: { capacity: 1500 } },
+  { name: "Home Theater", price: 6000, bonus: { passive: 17 } },
 ];
 const tabPanelWidth = Math.min(Dimensions.get("window").width - 24, 390);
 const moneyMachineBaseCapacity = 1000;
@@ -78,9 +80,156 @@ const moneyMachineCapacityUpgradeCostStep = 100;
 const moneyMachineMaxTapLevel = 46;
 const moneyMachineMaxCapacityLevel = 50;
 const moneyMachineTickMs = 60000;
-const moneyMachineEarnPerTick = 50;
+const moneyMachineEarnPerTick = 100;
 const rentalIncomeCapacity = 50000;
 const rentalIncomeTickMs = 3600000;
+const defaultAchievementStats = {
+  roundsPlayed: 0,
+  handsWon: 0,
+  blackjackWins: 0,
+  currentWinStreak: 0,
+  bestWinStreak: 0,
+  totalBet: 0,
+  biggestWin: 0,
+  storePurchases: 0,
+  moneyMachineCollected: 0,
+  rentalCollected: 0,
+  highestWealth: 0,
+};
+const achievementDefinitions = [
+  {
+    id: "first_round",
+    title: "First Hand",
+    description: "Play your first blackjack hand.",
+    goal: 1,
+    reward: 250,
+    stat: "roundsPlayed",
+  },
+  {
+    id: "first_win",
+    title: "First Win",
+    description: "Win a blackjack hand.",
+    goal: 1,
+    reward: 500,
+    stat: "handsWon",
+  },
+  {
+    id: "blackjack",
+    title: "Natural 21",
+    description: "Hit blackjack from the first two cards.",
+    goal: 1,
+    reward: 1500,
+    stat: "blackjackWins",
+  },
+  {
+    id: "five_wins",
+    title: "Hot Table",
+    description: "Win 5 blackjack hands.",
+    goal: 5,
+    reward: 2500,
+    stat: "handsWon",
+  },
+  {
+    id: "five_win_streak",
+    title: "On Fire",
+    description: "Win 5 hands in a row.",
+    goal: 5,
+    reward: 5000,
+    stat: "bestWinStreak",
+  },
+  {
+    id: "high_roller",
+    title: "High Roller",
+    description: "Place $25,000 total bets.",
+    goal: 25000,
+    reward: 3000,
+    stat: "totalBet",
+    money: true,
+  },
+  {
+    id: "big_win",
+    title: "Big Swing",
+    description: "Win $5,000 from one hand.",
+    goal: 5000,
+    reward: 4000,
+    stat: "biggestWin",
+    money: true,
+  },
+  {
+    id: "collector",
+    title: "Collector",
+    description: "Buy 5 store items, cars, or properties.",
+    goal: 5,
+    reward: 2500,
+    stat: "storePurchases",
+  },
+  {
+    id: "machine_cash",
+    title: "Machine Cash",
+    description: "Collect $10,000 from the money machine.",
+    goal: 10000,
+    reward: 3500,
+    stat: "moneyMachineCollected",
+    money: true,
+  },
+  {
+    id: "max_tap_power",
+    title: "Max Tap Power",
+    description: "Upgrade tap power to max level.",
+    goal: moneyMachineMaxTapLevel,
+    reward: 20000,
+    stat: "moneyMachineTapLevel",
+  },
+  {
+    id: "max_storage",
+    title: "Max Storage",
+    description: "Upgrade money machine storage to max level.",
+    goal: moneyMachineMaxCapacityLevel,
+    reward: 20000,
+    stat: "moneyMachineCapacityLevel",
+  },
+  {
+    id: "landlord",
+    title: "Landlord",
+    description: "Collect $25,000 rental income.",
+    goal: 25000,
+    reward: 6000,
+    stat: "rentalCollected",
+    money: true,
+  },
+  {
+    id: "all_real_estate",
+    title: "Property Empire",
+    description: "Buy every real estate property.",
+    goal: realEstateListings.length,
+    reward: 50000,
+    stat: "ownedRealEstateCount",
+  },
+  {
+    id: "all_cars",
+    title: "Full Garage",
+    description: "Buy every car and vehicle.",
+    goal: vehicleListings.length,
+    reward: 40000,
+    stat: "ownedVehiclesCount",
+  },
+  {
+    id: "all_items",
+    title: "Luxury Shelf",
+    description: "Buy every item.",
+    goal: itemListings.length,
+    reward: 25000,
+    stat: "ownedItemsCount",
+  },
+  {
+    id: "whole_store",
+    title: "Own The Store",
+    description: "Buy everything in the store.",
+    goal: realEstateListings.length + vehicleListings.length + itemListings.length,
+    reward: 100000,
+    stat: "totalStoreOwned",
+  },
+];
 const chipColors = {
   100: "#0f9f5a",
   200: "#2563eb",
@@ -188,6 +337,19 @@ const CARD_IMAGES = {
   QC: require("./assets/cards/QC.png"),
   KC: require("./assets/cards/KC.png"),
 };
+const PRELOAD_IMAGE_ASSETS = [
+  TABLE_FELT,
+  SOUND_ON_ICON,
+  SOUND_OFF_ICON,
+  TAB_BLACKJACK_ICON,
+  TAB_STORE_ICON,
+  TAB_MONEY_ICON,
+  CARD_BACK,
+  ...Object.values(CARD_IMAGES),
+  ...Object.values(PROPERTY_IMAGES),
+  ...Object.values(VEHICLE_IMAGES),
+  ...Object.values(ITEM_IMAGES),
+];
 
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -264,17 +426,53 @@ function normalizeMoneyMachineLevel(level, maxLevel) {
     : 1;
 }
 
-function moneyMachineCapacityForLevel(level) {
-  return moneyMachineBaseCapacity +
-    (normalizeMoneyMachineLevel(level, moneyMachineMaxCapacityLevel) - 1) * moneyMachineCapacityStep;
+function bonusLabel(bonus) {
+  if (!bonus) return "";
+  if (bonus.tap) return `Tap +$${bonus.tap}`;
+  if (bonus.passive) return `Machine +$${bonus.passive}/min`;
+  if (bonus.capacity) return `Storage +$${bonus.capacity.toLocaleString("en-US")}`;
+  if (bonus.rentalPercent) return `Rental +${bonus.rentalPercent}%`;
+  return "";
 }
 
-function moneyMachineTapEarnForLevel(level) {
+function storeBonusesForOwned(ownedItems = [], ownedVehicles = []) {
+  return [...itemListings, ...vehicleListings].reduce(
+    (total, listing) => {
+      const owned = itemListings.includes(listing)
+        ? ownedItems.includes(listing.name)
+        : ownedVehicles.includes(listing.name);
+
+      if (!owned || !listing.bonus) {
+        return total;
+      }
+
+      return {
+        tap: total.tap + (listing.bonus.tap || 0),
+        passive: total.passive + (listing.bonus.passive || 0),
+        capacity: total.capacity + (listing.bonus.capacity || 0),
+        rentalPercent: total.rentalPercent + (listing.bonus.rentalPercent || 0),
+      };
+    },
+    { tap: 0, passive: 0, capacity: 0, rentalPercent: 0 }
+  );
+}
+
+function moneyMachinePassiveEarnForBonuses(bonuses) {
+  return moneyMachineEarnPerTick + (bonuses?.passive || 0);
+}
+
+function moneyMachineCapacityForLevel(level, capacityBonus = 0) {
+  return moneyMachineBaseCapacity +
+    (normalizeMoneyMachineLevel(level, moneyMachineMaxCapacityLevel) - 1) * moneyMachineCapacityStep +
+    capacityBonus;
+}
+
+function moneyMachineTapEarnForLevel(level, tapBonus = 0) {
   return Math.min(
     moneyMachineMaxTapEarn,
     moneyMachineBaseTapEarn +
       (normalizeMoneyMachineLevel(level, moneyMachineMaxTapLevel) - 1) * moneyMachineTapEarnStep
-  );
+  ) + tapBonus;
 }
 
 function moneyMachineUpgradeCost(type, level) {
@@ -285,17 +483,22 @@ function moneyMachineUpgradeCost(type, level) {
   return baseCost + (normalizedLevel - 1) * costStep;
 }
 
-function normalizeMoneyMachine(machine, now = Date.now()) {
+function normalizeMoneyMachine(
+  machine,
+  now = Date.now(),
+  passiveEarn = moneyMachineEarnPerTick,
+  capacityBonus = 0
+) {
   const tapLevel = normalizeMoneyMachineLevel(machine?.tapLevel, moneyMachineMaxTapLevel);
   const capacityLevel = normalizeMoneyMachineLevel(machine?.capacityLevel, moneyMachineMaxCapacityLevel);
-  const capacity = moneyMachineCapacityForLevel(capacityLevel);
+  const capacity = moneyMachineCapacityForLevel(capacityLevel, capacityBonus);
   const currentStored = Number.isFinite(machine?.stored)
     ? Math.max(0, Math.min(capacity, Math.floor(machine.stored)))
     : 0;
   const currentLastUpdated = Number.isFinite(machine?.lastUpdated) ? machine.lastUpdated : now;
   const elapsed = Math.max(0, now - currentLastUpdated);
   const ticks = Math.floor(elapsed / moneyMachineTickMs);
-  const earned = ticks * moneyMachineEarnPerTick;
+  const earned = ticks * passiveEarn;
   const nextStored = Math.min(capacity, currentStored + earned);
   const reachedCapacity = nextStored >= capacity;
 
@@ -314,18 +517,19 @@ function createRentalIncome(now = Date.now()) {
   };
 }
 
-function rentalRateForProperties(ownedRealEstate) {
-  return realEstateListings.reduce(
+function rentalRateForProperties(ownedRealEstate, rentalPercentBonus = 0) {
+  const baseRate = realEstateListings.reduce(
     (total, property) => total + (ownedRealEstate.includes(property.name) ? property.rentPerHour : 0),
     0
   );
+  return Math.floor(baseRate * (1 + rentalPercentBonus / 100));
 }
 
-function normalizeRentalIncome(income, ownedRealEstate, now = Date.now()) {
+function normalizeRentalIncome(income, ownedRealEstate, now = Date.now(), rentalPercentBonus = 0) {
   const stored = Number.isFinite(income?.stored) ? Math.max(0, Math.floor(income.stored)) : 0;
   const lastUpdated = Number.isFinite(income?.lastUpdated) ? income.lastUpdated : now;
   const elapsed = Math.max(0, now - lastUpdated);
-  const hourlyRate = rentalRateForProperties(ownedRealEstate);
+  const hourlyRate = rentalRateForProperties(ownedRealEstate, rentalPercentBonus);
   const completedHours = Math.floor(elapsed / rentalIncomeTickMs);
 
   if (hourlyRate <= 0) {
@@ -356,6 +560,31 @@ function formatRentalCountdown(ms) {
     return `${hours}h`;
   }
   return `${minutes}m`;
+}
+
+function normalizeAchievementStats(stats) {
+  return Object.keys(defaultAchievementStats).reduce((normalized, key) => {
+    const value = Number(stats?.[key]);
+    return {
+      ...normalized,
+      [key]: Number.isFinite(value) && value > 0 ? Math.floor(value) : defaultAchievementStats[key],
+    };
+  }, {});
+}
+
+function achievementProgress(achievement, stats) {
+  return Math.min(achievement.goal, stats[achievement.stat] || 0);
+}
+
+function formatAchievementValue(value, achievement) {
+  return achievement.money ? `$${value.toLocaleString("en-US")}` : value.toLocaleString("en-US");
+}
+
+function sumOwnedListingPrices(ownedNames, listings) {
+  return listings.reduce(
+    (total, listing) => total + (ownedNames.includes(listing.name) ? listing.price : 0),
+    0
+  );
 }
 
 function Chip({ amount, small }) {
@@ -429,7 +658,7 @@ function DeckShoe({ onPress, onTouchStart }) {
             },
           ]}
         >
-          <Image resizeMode="stretch" source={CARD_BACK} style={styles.deckCardImage} />
+          <Image fadeDuration={0} resizeMode="stretch" source={CARD_BACK} style={styles.deckCardImage} />
         </View>
       ))}
     </Pressable>
@@ -439,7 +668,12 @@ function DeckShoe({ onPress, onTouchStart }) {
 function PropertyThumbnail({ name }) {
   return (
     <View style={styles.propertyThumbnail}>
-      <Image resizeMode="cover" source={PROPERTY_IMAGES[name]} style={styles.storeThumbnailImage} />
+      <Image
+        fadeDuration={0}
+        resizeMode="cover"
+        source={PROPERTY_IMAGES[name]}
+        style={styles.storeThumbnailImage}
+      />
     </View>
   );
 }
@@ -447,7 +681,12 @@ function PropertyThumbnail({ name }) {
 function VehicleThumbnail({ name }) {
   return (
     <View style={styles.vehicleThumbnail}>
-      <Image resizeMode="cover" source={VEHICLE_IMAGES[name]} style={styles.storeThumbnailImage} />
+      <Image
+        fadeDuration={0}
+        resizeMode="cover"
+        source={VEHICLE_IMAGES[name]}
+        style={styles.storeThumbnailImage}
+      />
     </View>
   );
 }
@@ -455,7 +694,7 @@ function VehicleThumbnail({ name }) {
 function ItemThumbnail({ name }) {
   return (
     <View style={styles.itemThumbnail}>
-      <Image resizeMode="cover" source={ITEM_IMAGES[name]} style={styles.storeThumbnailImage} />
+      <Image fadeDuration={0} resizeMode="cover" source={ITEM_IMAGES[name]} style={styles.storeThumbnailImage} />
     </View>
   );
 }
@@ -504,6 +743,209 @@ function OwnedRentLabel({ rentPerHour, showCheck }) {
       >
         +${rentPerHour.toLocaleString("en-US")}/hr
       </Animated.Text>
+    </View>
+  );
+}
+
+function AchievementsModal({ visible, stats, onClose }) {
+  const unlockedCount = achievementDefinitions.filter(
+    (achievement) => achievementProgress(achievement, stats) >= achievement.goal
+  ).length;
+
+  return (
+    <Modal animationType="fade" onRequestClose={onClose} transparent visible={visible}>
+      <View style={styles.achievementModalBackdrop}>
+        <Pressable style={styles.achievementModalCloseLayer} onPress={onClose} />
+        <View style={styles.achievementPanel}>
+          <View style={styles.achievementPanelHeader}>
+            <View>
+              <Text style={styles.achievementPanelTitle}>Achievements</Text>
+              <Text style={styles.achievementPanelSubtitle}>
+                {unlockedCount}/{achievementDefinitions.length} unlocked
+              </Text>
+            </View>
+            <Pressable
+              onPress={onClose}
+              style={({ pressed }) => [styles.accountCloseButton, pressed && styles.pressed]}
+            >
+              <Text style={styles.accountCloseText}>X</Text>
+            </Pressable>
+          </View>
+
+          <ScrollView contentContainerStyle={styles.achievementList} style={styles.achievementListScroll}>
+            {achievementDefinitions.map((achievement) => {
+              const progress = achievementProgress(achievement, stats);
+              const unlocked = progress >= achievement.goal;
+              const progressRatio = Math.min(1, progress / achievement.goal);
+
+              return (
+                <View
+                  key={achievement.id}
+                  style={[styles.achievementRow, unlocked && styles.achievementRowUnlocked]}
+                >
+                  <View style={[styles.achievementBadge, unlocked && styles.achievementBadgeUnlocked]}>
+                    <Text style={[styles.achievementBadgeText, unlocked && styles.achievementBadgeTextUnlocked]}>
+                      {unlocked ? "✓" : "★"}
+                    </Text>
+                  </View>
+                  <View style={styles.achievementInfo}>
+                    <View style={styles.achievementTitleRow}>
+                      <Text numberOfLines={1} style={styles.achievementTitle}>
+                        {achievement.title}
+                      </Text>
+                      <Text style={[styles.achievementStatus, unlocked && styles.achievementStatusUnlocked]}>
+                        {unlocked ? "DONE" : "LOCKED"}
+                      </Text>
+                    </View>
+                    <Text numberOfLines={2} style={styles.achievementDescription}>
+                      {achievement.description}
+                    </Text>
+                    <View style={styles.achievementProgressTrack}>
+                      <View style={[styles.achievementProgressFill, { width: `${progressRatio * 100}%` }]} />
+                    </View>
+                    <Text style={styles.achievementProgressText}>
+                      {formatAchievementValue(progress, achievement)} / {formatAchievementValue(achievement.goal, achievement)}
+                    </Text>
+                    <Text style={styles.achievementRewardText}>
+                      Reward ${achievement.reward.toLocaleString("en-US")}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function AchievementToast({ achievement, onDone }) {
+  const entrance = useRef(new Animated.Value(0)).current;
+  const checkScale = useRef(new Animated.Value(0.4)).current;
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(entrance, {
+          toValue: 1,
+          duration: 260,
+          useNativeDriver: true,
+        }),
+        Animated.spring(checkScale, {
+          toValue: 1,
+          useNativeDriver: true,
+          damping: 9,
+          stiffness: 190,
+        }),
+      ]),
+      Animated.delay(2300),
+      Animated.timing(entrance, {
+        toValue: 0,
+        duration: 220,
+        useNativeDriver: true,
+      }),
+    ]).start(({ finished }) => {
+      if (finished) {
+        onDone();
+      }
+    });
+  }, [achievement, checkScale, entrance, onDone]);
+
+  const translateY = entrance.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-18, 0],
+  });
+
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[
+        styles.achievementToast,
+        {
+          opacity: entrance,
+          transform: [{ translateY }],
+        },
+      ]}
+    >
+      <Animated.View style={[styles.achievementToastCheck, { transform: [{ scale: checkScale }] }]}>
+        <Text style={styles.achievementToastCheckText}>✓</Text>
+      </Animated.View>
+      <View style={styles.achievementToastTextWrap}>
+        <Text style={styles.achievementToastEyebrow}>Achievement unlocked</Text>
+        <Text numberOfLines={1} style={styles.achievementToastTitle}>
+          {achievement.title}
+        </Text>
+        <Text numberOfLines={2} style={styles.achievementToastDescription}>
+          {achievement.description}
+        </Text>
+        <Text style={styles.achievementToastReward}>
+          +${achievement.reward.toLocaleString("en-US")} reward
+        </Text>
+      </View>
+    </Animated.View>
+  );
+}
+
+function ProfileScreen({ stats, currentWealth, totalCredit, ownedCounts, onBack }) {
+  const roundsPlayed = stats.roundsPlayed || 0;
+  const handsWon = stats.handsWon || 0;
+  const winRate = roundsPlayed > 0 ? Math.round((handsWon / roundsPlayed) * 100) : 0;
+  const totalOwned = ownedCounts.realEstate + ownedCounts.vehicles + ownedCounts.items;
+  const profileStats = [
+    { label: "Total Credit", value: `$${totalCredit.toLocaleString("en-US")}` },
+    { label: "Net Worth", value: `$${currentWealth.toLocaleString("en-US")}` },
+    { label: "Highest Wealth", value: `$${(stats.highestWealth || currentWealth).toLocaleString("en-US")}` },
+    { label: "Biggest Round Win", value: `$${(stats.biggestWin || 0).toLocaleString("en-US")}` },
+    { label: "Rounds Played", value: roundsPlayed.toLocaleString("en-US") },
+    { label: "Rounds Won", value: handsWon.toLocaleString("en-US") },
+    { label: "Win Rate", value: `${winRate}%` },
+    { label: "Blackjacks", value: (stats.blackjackWins || 0).toLocaleString("en-US") },
+    { label: "Best Win Streak", value: (stats.bestWinStreak || 0).toLocaleString("en-US") },
+    { label: "Total Bets", value: `$${(stats.totalBet || 0).toLocaleString("en-US")}` },
+    { label: "Machine Collected", value: `$${(stats.moneyMachineCollected || 0).toLocaleString("en-US")}` },
+    { label: "Rent Collected", value: `$${(stats.rentalCollected || 0).toLocaleString("en-US")}` },
+    { label: "Store Owned", value: `${totalOwned}/${realEstateListings.length + vehicleListings.length + itemListings.length}` },
+  ];
+
+  return (
+    <View style={styles.profileScreen}>
+      <View style={styles.profileTopBar}>
+        <Pressable onPress={onBack} style={({ pressed }) => [styles.profileBackButton, pressed && styles.pressed]}>
+          <Text style={styles.profileBackText}>Back</Text>
+        </Pressable>
+        <View style={styles.profileTitleWrap}>
+          <Text style={styles.profileTitle}>Profile</Text>
+          <Text numberOfLines={1} style={styles.profileAccountName}>
+            Player stats
+          </Text>
+        </View>
+        <View style={styles.profileTopSpacer} />
+      </View>
+
+      <ScrollView contentContainerStyle={styles.profileStatsContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.profileHero}>
+          <View style={styles.profileAvatar}>
+            <View style={styles.profileAvatarHead} />
+            <View style={styles.profileAvatarBody} />
+          </View>
+          <View style={styles.profileHeroText}>
+            <Text style={styles.profileHeroLabel}>Net worth</Text>
+            <Text style={styles.profileHeroValue}>${currentWealth.toLocaleString("en-US")}</Text>
+          </View>
+        </View>
+
+        <View style={styles.profileGrid}>
+          {profileStats.map((stat) => (
+            <View key={stat.label} style={styles.profileStatCard}>
+              <Text style={styles.profileStatLabel}>{stat.label}</Text>
+              <Text numberOfLines={1} style={styles.profileStatValue}>
+                {stat.value}
+              </Text>
+            </View>
+          ))}
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -609,6 +1051,9 @@ function StorePanel({
                     <Text numberOfLines={1} style={styles.storeListingName}>
                       {property.name}
                     </Text>
+                    <Text numberOfLines={1} style={styles.storeListingBonus}>
+                      +${property.rentPerHour.toLocaleString("en-US")}/hr rent
+                    </Text>
                   </View>
                 </View>
                 <Pressable
@@ -650,6 +1095,9 @@ function StorePanel({
                     <Text numberOfLines={1} style={styles.storeListingName}>
                       {vehicle.name}
                     </Text>
+                    <Text numberOfLines={1} style={styles.storeListingBonus}>
+                      {bonusLabel(vehicle.bonus)}
+                    </Text>
                   </View>
                 </View>
                 <Pressable
@@ -688,6 +1136,9 @@ function StorePanel({
                     <Text style={styles.storeListingTier}>{String(index + 1).padStart(2, "0")}</Text>
                     <Text numberOfLines={1} style={styles.storeListingName}>
                       {item.name}
+                    </Text>
+                    <Text numberOfLines={1} style={styles.storeListingBonus}>
+                      {bonusLabel(item.bonus)}
                     </Text>
                   </View>
                 </View>
@@ -741,6 +1192,7 @@ function MoneyMachinePanel({
   stored,
   capacity,
   tapEarn,
+  passiveEarn,
   tapLevel,
   capacityLevel,
   credit,
@@ -784,7 +1236,7 @@ function MoneyMachinePanel({
           <Text style={styles.moneyMachineUpgradeEffect}>
             {tapAtMax
               ? `+$${tapEarn} per tap`
-              : `+$${tapEarn}  >  +$${Math.min(moneyMachineMaxTapEarn, tapEarn + moneyMachineTapEarnStep)}`}
+              : `+$${tapEarn}  >  +$${tapEarn + moneyMachineTapEarnStep}`}
           </Text>
           <Text style={styles.moneyMachineUpgradeCost}>{tapAtMax ? "MAX LEVEL" : `Upgrade  $${tapUpgradeCost}`}</Text>
         </Pressable>
@@ -813,7 +1265,7 @@ function MoneyMachinePanel({
           <View style={styles.moneyMachineWindow}>
             <View style={styles.moneyMachineAmountRow}>
               <Text style={styles.moneyMachineAmount}>${stored}</Text>
-              <Text style={styles.moneyMachinePassiveRate}>+${moneyMachineEarnPerTick}/min</Text>
+              <Text style={styles.moneyMachinePassiveRate}>+${passiveEarn}/min</Text>
             </View>
           </View>
           <View style={styles.moneyMachineProgressTrack}>
@@ -856,6 +1308,7 @@ function BottomTabs({ activeTab, onSelect }) {
             ]}
           >
             <Image
+              fadeDuration={0}
               resizeMode="contain"
               source={icon}
               style={[styles.bottomTabIcon, selected && styles.bottomTabIconSelected]}
@@ -990,7 +1443,12 @@ function BlackjackCelebration() {
 
 function CreditDelta({ amount, onDone }) {
   const move = useRef(new Animated.Value(0)).current;
+  const onDoneRef = useRef(onDone);
   const positive = amount > 0;
+
+  useEffect(() => {
+    onDoneRef.current = onDone;
+  }, [onDone]);
 
   useEffect(() => {
     move.setValue(0);
@@ -1002,7 +1460,7 @@ function CreditDelta({ amount, onDone }) {
 
     animation.start(({ finished }) => {
       if (finished) {
-        onDone();
+        onDoneRef.current();
       }
     });
 
@@ -1060,6 +1518,7 @@ function Card({ card, hidden, index, compact, fast }) {
 
   return (
     <Animated.Image
+      fadeDuration={0}
       resizeMode="stretch"
       source={cardSource}
       style={[styles.card, compact && styles.compactCard, animatedStyle]}
@@ -1123,6 +1582,9 @@ export default function App() {
   const [activeAccountId, setActiveAccountId] = useState(null);
   const [moneyMachine, setMoneyMachine] = useState(() => createMoneyMachine());
   const [rentalIncome, setRentalIncome] = useState(() => createRentalIncome());
+  const [achievementStats, setAchievementStats] = useState(() =>
+    normalizeAchievementStats(defaultAchievementStats)
+  );
   const [ownedItems, setOwnedItems] = useState([]);
   const [ownedRealEstate, setOwnedRealEstate] = useState([]);
   const [ownedVehicles, setOwnedVehicles] = useState([]);
@@ -1131,6 +1593,10 @@ export default function App() {
   const [firstAccountName, setFirstAccountName] = useState("");
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [accountMenuMessage, setAccountMenuMessage] = useState("");
+  const [achievementMenuOpen, setAchievementMenuOpen] = useState(false);
+  const [profileScreenOpen, setProfileScreenOpen] = useState(false);
+  const [achievementToast, setAchievementToast] = useState(null);
+  const [achievementToastQueue, setAchievementToastQueue] = useState([]);
   const [editingAccountId, setEditingAccountId] = useState(null);
   const [editingAccountName, setEditingAccountName] = useState("");
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -1138,6 +1604,8 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("blackjack");
   const resultTimer = useRef(null);
   const nextRoundTimer = useRef(null);
+  const achievementUnlocksReady = useRef(false);
+  const unlockedAchievementIds = useRef(new Set());
   const developerCheatStep = useRef(0);
   const developerDeckTaps = useRef(0);
   const tabSlide = useRef(new Animated.Value(mainTabIndex.blackjack)).current;
@@ -1147,15 +1615,27 @@ export default function App() {
   const playerScore = useMemo(() => handValue(player), [player]);
   const dealerScore = useMemo(() => handValue(dealer), [dealer]);
   const activeAccount = accounts.find((account) => account.id === activeAccountId);
+  const totalAccountCredit = useMemo(
+    () => accounts.reduce((total, account) => total + Math.max(0, Math.floor(account.credit || 0)), 0),
+    [accounts]
+  );
   const moneyMachineStored = Math.floor(moneyMachine.stored || 0);
   const moneyMachineTapLevel = normalizeMoneyMachineLevel(moneyMachine.tapLevel, moneyMachineMaxTapLevel);
   const moneyMachineCapacityLevel = normalizeMoneyMachineLevel(
     moneyMachine.capacityLevel,
     moneyMachineMaxCapacityLevel
   );
-  const activeMoneyMachineCapacity = moneyMachineCapacityForLevel(moneyMachineCapacityLevel);
-  const activeMoneyMachineTapEarn = moneyMachineTapEarnForLevel(moneyMachineTapLevel);
-  const rentalRate = rentalRateForProperties(ownedRealEstate);
+  const activeStoreBonuses = useMemo(
+    () => storeBonusesForOwned(ownedItems, ownedVehicles),
+    [ownedItems, ownedVehicles]
+  );
+  const activeMachinePassiveEarn = moneyMachinePassiveEarnForBonuses(activeStoreBonuses);
+  const activeMoneyMachineCapacity = moneyMachineCapacityForLevel(
+    moneyMachineCapacityLevel,
+    activeStoreBonuses.capacity
+  );
+  const activeMoneyMachineTapEarn = moneyMachineTapEarnForLevel(moneyMachineTapLevel, activeStoreBonuses.tap);
+  const rentalRate = rentalRateForProperties(ownedRealEstate, activeStoreBonuses.rentalPercent);
   const rentalIncomeStored = Math.min(rentalIncomeCapacity, Math.floor(rentalIncome.stored || 0));
   const rentalIncomeFull = rentalIncomeStored >= rentalIncomeCapacity;
   const rentalElapsed = Math.max(0, Date.now() - (rentalIncome.lastUpdated || Date.now()));
@@ -1167,6 +1647,41 @@ export default function App() {
       : rentalIncomeFull
         ? "FULL"
         : `Next in ${formatRentalCountdown(rentalIncomeTickMs - rentalElapsed)}`;
+  const ownedRealEstateValue = useMemo(
+    () => sumOwnedListingPrices(ownedRealEstate, realEstateListings),
+    [ownedRealEstate]
+  );
+  const ownedVehiclesValue = useMemo(
+    () => sumOwnedListingPrices(ownedVehicles, vehicleListings),
+    [ownedVehicles]
+  );
+  const ownedItemsValue = useMemo(() => sumOwnedListingPrices(ownedItems, itemListings), [ownedItems]);
+  const currentWealth =
+    totalAccountCredit +
+    moneyMachineStored +
+    rentalIncomeStored +
+    ownedRealEstateValue +
+    ownedVehiclesValue +
+    ownedItemsValue;
+  const achievementDisplayStats = useMemo(
+    () => ({
+      ...achievementStats,
+      ownedRealEstateCount: ownedRealEstate.length,
+      ownedVehiclesCount: ownedVehicles.length,
+      ownedItemsCount: ownedItems.length,
+      totalStoreOwned: ownedRealEstate.length + ownedVehicles.length + ownedItems.length,
+      moneyMachineTapLevel,
+      moneyMachineCapacityLevel,
+    }),
+    [
+      achievementStats,
+      moneyMachineCapacityLevel,
+      moneyMachineTapLevel,
+      ownedItems.length,
+      ownedRealEstate.length,
+      ownedVehicles.length,
+    ]
+  );
   const accountSwitchLocked =
     inRound || dealing || resolvingDealer || betweenRounds || resultDelta !== null || creditDelta !== null;
   const showBottomTabs =
@@ -1179,6 +1694,69 @@ export default function App() {
     !blackjackCelebration;
   const showBlackjackTable =
     activeTab === "blackjack" || inRound || dealing || resolvingDealer || resultDelta !== null || blackjackCelebration;
+  const needsFirstAccountName = accountsLoaded && !hasChosenFirstAccountName;
+
+  useEffect(() => {
+    Asset.loadAsync(PRELOAD_IMAGE_ASSETS).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!accountsLoaded || currentWealth <= (achievementStats.highestWealth || 0)) {
+      return;
+    }
+
+    setAchievementBest("highestWealth", currentWealth);
+  }, [accountsLoaded, achievementStats.highestWealth, currentWealth]);
+
+  useEffect(() => {
+    if (!accountsLoaded) {
+      return;
+    }
+
+    const nextUnlockedIds = new Set(
+      achievementDefinitions
+        .filter((achievement) => achievementProgress(achievement, achievementDisplayStats) >= achievement.goal)
+        .map((achievement) => achievement.id)
+    );
+
+    if (!achievementUnlocksReady.current) {
+      unlockedAchievementIds.current = nextUnlockedIds;
+      achievementUnlocksReady.current = true;
+      return;
+    }
+
+    const newUnlocks = achievementDefinitions.filter(
+      (achievement) => nextUnlockedIds.has(achievement.id) && !unlockedAchievementIds.current.has(achievement.id)
+    );
+
+    unlockedAchievementIds.current = nextUnlockedIds;
+
+    if (newUnlocks.length > 0) {
+      const totalReward = newUnlocks.reduce((total, achievement) => total + (achievement.reward || 0), 0);
+      if (totalReward > 0 && activeAccountId) {
+        setAccounts((current) =>
+          current.map((account) =>
+            account.id === activeAccountId
+              ? { ...account, credit: account.credit + totalReward }
+              : account
+          )
+        );
+        setChips((current) => current + totalReward);
+        setOutOfCredit(false);
+      }
+      setAchievementToastQueue((current) => [...current, ...newUnlocks]);
+    }
+  }, [accountsLoaded, achievementDisplayStats, activeAccountId]);
+
+  useEffect(() => {
+    if (achievementToast || achievementToastQueue.length === 0) {
+      return;
+    }
+
+    const [nextToast, ...remainingToasts] = achievementToastQueue;
+    setAchievementToast(nextToast);
+    setAchievementToastQueue(remainingToasts);
+  }, [achievementToast, achievementToastQueue]);
 
   useEffect(() => {
     setAudioModeAsync({ playsInSilentMode: true }).catch(() => {});
@@ -1227,6 +1805,7 @@ export default function App() {
         let loadedHasChosenName = false;
         let loadedMoneyMachine = null;
         let loadedRentalIncome = null;
+        let loadedAchievementStats = normalizeAchievementStats(defaultAchievementStats);
         let loadedOwnedItems = [];
         let loadedOwnedRealEstate = [];
         let loadedOwnedVehicles = [];
@@ -1235,10 +1814,13 @@ export default function App() {
           const parsedSave = JSON.parse(savedAccounts);
           loadedHasChosenName = parsedSave.hasChosenFirstAccountName === true;
           if (parsedSave.moneyMachine) {
-            loadedMoneyMachine = normalizeMoneyMachine(parsedSave.moneyMachine, now);
+            loadedMoneyMachine = parsedSave.moneyMachine;
           }
           if (parsedSave.rentalIncome) {
             loadedRentalIncome = parsedSave.rentalIncome;
+          }
+          if (parsedSave.achievementStats) {
+            loadedAchievementStats = normalizeAchievementStats(parsedSave.achievementStats);
           }
           if (Array.isArray(parsedSave.ownedRealEstate)) {
             loadedOwnedRealEstate = parsedSave.ownedRealEstate.filter((name) =>
@@ -1276,14 +1858,18 @@ export default function App() {
 
         const selectedAccount =
           loadedAccounts.find((account) => account.id === loadedActiveId) || loadedAccounts[0];
+        const loadedStoreBonuses = storeBonusesForOwned(loadedOwnedItems, loadedOwnedVehicles);
         loadedMoneyMachine = normalizeMoneyMachine(
           loadedMoneyMachine || selectedAccount.moneyMachine || createMoneyMachine(now),
-          now
+          now,
+          moneyMachinePassiveEarnForBonuses(loadedStoreBonuses),
+          loadedStoreBonuses.capacity
         );
         loadedRentalIncome = normalizeRentalIncome(
           loadedRentalIncome || createRentalIncome(now),
           loadedOwnedRealEstate,
-          now
+          now,
+          loadedStoreBonuses.rentalPercent
         );
         loadedAccounts = loadedAccounts.map(({ moneyMachine: legacyMoneyMachine, ...account }) => account);
 
@@ -1292,6 +1878,7 @@ export default function App() {
           setActiveAccountId(selectedAccount.id);
           setMoneyMachine(loadedMoneyMachine);
           setRentalIncome(loadedRentalIncome);
+          setAchievementStats(loadedAchievementStats);
           setOwnedItems(loadedOwnedItems);
           setOwnedRealEstate(loadedOwnedRealEstate);
           setOwnedVehicles(loadedOwnedVehicles);
@@ -1310,6 +1897,7 @@ export default function App() {
           setActiveAccountId(fallbackAccount.id);
           setMoneyMachine(createMoneyMachine());
           setRentalIncome(createRentalIncome());
+          setAchievementStats(normalizeAchievementStats(defaultAchievementStats));
           setOwnedItems([]);
           setOwnedRealEstate([]);
           setOwnedVehicles([]);
@@ -1338,6 +1926,7 @@ export default function App() {
           hasChosenFirstAccountName,
           moneyMachine,
           rentalIncome,
+          achievementStats,
           ownedItems,
           ownedRealEstate,
           ownedVehicles,
@@ -1348,6 +1937,7 @@ export default function App() {
     accounts,
     activeAccountId,
     accountsLoaded,
+    achievementStats,
     hasChosenFirstAccountName,
     moneyMachine,
     rentalIncome,
@@ -1362,12 +1952,21 @@ export default function App() {
     }
 
     const timer = setInterval(() => {
-      setMoneyMachine((current) => normalizeMoneyMachine(current));
-      setRentalIncome((current) => normalizeRentalIncome(current, ownedRealEstate));
+      setMoneyMachine((current) =>
+        normalizeMoneyMachine(
+          current,
+          Date.now(),
+          activeMachinePassiveEarn,
+          activeStoreBonuses.capacity
+        )
+      );
+      setRentalIncome((current) =>
+        normalizeRentalIncome(current, ownedRealEstate, Date.now(), activeStoreBonuses.rentalPercent)
+      );
     }, moneyMachineTickMs);
 
     return () => clearInterval(timer);
-  }, [accountsLoaded, ownedRealEstate]);
+  }, [accountsLoaded, activeMachinePassiveEarn, activeStoreBonuses.capacity, activeStoreBonuses.rentalPercent, ownedRealEstate]);
 
   useEffect(() => {
     return () => {
@@ -1386,6 +1985,45 @@ export default function App() {
     );
   }
 
+  function addAchievementStat(key, amount) {
+    if (!amount) {
+      return;
+    }
+
+    setAchievementStats((current) => ({
+      ...normalizeAchievementStats(current),
+      [key]: Math.max(0, Math.floor((current[key] || 0) + amount)),
+    }));
+  }
+
+  function setAchievementBest(key, value) {
+    setAchievementStats((current) => ({
+      ...normalizeAchievementStats(current),
+      [key]: Math.max(current[key] || 0, Math.floor(value)),
+    }));
+  }
+
+  function registerAchievementRoundResult(delta) {
+    setAchievementStats((current) => {
+      const normalized = normalizeAchievementStats(current);
+      if (delta <= 0) {
+        return {
+          ...normalized,
+          currentWinStreak: 0,
+        };
+      }
+
+      const nextStreak = normalized.currentWinStreak + 1;
+      return {
+        ...normalized,
+        handsWon: normalized.handsWon + 1,
+        biggestWin: Math.max(normalized.biggestWin, Math.floor(delta)),
+        currentWinStreak: nextStreak,
+        bestWinStreak: Math.max(normalized.bestWinStreak, nextStreak),
+      };
+    });
+  }
+
   function selectTab(tab) {
     if (!showBottomTabs || tab === activeTab) {
       return;
@@ -1402,13 +2040,24 @@ export default function App() {
   }
 
   function collectMoneyMachine() {
-    if (!activeAccount || moneyMachineStored <= 0 || creditDelta !== null) {
+    if (!activeAccount || creditDelta !== null) {
       return;
     }
 
     const now = Date.now();
-    const nextCredit = chips + moneyMachineStored;
-    const normalizedMachine = normalizeMoneyMachine(moneyMachine, now);
+    const normalizedMachine = normalizeMoneyMachine(
+      moneyMachine,
+      now,
+      activeMachinePassiveEarn,
+      activeStoreBonuses.capacity
+    );
+    const amount = Math.floor(normalizedMachine.stored);
+
+    if (amount <= 0) {
+      return;
+    }
+
+    const nextCredit = chips + amount;
 
     setAccounts((current) =>
       current.map((account) =>
@@ -1418,10 +2067,11 @@ export default function App() {
     setMoneyMachine({
       ...normalizedMachine,
       stored: 0,
-      lastUpdated: now,
+      lastUpdated: normalizedMachine.lastUpdated,
     });
     setOutOfCredit(false);
-    setCreditDelta(moneyMachineStored);
+    addAchievementStat("moneyMachineCollected", amount);
+    setCreditDelta(amount);
   }
 
   function tapMoneyMachine() {
@@ -1432,14 +2082,23 @@ export default function App() {
     const now = Date.now();
 
     setMoneyMachine((current) => {
-      const normalizedMachine = normalizeMoneyMachine(current, now);
-        const capacity = moneyMachineCapacityForLevel(normalizedMachine.capacityLevel);
-        const tapEarn = moneyMachineTapEarnForLevel(normalizedMachine.tapLevel);
+      const normalizedMachine = normalizeMoneyMachine(
+        current,
+        now,
+        activeMachinePassiveEarn,
+        activeStoreBonuses.capacity
+      );
+      const capacity = moneyMachineCapacityForLevel(
+        normalizedMachine.capacityLevel,
+        activeStoreBonuses.capacity
+      );
+      const tapEarn = moneyMachineTapEarnForLevel(normalizedMachine.tapLevel, activeStoreBonuses.tap);
+      const nextStored = Math.min(capacity, normalizedMachine.stored + tapEarn);
 
       return {
         ...normalizedMachine,
-        stored: Math.min(capacity, normalizedMachine.stored + tapEarn),
-        lastUpdated: now,
+        stored: nextStored,
+        lastUpdated: nextStored >= capacity ? now : normalizedMachine.lastUpdated,
       };
     });
   }
@@ -1450,7 +2109,12 @@ export default function App() {
     }
 
     const now = Date.now();
-    const normalizedMachine = normalizeMoneyMachine(moneyMachine, now);
+    const normalizedMachine = normalizeMoneyMachine(
+      moneyMachine,
+      now,
+      activeMachinePassiveEarn,
+      activeStoreBonuses.capacity
+    );
     const levelKey = type === "tap" ? "tapLevel" : "capacityLevel";
     const currentLevel = normalizedMachine[levelKey];
     const maxLevel = type === "tap" ? moneyMachineMaxTapLevel : moneyMachineMaxCapacityLevel;
@@ -1491,13 +2155,13 @@ export default function App() {
 
     const now = Date.now();
     const nextCredit = chips - property.price;
-    setRentalIncome((current) => ({
-      ...normalizeRentalIncome(current, ownedRealEstate, now),
-      lastUpdated: now,
-    }));
+    setRentalIncome((current) =>
+      normalizeRentalIncome(current, ownedRealEstate, now, activeStoreBonuses.rentalPercent)
+    );
     setChips(nextCredit);
     saveActiveAccountCredit(nextCredit);
     setOwnedRealEstate((current) => [...current, property.name]);
+    addAchievementStat("storePurchases", 1);
   }
 
   function collectRentalIncome() {
@@ -1506,7 +2170,12 @@ export default function App() {
     }
 
     const now = Date.now();
-    const normalizedIncome = normalizeRentalIncome(rentalIncome, ownedRealEstate, now);
+    const normalizedIncome = normalizeRentalIncome(
+      rentalIncome,
+      ownedRealEstate,
+      now,
+      activeStoreBonuses.rentalPercent
+    );
     const amount = Math.floor(normalizedIncome.stored);
 
     if (amount <= 0) {
@@ -1521,9 +2190,10 @@ export default function App() {
     );
     setRentalIncome({
       stored: normalizedIncome.stored - amount,
-      lastUpdated: now,
+      lastUpdated: normalizedIncome.lastUpdated,
     });
     setOutOfCredit(false);
+    addAchievementStat("rentalCollected", amount);
     setCreditDelta(amount);
   }
 
@@ -1538,9 +2208,17 @@ export default function App() {
     }
 
     const nextCredit = chips - vehicle.price;
+    const now = Date.now();
+    setMoneyMachine((current) =>
+      normalizeMoneyMachine(current, now, activeMachinePassiveEarn, activeStoreBonuses.capacity)
+    );
+    setRentalIncome((current) =>
+      normalizeRentalIncome(current, ownedRealEstate, now, activeStoreBonuses.rentalPercent)
+    );
     setChips(nextCredit);
     saveActiveAccountCredit(nextCredit);
     setOwnedVehicles((current) => [...current, vehicle.name]);
+    addAchievementStat("storePurchases", 1);
   }
 
   function buyItem(item) {
@@ -1549,9 +2227,17 @@ export default function App() {
     }
 
     const nextCredit = chips - item.price;
+    const now = Date.now();
+    setMoneyMachine((current) =>
+      normalizeMoneyMachine(current, now, activeMachinePassiveEarn, activeStoreBonuses.capacity)
+    );
+    setRentalIncome((current) =>
+      normalizeRentalIncome(current, ownedRealEstate, now, activeStoreBonuses.rentalPercent)
+    );
     setChips(nextCredit);
     saveActiveAccountCredit(nextCredit);
     setOwnedItems((current) => [...current, item.name]);
+    addAchievementStat("storePurchases", 1);
   }
 
   function resetDeveloperCheat() {
@@ -1702,6 +2388,10 @@ export default function App() {
       setAccountMenuMessage("Finish the round first.");
       return;
     }
+    if (accounts.length >= accountLimit) {
+      setAccountMenuMessage(`Max ${accountLimit} accounts.`);
+      return;
+    }
     if (chips < accountCost) {
       setAccountMenuMessage(`Need $${accountCost} credit.`);
       return;
@@ -1729,10 +2419,16 @@ export default function App() {
   }
 
   function finishRound(text, payout, options = {}) {
-    const { showResultSplash = true } = options;
+    const { blackjack = false, showResultSplash = true } = options;
     const delta = payout - bet;
     const nextChips = chips + delta;
     saveActiveAccountCredit(nextChips);
+    addAchievementStat("roundsPlayed", 1);
+    addAchievementStat("totalBet", bet);
+    registerAchievementRoundResult(delta);
+    if (blackjack) {
+      addAchievementStat("blackjackWins", 1);
+    }
 
     setInRound(false);
     setDealing(false);
@@ -1912,7 +2608,7 @@ export default function App() {
       await wait(3000);
       setBlackjackCelebration(false);
       setDealing(false);
-      finishRound("Blackjack!", Math.floor(bet * 2.5), { showResultSplash: false });
+      finishRound("Blackjack!", Math.floor(bet * 2.5), { blackjack: true, showResultSplash: false });
       return;
     }
 
@@ -2013,44 +2709,66 @@ export default function App() {
   });
 
   return (
-    <ImageBackground resizeMode="cover" source={TABLE_FELT} style={styles.background}>
+    <ImageBackground fadeDuration={0} resizeMode="cover" source={TABLE_FELT} style={styles.background}>
       <SafeAreaView style={styles.safeArea}>
         <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
         <View onTouchStart={resetDeveloperCheat} style={styles.screen}>
-        {accountsLoaded && !hasChosenFirstAccountName ? (
-          <View onTouchStart={stopDeveloperTouchPropagation} style={styles.inlineNamePanel}>
-            <TextInput
-              autoCapitalize="words"
-              autoCorrect={false}
-              maxLength={10}
-              onChangeText={setFirstAccountName}
-              onSubmitEditing={saveFirstAccountName}
-              placeholder="Enter name"
-              placeholderTextColor="rgba(255,255,255,0.62)"
-              returnKeyType="done"
-              style={styles.inlineNameInput}
-              value={firstAccountName}
-            />
+        {needsFirstAccountName ? (
+          <View style={styles.inlineNameOverlay}>
+            <View onTouchStart={stopDeveloperTouchPropagation} style={styles.inlineNamePanel}>
+              <TextInput
+                autoCapitalize="words"
+                autoCorrect={false}
+                maxLength={10}
+                onChangeText={setFirstAccountName}
+                onSubmitEditing={saveFirstAccountName}
+                placeholder="Enter name"
+                placeholderTextColor="rgba(255,255,255,0.62)"
+                returnKeyType="done"
+                style={styles.inlineNameInput}
+                value={firstAccountName}
+              />
+              <Pressable
+                disabled={!firstAccountName.trim()}
+                onPress={saveFirstAccountName}
+                style={({ pressed }) => [
+                  styles.inlineNameConfirm,
+                  !firstAccountName.trim() && styles.disabled,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Text style={styles.inlineNameConfirmText}>OK</Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : (
+          <>
+        <View style={styles.header}>
+          <View style={styles.headerLeftSlot}>
             <Pressable
-              disabled={!firstAccountName.trim()}
-              onPress={saveFirstAccountName}
-              style={({ pressed }) => [
-                styles.inlineNameConfirm,
-                !firstAccountName.trim() && styles.disabled,
-                pressed && styles.pressed,
-              ]}
+              onPress={() => setAchievementMenuOpen(true)}
+              onTouchStart={stopDeveloperTouchPropagation}
+              style={({ pressed }) => [styles.achievementHeaderButton, pressed && styles.pressed]}
             >
-              <Text style={styles.inlineNameConfirmText}>OK</Text>
+              <Text style={styles.achievementHeaderIcon}>★</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setProfileScreenOpen(true)}
+              onTouchStart={stopDeveloperTouchPropagation}
+              style={({ pressed }) => [styles.profileHeaderButton, pressed && styles.pressed]}
+            >
+              <View style={styles.profileHeaderIcon}>
+                <View style={styles.profileHeaderIconHead} />
+                <View style={styles.profileHeaderIconBody} />
+              </View>
             </Pressable>
           </View>
-        ) : null}
-        <View style={styles.header}>
-          <View style={styles.headerLeftSlot} />
           <Pressable
             onPress={() => setSoundEnabled((current) => !current)}
             style={({ pressed }) => [styles.soundHeaderButton, pressed && styles.pressed]}
           >
             <Image
+              fadeDuration={0}
               resizeMode="contain"
               source={soundEnabled ? SOUND_ON_ICON : SOUND_OFF_ICON}
               style={styles.soundHeaderIcon}
@@ -2096,6 +2814,24 @@ export default function App() {
           </View>
           </View>
         </View>
+
+        {achievementToast ? (
+          <AchievementToast achievement={achievementToast} onDone={() => setAchievementToast(null)} />
+        ) : null}
+
+        {profileScreenOpen ? (
+          <ProfileScreen
+            currentWealth={currentWealth}
+            onBack={() => setProfileScreenOpen(false)}
+            ownedCounts={{
+              realEstate: ownedRealEstate.length,
+              vehicles: ownedVehicles.length,
+              items: ownedItems.length,
+            }}
+            stats={achievementStats}
+            totalCredit={totalAccountCredit}
+          />
+        ) : null}
 
         <View style={styles.table}>
           <View
@@ -2254,6 +2990,7 @@ export default function App() {
                         stored={moneyMachineStored}
                         capacity={activeMoneyMachineCapacity}
                         tapEarn={activeMoneyMachineTapEarn}
+                        passiveEarn={activeMachinePassiveEarn}
                         tapLevel={moneyMachineTapLevel}
                         capacityLevel={moneyMachineCapacityLevel}
                         credit={chips}
@@ -2323,7 +3060,6 @@ export default function App() {
             <Hand cards={player} score={shownPlayerScore} showScore={inRound} stacked />
           ) : null}
           {blackjackCelebration && <BlackjackCelebration />}
-        </View>
         </View>
 
         <Modal
@@ -2422,20 +3158,31 @@ export default function App() {
               {!!accountMenuMessage && <Text style={styles.accountMenuMessage}>{accountMenuMessage}</Text>}
 
               <Pressable
-                disabled={accountSwitchLocked || chips < accountCost}
+                disabled={accountSwitchLocked || chips < accountCost || accounts.length >= accountLimit}
                 onPress={createAccount}
                 style={({ pressed }) => [
                   styles.createAccountButton,
-                  (accountSwitchLocked || chips < accountCost) && styles.disabled,
+                  (accountSwitchLocked || chips < accountCost || accounts.length >= accountLimit) && styles.disabled,
                   pressed && styles.pressed,
                 ]}
               >
                 <Text style={styles.createAccountButtonText}>New account</Text>
-                <Text style={styles.createAccountCost}>${accountCost}</Text>
+                <Text style={styles.createAccountCost}>
+                  {accounts.length >= accountLimit ? "MAX" : `$${accountCost}`}
+                </Text>
               </Pressable>
             </Pressable>
           </Pressable>
         </Modal>
+
+        <AchievementsModal
+          onClose={() => setAchievementMenuOpen(false)}
+          stats={achievementDisplayStats}
+          visible={achievementMenuOpen}
+        />
+          </>
+        )}
+        </View>
 
       </SafeAreaView>
     </ImageBackground>
@@ -2443,6 +3190,12 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
+  inlineNameOverlay: {
+    alignItems: "center",
+    flex: 1,
+    justifyContent: "center",
+    paddingHorizontal: 24,
+  },
   inlineNamePanel: {
     alignItems: "center",
     alignSelf: "center",
@@ -2455,9 +3208,6 @@ const styles = StyleSheet.create({
     minHeight: 44,
     paddingHorizontal: 8,
     paddingVertical: 6,
-    position: "absolute",
-    top: 72,
-    zIndex: 30,
   },
   inlineNameInput: {
     backgroundColor: "rgba(255,255,255,0.12)",
@@ -2470,7 +3220,7 @@ const styles = StyleSheet.create({
     height: 34,
     paddingHorizontal: 10,
     textAlign: "center",
-    width: 150,
+    width: 190,
   },
   inlineNameConfirm: {
     alignItems: "center",
@@ -2506,7 +3256,55 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   headerLeftSlot: {
+    alignItems: "flex-start",
+    gap: 8,
     width: 44,
+  },
+  achievementHeaderButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.28)",
+    borderColor: "rgba(255,240,122,0.72)",
+    borderRadius: 8,
+    borderWidth: 2,
+    height: 38,
+    justifyContent: "center",
+    width: 38,
+  },
+  achievementHeaderIcon: {
+    color: "#fff07a",
+    fontSize: 21,
+    fontWeight: "900",
+    lineHeight: 24,
+  },
+  profileHeaderButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.28)",
+    borderColor: "rgba(255,255,255,0.46)",
+    borderRadius: 8,
+    borderWidth: 2,
+    height: 38,
+    justifyContent: "center",
+    width: 38,
+  },
+  profileHeaderIcon: {
+    alignItems: "center",
+    height: 22,
+    justifyContent: "center",
+    width: 22,
+  },
+  profileHeaderIconHead: {
+    backgroundColor: "#ffffff",
+    borderRadius: 5,
+    height: 8,
+    marginBottom: 2,
+    width: 8,
+  },
+  profileHeaderIconBody: {
+    backgroundColor: "#ffffff",
+    borderTopLeftRadius: 9,
+    borderTopRightRadius: 9,
+    height: 8,
+    width: 17,
   },
   soundHeaderButton: {
     alignItems: "center",
@@ -2521,8 +3319,8 @@ const styles = StyleSheet.create({
   },
   soundHeaderIcon: {
     borderRadius: 4,
-    height: 36,
-    width: 36,
+    height: 32,
+    width: 32,
   },
   headerRight: {
     alignItems: "flex-end",
@@ -2727,6 +3525,339 @@ const styles = StyleSheet.create({
     color: "#17201d",
     fontSize: 15,
     fontWeight: "900",
+  },
+  achievementModalBackdrop: {
+    backgroundColor: "rgba(0,0,0,0.62)",
+    flex: 1,
+    justifyContent: "flex-start",
+    paddingHorizontal: 14,
+    paddingTop: 58,
+  },
+  achievementModalCloseLayer: {
+    bottom: 0,
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0,
+  },
+  achievementPanel: {
+    alignSelf: "center",
+    backgroundColor: "#f7f9f4",
+    borderColor: "#111111",
+    borderRadius: 8,
+    borderWidth: 2,
+    height: "82%",
+    padding: 14,
+    width: "100%",
+    maxWidth: 360,
+  },
+  achievementPanelHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  achievementPanelTitle: {
+    color: "#17201d",
+    fontSize: 22,
+    fontWeight: "900",
+  },
+  achievementPanelSubtitle: {
+    color: "#68746f",
+    fontSize: 12,
+    fontWeight: "900",
+    marginTop: 2,
+  },
+  achievementListScroll: {
+    flex: 1,
+  },
+  achievementList: {
+    gap: 9,
+    paddingBottom: 4,
+  },
+  achievementRow: {
+    alignItems: "center",
+    backgroundColor: "#ffffff",
+    borderColor: "#cbd5cf",
+    borderRadius: 8,
+    borderWidth: 2,
+    flexDirection: "row",
+    minHeight: 104,
+    padding: 10,
+  },
+  achievementRowUnlocked: {
+    backgroundColor: "#e8fff1",
+    borderColor: "#18c96f",
+  },
+  achievementBadge: {
+    alignItems: "center",
+    backgroundColor: "#17201d",
+    borderRadius: 20,
+    height: 40,
+    justifyContent: "center",
+    marginRight: 10,
+    width: 40,
+  },
+  achievementBadgeUnlocked: {
+    backgroundColor: "#fff07a",
+  },
+  achievementBadgeText: {
+    color: "#ffffff",
+    fontSize: 18,
+    fontWeight: "900",
+  },
+  achievementBadgeTextUnlocked: {
+    color: "#17201d",
+  },
+  achievementInfo: {
+    flex: 1,
+  },
+  achievementTitleRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "space-between",
+  },
+  achievementTitle: {
+    color: "#17201d",
+    flex: 1,
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  achievementStatus: {
+    color: "#7c8781",
+    fontSize: 9,
+    fontWeight: "900",
+  },
+  achievementStatusUnlocked: {
+    color: "#0b7c45",
+  },
+  achievementDescription: {
+    color: "#68746f",
+    fontSize: 11,
+    fontWeight: "800",
+    marginTop: 3,
+  },
+  achievementProgressTrack: {
+    backgroundColor: "#dce4df",
+    borderRadius: 5,
+    height: 7,
+    marginTop: 8,
+    overflow: "hidden",
+  },
+  achievementProgressFill: {
+    backgroundColor: "#18c96f",
+    borderRadius: 5,
+    height: "100%",
+  },
+  achievementProgressText: {
+    color: "#17201d",
+    fontSize: 10,
+    fontWeight: "900",
+    marginTop: 4,
+    textAlign: "right",
+  },
+  achievementRewardText: {
+    color: "#0b7c45",
+    fontSize: 10,
+    fontWeight: "900",
+    marginTop: 2,
+    textAlign: "right",
+  },
+  achievementToast: {
+    alignItems: "center",
+    alignSelf: "center",
+    backgroundColor: "rgba(12,24,19,0.94)",
+    borderColor: "#fff07a",
+    borderRadius: 8,
+    borderWidth: 2,
+    flexDirection: "row",
+    gap: 10,
+    left: 18,
+    minHeight: 86,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    position: "absolute",
+    right: 18,
+    top: 64,
+    zIndex: 80,
+  },
+  achievementToastCheck: {
+    alignItems: "center",
+    backgroundColor: "#18c96f",
+    borderColor: "#d6ffe7",
+    borderRadius: 18,
+    borderWidth: 2,
+    height: 36,
+    justifyContent: "center",
+    width: 36,
+  },
+  achievementToastCheckText: {
+    color: "#ffffff",
+    fontSize: 20,
+    fontWeight: "900",
+    lineHeight: 24,
+  },
+  achievementToastTextWrap: {
+    flex: 1,
+  },
+  achievementToastEyebrow: {
+    color: "#fff07a",
+    fontSize: 10,
+    fontWeight: "900",
+    textTransform: "uppercase",
+  },
+  achievementToastTitle: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "900",
+    marginTop: 1,
+  },
+  achievementToastDescription: {
+    color: "#d6ffe7",
+    fontSize: 11,
+    fontWeight: "800",
+    marginTop: 2,
+  },
+  achievementToastReward: {
+    color: "#fff07a",
+    fontSize: 11,
+    fontWeight: "900",
+    marginTop: 3,
+  },
+  profileScreen: {
+    backgroundColor: "rgba(6,38,25,0.94)",
+    bottom: 0,
+    left: 0,
+    paddingHorizontal: 12,
+    paddingTop: 6,
+    position: "absolute",
+    right: 0,
+    top: 0,
+    zIndex: 90,
+  },
+  profileTopBar: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    minHeight: 54,
+  },
+  profileBackButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.28)",
+    borderColor: "rgba(255,255,255,0.28)",
+    borderRadius: 8,
+    borderWidth: 1,
+    justifyContent: "center",
+    minHeight: 38,
+    minWidth: 68,
+    paddingHorizontal: 12,
+  },
+  profileBackText: {
+    color: "#ffffff",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  profileTitleWrap: {
+    alignItems: "center",
+    flex: 1,
+  },
+  profileTitle: {
+    color: "#fff07a",
+    fontSize: 24,
+    fontWeight: "900",
+  },
+  profileAccountName: {
+    color: "#d6ffe7",
+    fontSize: 12,
+    fontWeight: "800",
+    marginTop: 1,
+    maxWidth: 170,
+  },
+  profileTopSpacer: {
+    width: 68,
+  },
+  profileStatsContent: {
+    paddingBottom: 24,
+    paddingTop: 10,
+  },
+  profileHero: {
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.28)",
+    borderColor: "rgba(255,240,122,0.45)",
+    borderRadius: 8,
+    borderWidth: 2,
+    flexDirection: "row",
+    marginBottom: 12,
+    minHeight: 96,
+    paddingHorizontal: 16,
+  },
+  profileAvatar: {
+    alignItems: "center",
+    backgroundColor: "rgba(255,240,122,0.16)",
+    borderColor: "#fff07a",
+    borderRadius: 28,
+    borderWidth: 2,
+    height: 56,
+    justifyContent: "center",
+    marginRight: 14,
+    width: 56,
+  },
+  profileAvatarHead: {
+    backgroundColor: "#ffffff",
+    borderRadius: 8,
+    height: 14,
+    marginBottom: 3,
+    width: 14,
+  },
+  profileAvatarBody: {
+    backgroundColor: "#ffffff",
+    borderTopLeftRadius: 14,
+    borderTopRightRadius: 14,
+    height: 14,
+    width: 30,
+  },
+  profileHeroText: {
+    flex: 1,
+  },
+  profileHeroLabel: {
+    color: "#d6ffe7",
+    fontSize: 12,
+    fontWeight: "900",
+    textTransform: "uppercase",
+  },
+  profileHeroValue: {
+    color: "#fff07a",
+    fontSize: 30,
+    fontWeight: "900",
+    marginTop: 2,
+  },
+  profileGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  profileStatCard: {
+    backgroundColor: "rgba(0,0,0,0.26)",
+    borderColor: "rgba(255,255,255,0.18)",
+    borderRadius: 8,
+    borderWidth: 1,
+    minHeight: 70,
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+    width: "48%",
+  },
+  profileStatLabel: {
+    color: "rgba(255,255,255,0.62)",
+    fontSize: 10,
+    fontWeight: "900",
+    textTransform: "uppercase",
+  },
+  profileStatValue: {
+    color: "#ffffff",
+    fontSize: 17,
+    fontWeight: "900",
+    marginTop: 7,
   },
   wallet: {
     alignItems: "flex-end",
@@ -3121,7 +4252,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     flexDirection: "row",
     justifyContent: "space-between",
-    minHeight: 58,
+    minHeight: 64,
     paddingHorizontal: 4,
   },
   storeListingInfo: {
@@ -3144,6 +4275,13 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     fontSize: 14,
     fontWeight: "900",
+  },
+  storeListingBonus: {
+    color: "rgba(255,255,255,0.58)",
+    flexShrink: 1,
+    fontSize: 9,
+    fontWeight: "900",
+    marginTop: 1,
   },
   storeListingPrice: {
     color: "#fff07a",

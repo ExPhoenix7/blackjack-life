@@ -1,6 +1,6 @@
 # Blackjack Mobile
 
-Basit bir Expo / React Native Blackjack mobil oyunu.
+Expo / React Native ile gelistirilen mobil blackjack ve para yonetimi oyunu.
 
 ## Calistirma
 
@@ -17,8 +17,9 @@ npm run android
 
 ## Oyun
 
-- Bahis sec.
-- Dagit ile turu baslat.
-- Kart Cek veya Kal.
-- Krupiye 17'ye kadar kart ceker.
-- Blackjack, bust, kazanma, kaybetme ve beraberlik durumlari vardir.
+- Blackjack masasında bahis secip tur oynanir.
+- Store ekraninda real estate, cars ve items satin alinabilir.
+- Money Machine aktif tiklama, pasif gelir ve offline birikimle para uretir.
+- Real estate saatlik rental income biriktirir.
+- Accounts sistemi en fazla 3 hesap destekler.
+- Achievements ve Profile ekranlari oyuncu ilerlemesini takip eder.
