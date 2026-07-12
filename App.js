@@ -2,12 +2,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Asset } from "expo-asset";
 import { setAudioModeAsync, useAudioPlayer } from "expo-audio";
+import Constants from "expo-constants";
 import {
   Animated,
   Dimensions,
   Image,
   ImageBackground,
   Modal,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -30,8 +32,32 @@ const accountCost = 3000;
 const accountLimit = 3;
 const developerCheatChips = [100, 200, 500];
 const developerCheatReward = 50000;
+const rewardedAdCredit = 10000;
+const isExpoGo = Constants.appOwnership === "expo";
+let googleMobileAdsModule = null;
 const mainTabs = ["store", "blackjack", "money"];
 const mainTabIndex = { store: 0, blackjack: 1, money: 2 };
+
+function getGoogleMobileAdsModule() {
+  if (googleMobileAdsModule !== null) {
+    return googleMobileAdsModule;
+  }
+
+  try {
+    googleMobileAdsModule = {
+      AdEventType: require("react-native-google-mobile-ads/lib/commonjs/AdEventType").AdEventType,
+      RewardedAd: require("react-native-google-mobile-ads/lib/commonjs/ads/RewardedAd").RewardedAd,
+      RewardedAdEventType: require("react-native-google-mobile-ads/lib/commonjs/RewardedAdEventType")
+        .RewardedAdEventType,
+      TestIds: require("react-native-google-mobile-ads/lib/commonjs/TestIds").TestIds,
+      mobileAds: require("react-native-google-mobile-ads/lib/commonjs/MobileAds").default,
+    };
+  } catch (error) {
+    googleMobileAdsModule = false;
+  }
+
+  return googleMobileAdsModule || null;
+}
 const realEstateListings = [
   { name: "Studio Apartment", price: 5000, rentPerHour: 200 },
   { name: "Bungalow", price: 10000, rentPerHour: 400 },
@@ -1603,6 +1629,7 @@ export default function App() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [blackjackCelebration, setBlackjackCelebration] = useState(false);
   const [activeTab, setActiveTab] = useState("blackjack");
+  const [rewardedAdLoading, setRewardedAdLoading] = useState(false);
   const resultTimer = useRef(null);
   const nextRoundTimer = useRef(null);
   const achievementUnlocksReady = useRef(false);
@@ -2298,6 +2325,87 @@ export default function App() {
     resetDeveloperCheat();
   }
 
+  function awardRewardedAdCredit() {
+    const nextCredit = chips + rewardedAdCredit;
+    saveActiveAccountCredit(nextCredit);
+    setOutOfCredit(false);
+    setCreditDelta(rewardedAdCredit);
+  }
+
+  async function handleRewardedAdPress() {
+    if (!activeAccount || creditDelta !== null || rewardedAdLoading) {
+      return;
+    }
+
+    if (isExpoGo) {
+      awardRewardedAdCredit();
+      return;
+    }
+
+    const ads = getGoogleMobileAdsModule();
+    if (!ads?.RewardedAd || !ads?.RewardedAdEventType || !ads?.TestIds) {
+      return;
+    }
+
+    const rewardedAdUnitId =
+      Platform.select({
+        android: Constants.expoConfig?.extra?.adMob?.androidRewardedAdUnitId,
+        ios: Constants.expoConfig?.extra?.adMob?.iosRewardedAdUnitId,
+        default: null,
+      }) || ads.TestIds.REWARDED;
+
+    setRewardedAdLoading(true);
+
+    try {
+      if (typeof ads.mobileAds === "function") {
+        await ads.mobileAds().initialize();
+      }
+
+      const rewardedAd = ads.RewardedAd.createForAdRequest(rewardedAdUnitId, {
+        requestNonPersonalizedAdsOnly: true,
+      });
+      const unsubscribers = [];
+      const cleanup = () => {
+        while (unsubscribers.length) {
+          const unsubscribe = unsubscribers.pop();
+          if (typeof unsubscribe === "function") {
+            unsubscribe();
+          }
+        }
+      };
+
+      unsubscribers.push(
+        rewardedAd.addAdEventListener(ads.RewardedAdEventType.LOADED, () => {
+          Promise.resolve(rewardedAd.show()).catch(() => {
+            cleanup();
+            setRewardedAdLoading(false);
+          });
+        })
+      );
+      unsubscribers.push(
+        rewardedAd.addAdEventListener(ads.RewardedAdEventType.EARNED_REWARD, () => {
+          awardRewardedAdCredit();
+        })
+      );
+      unsubscribers.push(
+        rewardedAd.addAdEventListener(ads.AdEventType.CLOSED, () => {
+          cleanup();
+          setRewardedAdLoading(false);
+        })
+      );
+      unsubscribers.push(
+        rewardedAd.addAdEventListener(ads.AdEventType.ERROR, () => {
+          cleanup();
+          setRewardedAdLoading(false);
+        })
+      );
+
+      rewardedAd.load();
+    } catch (error) {
+      setRewardedAdLoading(false);
+    }
+  }
+
   function saveFirstAccountName() {
     const trimmedName = firstAccountName.trim();
     if (!trimmedName) {
@@ -2803,6 +2911,19 @@ export default function App() {
               </Pressable>
             </View>
             <Text style={styles.walletValue}>{chips}</Text>
+            <Pressable
+              disabled={creditDelta !== null || rewardedAdLoading}
+              onPress={handleRewardedAdPress}
+              onTouchStart={stopDeveloperTouchPropagation}
+              style={({ pressed }) => [
+                styles.rewardedAdButton,
+                (creditDelta !== null || rewardedAdLoading) && styles.disabled,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text style={styles.rewardedAdBadge}>AD</Text>
+              <Text style={styles.rewardedAdText}>{rewardedAdLoading ? "..." : "+10K"}</Text>
+            </Pressable>
             {creditDelta !== null && (
               <CreditDelta
                 amount={creditDelta}
@@ -3880,12 +4001,40 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "900",
   },
+  rewardedAdButton: {
+    alignItems: "center",
+    alignSelf: "flex-end",
+    backgroundColor: "rgba(255,240,122,0.16)",
+    borderColor: "rgba(255,240,122,0.7)",
+    borderRadius: 7,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 4,
+    justifyContent: "center",
+    marginTop: 3,
+    minHeight: 22,
+    paddingHorizontal: 7,
+  },
+  rewardedAdBadge: {
+    backgroundColor: "#fff07a",
+    borderRadius: 4,
+    color: "#17201d",
+    fontSize: 8,
+    fontWeight: "900",
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+  },
+  rewardedAdText: {
+    color: "#fff07a",
+    fontSize: 10,
+    fontWeight: "900",
+  },
   creditDelta: {
     fontSize: 14,
     fontWeight: "900",
     position: "absolute",
     right: 0,
-    top: 38,
+    top: 62,
   },
   creditDeltaPositive: {
     color: "#fff07a",

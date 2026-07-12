@@ -22,8 +22,26 @@
         }
       ],
       "expo-audio",
-      "expo-asset"
+      "expo-asset",
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-9293916365182641~1844805950",
+          "iosAppId": "ca-app-pub-9293916365182641~6099324278",
+          "optimizeInitialization": true,
+          "optimizeAdLoading": true
+        }
+      ]
     ],
+    "extra": {
+      "adMob": {
+        "androidRewardedAdUnitId": "ca-app-pub-9293916365182641/5536638959",
+        "iosRewardedAdUnitId": "ca-app-pub-9293916365182641/5580449520"
+      },
+      "eas": {
+        "projectId": "3e79624b-1832-43e6-9b3c-8016db59ec39"
+      }
+    },
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -36,7 +54,15 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#031f09"
-      }
+      },
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     }
+  },
+  "react-native-google-mobile-ads": {
+    "android_app_id": "ca-app-pub-9293916365182641~1844805950",
+    "ios_app_id": "ca-app-pub-9293916365182641~6099324278"
   }
 }

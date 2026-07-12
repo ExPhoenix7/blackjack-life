@@ -11,6 +11,7 @@ yarn-error.log*
 .expo-live.log
 .expo-live.err.log
 .expo-verify-*/
+eas-build-*.log
 metro.log
 metro.err
 start-expo-*.cmd
