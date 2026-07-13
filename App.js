@@ -657,12 +657,14 @@ function sumOwnedListingPrices(ownedNames, listings) {
   );
 }
 
-function Chip({ amount, small }) {
+function Chip({ amount, isTablet, small }) {
   return (
     <View
       style={[
         styles.chipOuter,
+        isTablet && styles.chipOuterTablet,
         small && styles.chipOuterSmall,
+        small && isTablet && styles.chipOuterSmallTablet,
         { backgroundColor: chipColors[amount] },
       ]}
     >
@@ -670,12 +672,22 @@ function Chip({ amount, small }) {
       <View style={styles.chipStripeRight} />
       <View style={styles.chipStripeBottom} />
       <View style={styles.chipStripeLeft} />
-      <View style={[styles.chipInner, small && styles.chipInnerSmall]}>
+      <View
+        style={[
+          styles.chipInner,
+          isTablet && styles.chipInnerTablet,
+          small && styles.chipInnerSmall,
+          small && isTablet && styles.chipInnerSmallTablet,
+        ]}
+      >
         <Text
           style={[
             styles.chipText,
+            isTablet && styles.chipTextTablet,
             small && styles.chipTextSmall,
+            small && isTablet && styles.chipTextSmallTablet,
             amount === 5000 && (small ? styles.chipText5000Small : styles.chipText5000),
+            amount === 5000 && isTablet && (small ? styles.chipText5000SmallTablet : styles.chipText5000Tablet),
           ]}
         >
           {amount}
@@ -685,11 +697,11 @@ function Chip({ amount, small }) {
   );
 }
 
-function BetStack({ chips }) {
+function BetStack({ chips, isTablet }) {
   const visibleChips = chips.slice(-7);
 
   return (
-    <View style={styles.betStack}>
+    <View style={[styles.betStack, isTablet && styles.betStackTablet]}>
       {visibleChips.map((amount, index) => (
         <View
           key={`${amount}-${index}`}
@@ -701,27 +713,32 @@ function BetStack({ chips }) {
             },
           ]}
         >
-          <Chip amount={amount} small />
+          <Chip amount={amount} isTablet={isTablet} small />
         </View>
       ))}
-      {chips.length === 0 && <View style={styles.emptyBetSpace} />}
+      {chips.length === 0 && <View style={[styles.emptyBetSpace, isTablet && styles.emptyBetSpaceTablet]} />}
     </View>
   );
 }
 
-function DeckShoe({ onPress, onTouchStart }) {
+function DeckShoe({ isTablet, onPress, onTouchStart }) {
   return (
     <Pressable
       disabled={!onPress}
       onPress={onPress}
       onTouchStart={onTouchStart}
-      style={({ pressed }) => [styles.deckShoe, pressed && onPress && styles.deckShoePressed]}
+      style={({ pressed }) => [
+        styles.deckShoe,
+        isTablet && styles.deckShoeTablet,
+        pressed && onPress && styles.deckShoePressed,
+      ]}
     >
       {[0, 1, 2].map((offset) => (
         <View
           key={offset}
           style={[
             styles.deckCard,
+            isTablet && styles.deckCardTablet,
             {
               right: offset * 4,
               top: offset * 3,
@@ -735,9 +752,9 @@ function DeckShoe({ onPress, onTouchStart }) {
   );
 }
 
-function PropertyThumbnail({ name }) {
+function PropertyThumbnail({ isTablet, name }) {
   return (
-    <View style={styles.propertyThumbnail}>
+    <View style={[styles.propertyThumbnail, isTablet && styles.storeThumbnailTablet]}>
       <Image
         fadeDuration={0}
         resizeMode="cover"
@@ -748,9 +765,9 @@ function PropertyThumbnail({ name }) {
   );
 }
 
-function VehicleThumbnail({ name }) {
+function VehicleThumbnail({ isTablet, name }) {
   return (
-    <View style={styles.vehicleThumbnail}>
+    <View style={[styles.vehicleThumbnail, isTablet && styles.storeThumbnailTablet]}>
       <Image
         fadeDuration={0}
         resizeMode="cover"
@@ -761,9 +778,9 @@ function VehicleThumbnail({ name }) {
   );
 }
 
-function ItemThumbnail({ name }) {
+function ItemThumbnail({ isTablet, name }) {
   return (
-    <View style={styles.itemThumbnail}>
+    <View style={[styles.itemThumbnail, isTablet && styles.storeThumbnailTablet]}>
       <Image fadeDuration={0} resizeMode="cover" source={ITEM_IMAGES[name]} style={styles.storeThumbnailImage} />
     </View>
   );
@@ -1022,6 +1039,7 @@ function ProfileScreen({ stats, currentWealth, totalCredit, ownedCounts, onBack 
 
 function StorePanel({
   credit,
+  isTablet,
   ownedItems,
   ownedRealEstate,
   ownedVehicles,
@@ -1050,13 +1068,14 @@ function StorePanel({
 
   return (
     <View style={styles.storeScreen}>
-      <Text style={styles.storeTitle}>Store</Text>
-      <View style={styles.storeCategories}>
+      <Text style={[styles.storeTitle, isTablet && styles.storeTitleTablet]}>Store</Text>
+      <View style={[styles.storeCategories, isTablet && styles.storeCategoriesTablet]}>
         <Pressable
           disabled={category === "realEstate"}
           onPress={() => setCategory("realEstate")}
           style={({ pressed }) => [
             styles.storeCategoryButton,
+            isTablet && styles.storeCategoryButtonTablet,
             category === "realEstate" && styles.storeCategoryButtonSelected,
             pressed && styles.pressed,
           ]}
@@ -1064,6 +1083,7 @@ function StorePanel({
           <Text
             style={[
               styles.storeCategoryText,
+              isTablet && styles.storeCategoryTextTablet,
               category === "realEstate" && styles.storeCategoryTextSelected,
             ]}
           >
@@ -1075,12 +1095,17 @@ function StorePanel({
           onPress={() => setCategory("cars")}
           style={({ pressed }) => [
             styles.storeCategoryButton,
+            isTablet && styles.storeCategoryButtonTablet,
             category === "cars" && styles.storeCategoryButtonSelected,
             pressed && styles.pressed,
           ]}
         >
           <Text
-            style={[styles.storeCategoryText, category === "cars" && styles.storeCategoryTextSelected]}
+            style={[
+              styles.storeCategoryText,
+              isTablet && styles.storeCategoryTextTablet,
+              category === "cars" && styles.storeCategoryTextSelected,
+            ]}
           >
             Cars
           </Text>
@@ -1090,12 +1115,17 @@ function StorePanel({
           onPress={() => setCategory("items")}
           style={({ pressed }) => [
             styles.storeCategoryButton,
+            isTablet && styles.storeCategoryButtonTablet,
             category === "items" && styles.storeCategoryButtonSelected,
             pressed && styles.pressed,
           ]}
         >
           <Text
-            style={[styles.storeCategoryText, category === "items" && styles.storeCategoryTextSelected]}
+            style={[
+              styles.storeCategoryText,
+              isTablet && styles.storeCategoryTextTablet,
+              category === "items" && styles.storeCategoryTextSelected,
+            ]}
           >
             Items
           </Text>
@@ -1113,15 +1143,17 @@ function StorePanel({
             const affordable = credit >= property.price;
 
             return (
-              <View key={property.name} style={styles.storeListing}>
+              <View key={property.name} style={[styles.storeListing, isTablet && styles.storeListingTablet]}>
                 <View style={styles.storeListingInfo}>
-                  <PropertyThumbnail name={property.name} />
+                  <PropertyThumbnail isTablet={isTablet} name={property.name} />
                   <View style={styles.storeListingLabel}>
-                    <Text style={styles.storeListingTier}>{String(index + 1).padStart(2, "0")}</Text>
-                    <Text numberOfLines={1} style={styles.storeListingName}>
+                    <Text style={[styles.storeListingTier, isTablet && styles.storeListingTierTablet]}>
+                      {String(index + 1).padStart(2, "0")}
+                    </Text>
+                    <Text numberOfLines={1} style={[styles.storeListingName, isTablet && styles.storeListingNameTablet]}>
                       {property.name}
                     </Text>
-                    <Text numberOfLines={1} style={styles.storeListingBonus}>
+                    <Text numberOfLines={1} style={[styles.storeListingBonus, isTablet && styles.storeListingBonusTablet]}>
                       +${property.rentPerHour.toLocaleString("en-US")}/hr rent
                     </Text>
                   </View>
@@ -1131,6 +1163,7 @@ function StorePanel({
                   onPress={() => onBuyRealEstate(property)}
                   style={({ pressed }) => [
                     styles.storeBuyButton,
+                    isTablet && styles.storeBuyButtonTablet,
                     owned && styles.storeBuyButtonOwned,
                     !owned && !affordable && styles.storeBuyButtonDisabled,
                     pressed && styles.pressed,
@@ -1139,7 +1172,9 @@ function StorePanel({
                   {owned ? (
                     <OwnedRentLabel rentPerHour={property.rentPerHour} showCheck={showOwnedChecks} />
                   ) : (
-                    <Text style={styles.storeListingPrice}>${property.price.toLocaleString("en-US")}</Text>
+                    <Text style={[styles.storeListingPrice, isTablet && styles.storeListingPriceTablet]}>
+                      ${property.price.toLocaleString("en-US")}
+                    </Text>
                   )}
                 </Pressable>
               </View>
@@ -1157,15 +1192,17 @@ function StorePanel({
             const affordable = credit >= vehicle.price;
 
             return (
-              <View key={vehicle.name} style={styles.storeListing}>
+              <View key={vehicle.name} style={[styles.storeListing, isTablet && styles.storeListingTablet]}>
                 <View style={styles.storeListingInfo}>
-                  <VehicleThumbnail name={vehicle.name} />
+                  <VehicleThumbnail isTablet={isTablet} name={vehicle.name} />
                   <View style={styles.storeListingLabel}>
-                    <Text style={styles.storeListingTier}>{String(index + 1).padStart(2, "0")}</Text>
-                    <Text numberOfLines={1} style={styles.storeListingName}>
+                    <Text style={[styles.storeListingTier, isTablet && styles.storeListingTierTablet]}>
+                      {String(index + 1).padStart(2, "0")}
+                    </Text>
+                    <Text numberOfLines={1} style={[styles.storeListingName, isTablet && styles.storeListingNameTablet]}>
                       {vehicle.name}
                     </Text>
-                    <Text numberOfLines={1} style={styles.storeListingBonus}>
+                    <Text numberOfLines={1} style={[styles.storeListingBonus, isTablet && styles.storeListingBonusTablet]}>
                       {bonusLabel(vehicle.bonus)}
                     </Text>
                   </View>
@@ -1175,12 +1212,13 @@ function StorePanel({
                   onPress={() => onBuyVehicle(vehicle)}
                   style={({ pressed }) => [
                     styles.storeBuyButton,
+                    isTablet && styles.storeBuyButtonTablet,
                     owned && styles.storeBuyButtonOwned,
                     !owned && !affordable && styles.storeBuyButtonDisabled,
                     pressed && styles.pressed,
                   ]}
                 >
-                  <Text style={[styles.storeListingPrice, owned && styles.storeOwnedCheck]}>
+                  <Text style={[styles.storeListingPrice, isTablet && styles.storeListingPriceTablet, owned && styles.storeOwnedCheck]}>
                     {owned ? "✓" : `$${vehicle.price.toLocaleString("en-US")}`}
                   </Text>
                 </Pressable>
@@ -1199,15 +1237,17 @@ function StorePanel({
             const affordable = credit >= item.price;
 
             return (
-              <View key={item.name} style={styles.storeListing}>
+              <View key={item.name} style={[styles.storeListing, isTablet && styles.storeListingTablet]}>
                 <View style={styles.storeListingInfo}>
-                  <ItemThumbnail name={item.name} />
+                  <ItemThumbnail isTablet={isTablet} name={item.name} />
                   <View style={styles.storeListingLabel}>
-                    <Text style={styles.storeListingTier}>{String(index + 1).padStart(2, "0")}</Text>
-                    <Text numberOfLines={1} style={styles.storeListingName}>
+                    <Text style={[styles.storeListingTier, isTablet && styles.storeListingTierTablet]}>
+                      {String(index + 1).padStart(2, "0")}
+                    </Text>
+                    <Text numberOfLines={1} style={[styles.storeListingName, isTablet && styles.storeListingNameTablet]}>
                       {item.name}
                     </Text>
-                    <Text numberOfLines={1} style={styles.storeListingBonus}>
+                    <Text numberOfLines={1} style={[styles.storeListingBonus, isTablet && styles.storeListingBonusTablet]}>
                       {bonusLabel(item.bonus)}
                     </Text>
                   </View>
@@ -1217,12 +1257,13 @@ function StorePanel({
                   onPress={() => onBuyItem(item)}
                   style={({ pressed }) => [
                     styles.storeBuyButton,
+                    isTablet && styles.storeBuyButtonTablet,
                     owned && styles.storeBuyButtonOwned,
                     !owned && !affordable && styles.storeBuyButtonDisabled,
                     pressed && styles.pressed,
                   ]}
                 >
-                  <Text style={[styles.storeListingPrice, owned && styles.storeOwnedCheck]}>
+                  <Text style={[styles.storeListingPrice, isTablet && styles.storeListingPriceTablet, owned && styles.storeOwnedCheck]}>
                     {owned ? "✓" : `$${item.price.toLocaleString("en-US")}`}
                   </Text>
                 </Pressable>
@@ -1260,6 +1301,7 @@ function StorePanel({
 
 function MoneyMachinePanel({
   stored,
+  isTablet,
   capacity,
   tapEarn,
   passiveEarn,
@@ -1285,83 +1327,92 @@ function MoneyMachinePanel({
         onPress={onTapEarn}
         style={({ pressed }) => [
           styles.moneyMachineTapZone,
+          isTablet && styles.moneyMachineTapZoneTablet,
           machineFull && styles.moneyMachineTapZoneFull,
           pressed && styles.moneyMachineTapZonePressed,
+          pressed && isTablet && styles.moneyMachineTapZonePressedTablet,
         ]}
       >
-        <Text style={styles.moneyMachineTapText}>{machineFull ? "FULL" : "Tap here to make money"}</Text>
-        {!machineFull && <Text style={styles.moneyMachineTapValue}>+${tapEarn}</Text>}
+        <Text style={[styles.moneyMachineTapText, isTablet && styles.moneyMachineTapTextTablet]}>
+          {machineFull ? "FULL" : "Tap here to make money"}
+        </Text>
+        {!machineFull && <Text style={[styles.moneyMachineTapValue, isTablet && styles.moneyMachineTapValueTablet]}>+${tapEarn}</Text>}
       </Pressable>
-      <View style={styles.moneyMachineUpgrades}>
+      <View style={[styles.moneyMachineUpgrades, isTablet && styles.moneyMachineUpgradesTablet]}>
         <Pressable
           disabled={tapAtMax || credit < tapUpgradeCost}
           onPress={onUpgradeTap}
           style={({ pressed }) => [
             styles.moneyMachineUpgrade,
+            isTablet && styles.moneyMachineUpgradeTablet,
             (tapAtMax || credit < tapUpgradeCost) && styles.moneyMachineUpgradeDisabled,
             pressed && styles.pressed,
           ]}
         >
-          <Text style={styles.moneyMachineUpgradeTitle}>Tap Power</Text>
-          <Text style={styles.moneyMachineUpgradeEffect}>
+          <Text style={[styles.moneyMachineUpgradeTitle, isTablet && styles.moneyMachineUpgradeTitleTablet]}>Tap Power</Text>
+          <Text style={[styles.moneyMachineUpgradeEffect, isTablet && styles.moneyMachineUpgradeEffectTablet]}>
             {tapAtMax
               ? `+$${tapEarn} per tap`
               : `+$${tapEarn}  >  +$${tapEarn + moneyMachineTapEarnStep}`}
           </Text>
-          <Text style={styles.moneyMachineUpgradeCost}>{tapAtMax ? "MAX LEVEL" : `Upgrade  $${tapUpgradeCost}`}</Text>
+          <Text style={[styles.moneyMachineUpgradeCost, isTablet && styles.moneyMachineUpgradeCostTablet]}>
+            {tapAtMax ? "MAX LEVEL" : `Upgrade  $${tapUpgradeCost}`}
+          </Text>
         </Pressable>
         <Pressable
           disabled={capacityAtMax || credit < capacityUpgradeCost}
           onPress={onUpgradeCapacity}
           style={({ pressed }) => [
             styles.moneyMachineUpgrade,
+            isTablet && styles.moneyMachineUpgradeTablet,
             (capacityAtMax || credit < capacityUpgradeCost) && styles.moneyMachineUpgradeDisabled,
             pressed && styles.pressed,
           ]}
         >
-          <Text style={styles.moneyMachineUpgradeTitle}>Storage</Text>
-          <Text style={styles.moneyMachineUpgradeEffect}>
+          <Text style={[styles.moneyMachineUpgradeTitle, isTablet && styles.moneyMachineUpgradeTitleTablet]}>Storage</Text>
+          <Text style={[styles.moneyMachineUpgradeEffect, isTablet && styles.moneyMachineUpgradeEffectTablet]}>
             {capacityAtMax ? `$${capacity} capacity` : `$${capacity}  >  $${capacity + moneyMachineCapacityStep}`}
           </Text>
-          <Text style={styles.moneyMachineUpgradeCost}>
+          <Text style={[styles.moneyMachineUpgradeCost, isTablet && styles.moneyMachineUpgradeCostTablet]}>
             {capacityAtMax ? "MAX LEVEL" : `Upgrade  $${capacityUpgradeCost}`}
           </Text>
         </Pressable>
       </View>
-      <View style={styles.moneyMachineStation}>
-        <Text style={styles.moneyMachineStationTitle}>Money Machine</Text>
-        <View style={styles.moneyMachineBox}>
-          <View style={styles.moneyMachineTopLight} />
-          <View style={styles.moneyMachineWindow}>
+      <View style={[styles.moneyMachineStation, isTablet && styles.moneyMachineStationTablet]}>
+        <Text style={[styles.moneyMachineStationTitle, isTablet && styles.moneyMachineStationTitleTablet]}>Money Machine</Text>
+        <View style={[styles.moneyMachineBox, isTablet && styles.moneyMachineBoxTablet]}>
+          <View style={[styles.moneyMachineTopLight, isTablet && styles.moneyMachineTopLightTablet]} />
+          <View style={[styles.moneyMachineWindow, isTablet && styles.moneyMachineWindowTablet]}>
             <View style={styles.moneyMachineAmountRow}>
-              <Text style={styles.moneyMachineAmount}>${stored}</Text>
-              <Text style={styles.moneyMachinePassiveRate}>+${passiveEarn}/min</Text>
+              <Text style={[styles.moneyMachineAmount, isTablet && styles.moneyMachineAmountTablet]}>${stored}</Text>
+              <Text style={[styles.moneyMachinePassiveRate, isTablet && styles.moneyMachinePassiveRateTablet]}>+${passiveEarn}/min</Text>
             </View>
           </View>
-          <View style={styles.moneyMachineProgressTrack}>
+          <View style={[styles.moneyMachineProgressTrack, isTablet && styles.moneyMachineProgressTrackTablet]}>
             <View style={[styles.moneyMachineProgressFill, { width: `${progress * 100}%` }]} />
           </View>
-          <Text style={styles.moneyMachineCapacity}>MAX ${capacity}</Text>
+          <Text style={[styles.moneyMachineCapacity, isTablet && styles.moneyMachineCapacityTablet]}>MAX ${capacity}</Text>
         </View>
         <Pressable
           disabled={stored <= 0}
           onPress={onCollect}
           style={({ pressed }) => [
             styles.moneyMachineCollect,
+            isTablet && styles.moneyMachineCollectTablet,
             stored <= 0 && styles.disabled,
             pressed && styles.pressed,
           ]}
         >
-          <Text style={styles.moneyMachineCollectText}>Collect</Text>
+          <Text style={[styles.moneyMachineCollectText, isTablet && styles.moneyMachineCollectTextTablet]}>Collect</Text>
         </Pressable>
       </View>
     </View>
   );
 }
 
-function BottomTabs({ activeTab, onSelect }) {
+function BottomTabs({ activeTab, isTablet, onSelect }) {
   return (
-    <View style={styles.bottomTabs}>
+    <View style={[styles.bottomTabs, isTablet && styles.bottomTabsTablet]}>
       {mainTabs.map((tab) => {
         const selected = tab === activeTab;
         const icon = tab === "store" ? TAB_STORE_ICON : tab === "blackjack" ? TAB_BLACKJACK_ICON : TAB_MONEY_ICON;
@@ -1373,6 +1424,7 @@ function BottomTabs({ activeTab, onSelect }) {
             onPress={() => onSelect(tab)}
             style={({ pressed }) => [
               styles.bottomTabButton,
+              isTablet && styles.bottomTabButtonTablet,
               selected && styles.bottomTabButtonSelected,
               pressed && styles.pressed,
             ]}
@@ -1381,7 +1433,11 @@ function BottomTabs({ activeTab, onSelect }) {
               fadeDuration={0}
               resizeMode="contain"
               source={icon}
-              style={[styles.bottomTabIcon, selected && styles.bottomTabIconSelected]}
+              style={[
+                styles.bottomTabIcon,
+                isTablet && styles.bottomTabIconTablet,
+                selected && styles.bottomTabIconSelected,
+              ]}
             />
           </Pressable>
         );
@@ -1556,7 +1612,7 @@ function CreditDelta({ amount, onDone }) {
   );
 }
 
-function Card({ card, hidden, index, compact, fast }) {
+function Card({ card, hidden, index, compact, fast, isTablet }) {
   const animated = useRef(new Animated.Value(0)).current;
   const rotation = `${index - 1}deg`;
   const cardSource = hidden ? CARD_BACK : CARD_IMAGES[`${card.rank}${card.suit}`];
@@ -1591,25 +1647,32 @@ function Card({ card, hidden, index, compact, fast }) {
       fadeDuration={0}
       resizeMode="stretch"
       source={cardSource}
-      style={[styles.card, compact && styles.compactCard, animatedStyle]}
+      style={[
+        styles.card,
+        isTablet && styles.cardTablet,
+        compact && styles.compactCard,
+        compact && isTablet && styles.compactCardTablet,
+        animatedStyle,
+      ]}
     />
   );
 }
 
-function Hand({ cards, score, hideDealer, onDeckPress, onDeckTouchStart, showDeck, showScore, stacked, compactStack }) {
-  const slotOffset = compactStack ? 38 : 54;
+function Hand({ cards, score, hideDealer, isTablet, onDeckPress, onDeckTouchStart, showDeck, showScore, stacked, compactStack }) {
+  const slotOffset = compactStack ? (isTablet ? 46 : 38) : isTablet ? 64 : 54;
+  const cardBaseWidth = compactStack ? (isTablet ? 94 : 82) : isTablet ? 108 : 94;
   const stackWidth = compactStack
-    ? Math.max(202, 82 + Math.max(cards.length - 1, 0) * slotOffset)
-    : Math.max(178, 94 + Math.max(cards.length - 1, 0) * slotOffset);
+    ? Math.max(isTablet ? 236 : 202, cardBaseWidth + Math.max(cards.length - 1, 0) * slotOffset)
+    : Math.max(isTablet ? 210 : 178, cardBaseWidth + Math.max(cards.length - 1, 0) * slotOffset);
 
   return (
-    <View style={styles.hand}>
+    <View style={[styles.hand, isTablet && styles.handTablet]}>
       <View style={styles.handHeader}>
-        {showScore && <Text style={styles.score}>{hideDealer ? "?" : score}</Text>}
+        {showScore && <Text style={[styles.score, isTablet && styles.scoreTablet]}>{hideDealer ? "?" : score}</Text>}
       </View>
-      <View style={styles.dealerRow}>
-        {showDeck && <DeckShoe onPress={onDeckPress} onTouchStart={onDeckTouchStart} />}
-        <View style={stacked ? [styles.stackedCards, { width: stackWidth }] : styles.cards}>
+      <View style={[styles.dealerRow, isTablet && styles.dealerRowTablet]}>
+        {showDeck && <DeckShoe isTablet={isTablet} onPress={onDeckPress} onTouchStart={onDeckTouchStart} />}
+        <View style={stacked ? [styles.stackedCards, isTablet && styles.stackedCardsTablet, { width: stackWidth }] : styles.cards}>
           {cards.map((card, index) => (
             <View
               key={`${card.rank}-${card.suit}-${index}`}
@@ -1621,6 +1684,7 @@ function Hand({ cards, score, hideDealer, onDeckPress, onDeckTouchStart, showDec
                 index={index}
                 compact={compactStack}
                 fast={!compactStack && index > 1}
+                isTablet={isTablet}
               />
             </View>
           ))}
@@ -1634,6 +1698,7 @@ export default function App() {
   const windowSize = useWindowDimensions();
   const layoutWidth = getLayoutWidth(windowSize.width);
   const tabPanelWidth = layoutWidth;
+  const isTabletLayout = Math.min(windowSize.width, windowSize.height) >= 650;
   const safeFrameInsets = getSafeFrameInsets(windowSize.width, windowSize.height);
   const [deck, setDeck] = useState(() => shuffle(createDeck()));
   const [dealer, setDealer] = useState([]);
@@ -3052,13 +3117,14 @@ export default function App() {
         <View style={[styles.table, { width: layoutWidth }]}>
           <View
             pointerEvents={showBlackjackTable ? "auto" : "none"}
-            style={[styles.blackjackHandClip, { width: tabPanelWidth }]}
+            style={[styles.blackjackHandClip, isTabletLayout && styles.blackjackHandClipTablet, { width: tabPanelWidth }]}
           >
             <Animated.View style={{ transform: [{ translateX: blackjackOverlayTranslateX }] }}>
               <Hand
                 cards={dealer}
                 score={shownDealerScore}
                 hideDealer={inRound && !revealDealer}
+                isTablet={isTabletLayout}
                 onDeckPress={
                   !inRound && !dealing && !betweenRounds && resultDelta === null && !outOfCredit
                     ? handleDeveloperDeckPress
@@ -3076,8 +3142,8 @@ export default function App() {
           <View style={styles.centerControls}>
             {showBottomTabs ? (
               <>
-                <View style={[styles.tabArea, { width: tabPanelWidth }]}>
-                  <View style={[styles.tabViewport, { width: tabPanelWidth }]}>
+                <View style={[styles.tabArea, isTabletLayout && styles.tabAreaTablet, { width: tabPanelWidth }]}>
+                  <View style={[styles.tabViewport, isTabletLayout && styles.tabViewportTablet, { width: tabPanelWidth }]}>
                     <Animated.View
                       style={[
                         styles.tabTrack,
@@ -3094,16 +3160,18 @@ export default function App() {
                   </View>
                   <View
                     pointerEvents={activeTab === "store" ? "auto" : "none"}
-                    style={[styles.storeOverlayClip, { width: tabPanelWidth }]}
+                    style={[styles.storeOverlayClip, isTabletLayout && styles.storeOverlayClipTablet, { width: tabPanelWidth }]}
                   >
                     <Animated.View
                       style={[
                         styles.storeOverlay,
+                        isTabletLayout && styles.storeOverlayTablet,
                         { transform: [{ translateX: storeOverlayTranslateX }] },
                       ]}
                     >
                       <StorePanel
                         credit={chips}
+                        isTablet={isTabletLayout}
                         ownedItems={ownedItems}
                         ownedRealEstate={ownedRealEstate}
                         ownedVehicles={ownedVehicles}
@@ -3121,16 +3189,17 @@ export default function App() {
                   </View>
                   <View
                     pointerEvents={activeTab === "blackjack" ? "box-none" : "none"}
-                    style={[styles.blackjackOverlayClip, { width: tabPanelWidth }]}
+                    style={[styles.blackjackOverlayClip, isTabletLayout && styles.blackjackOverlayClipTablet, { width: tabPanelWidth }]}
                   >
                     <Animated.View
                       style={[
                         styles.blackjackBetOverlay,
+                        isTabletLayout && styles.blackjackBetOverlayTablet,
                         { transform: [{ translateX: blackjackOverlayTranslateX }] },
                       ]}
                     >
                         <Text style={styles.message}>{message}</Text>
-                        <BetStack chips={betChips} />
+                        <BetStack chips={betChips} isTablet={isTabletLayout} />
 
                         {outOfCredit ? (
                           <View style={styles.creditPanel}>
@@ -3143,7 +3212,7 @@ export default function App() {
                           <RoundLoader />
                         ) : (
                           <>
-                            <View style={styles.betRow}>
+                            <View style={[styles.betRow, isTabletLayout && styles.betRowTablet]}>
                               {betOptions.map((amount, index) => (
                                 <Pressable
                                   key={amount}
@@ -3155,11 +3224,11 @@ export default function App() {
                                     pressed && styles.pressed,
                                   ]}
                                 >
-                                  <Chip amount={amount} />
+                                  <Chip amount={amount} isTablet={isTabletLayout} />
                                 </Pressable>
                               ))}
                             </View>
-                            <View style={styles.betActions}>
+                            <View style={[styles.betActions, isTabletLayout && styles.betActionsTablet]}>
                               <Pressable
                                 disabled={bet <= 0}
                                 onPress={clearBet}
@@ -3194,16 +3263,18 @@ export default function App() {
                   </View>
                   <View
                     pointerEvents={activeTab === "money" ? "auto" : "none"}
-                    style={[styles.moneyOverlayClip, { width: tabPanelWidth }]}
+                    style={[styles.moneyOverlayClip, isTabletLayout && styles.moneyOverlayClipTablet, { width: tabPanelWidth }]}
                   >
                     <Animated.View
                       style={[
                         styles.moneyOverlay,
+                        isTabletLayout && styles.moneyOverlayTablet,
                         { transform: [{ translateX: moneyOverlayTranslateX }] },
                       ]}
                     >
                       <MoneyMachinePanel
                         stored={moneyMachineStored}
+                        isTablet={isTabletLayout}
                         capacity={activeMoneyMachineCapacity}
                         tapEarn={activeMoneyMachineTapEarn}
                         passiveEarn={activeMachinePassiveEarn}
@@ -3218,11 +3289,11 @@ export default function App() {
                     </Animated.View>
                   </View>
                 </View>
-                <BottomTabs activeTab={activeTab} onSelect={selectTab} />
+                <BottomTabs activeTab={activeTab} isTablet={isTabletLayout} onSelect={selectTab} />
               </>
             ) : resultDelta !== null ? (
               <>
-                <BetStack chips={betChips} />
+                <BetStack chips={betChips} isTablet={isTabletLayout} />
                 <ResultSplash delta={resultDelta} />
               </>
             ) : outOfCredit ? (
@@ -3236,12 +3307,12 @@ export default function App() {
               <RoundLoader />
             ) : dealing ? (
               <>
-                <BetStack chips={betChips} />
+                <BetStack chips={betChips} isTablet={isTabletLayout} />
                 <View style={styles.dealingSpace} />
               </>
             ) : (
               <>
-                <BetStack chips={betChips} />
+                <BetStack chips={betChips} isTablet={isTabletLayout} />
                 <View style={styles.actionRow}>
                   <Pressable
                     disabled={resolvingDealer || dealing}
@@ -3273,7 +3344,7 @@ export default function App() {
           </View>
 
           {!showBottomTabs && showBlackjackTable ? (
-            <Hand cards={player} score={shownPlayerScore} showScore={inRound} stacked />
+            <Hand cards={player} isTablet={isTabletLayout} score={shownPlayerScore} showScore={inRound} stacked />
           ) : null}
           {blackjackCelebration && <BlackjackCelebration />}
         </View>
@@ -4205,6 +4276,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     minHeight: 198,
   },
+  handTablet: {
+    minHeight: 222,
+  },
   handHeader: {
     alignItems: "center",
     justifyContent: "center",
@@ -4223,6 +4297,12 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     textAlign: "center",
   },
+  scoreTablet: {
+    fontSize: 18,
+    minWidth: 48,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
   dealerRow: {
     alignItems: "center",
     flexDirection: "row",
@@ -4230,10 +4310,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     minHeight: 112,
   },
+  dealerRowTablet: {
+    gap: 14,
+    minHeight: 136,
+  },
   deckShoe: {
     height: 113,
     position: "relative",
     width: 72,
+  },
+  deckShoeTablet: {
+    height: 135,
+    width: 86,
   },
   deckShoePressed: {
     opacity: 0.92,
@@ -4253,6 +4341,10 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     width: 72,
     elevation: 6,
+  },
+  deckCardTablet: {
+    height: 135,
+    width: 86,
   },
   deckCardImage: {
     borderRadius: 8,
@@ -4279,6 +4371,9 @@ const styles = StyleSheet.create({
     height: 147,
     position: "relative",
   },
+  stackedCardsTablet: {
+    height: 172,
+  },
   stackedCardSlot: {
     position: "absolute",
     top: 0,
@@ -4297,9 +4392,17 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 6,
   },
+  cardTablet: {
+    height: 172,
+    width: 108,
+  },
   compactCard: {
     width: 82,
     height: 128,
+  },
+  compactCardTablet: {
+    height: 147,
+    width: 94,
   },
   cardBack: {
     borderColor: "#fff8ec",
@@ -4394,6 +4497,9 @@ const styles = StyleSheet.create({
     minHeight: 198,
     overflow: "hidden",
   },
+  blackjackHandClipTablet: {
+    minHeight: 224,
+  },
   centerControls: {
     alignItems: "center",
     justifyContent: "center",
@@ -4403,10 +4509,16 @@ const styles = StyleSheet.create({
     height: 286,
     position: "relative",
   },
+  tabAreaTablet: {
+    height: 326,
+  },
   tabViewport: {
     alignSelf: "center",
     height: 286,
     overflow: "hidden",
+  },
+  tabViewportTablet: {
+    height: 326,
   },
   tabTrack: {
     flexDirection: "row",
@@ -4424,6 +4536,10 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: -92,
   },
+  blackjackOverlayClipTablet: {
+    height: 426,
+    top: -100,
+  },
   blackjackBetOverlay: {
     alignItems: "center",
     justifyContent: "center",
@@ -4432,12 +4548,19 @@ const styles = StyleSheet.create({
     right: 0,
     top: 34,
   },
+  blackjackBetOverlayTablet: {
+    top: 24,
+  },
   storeOverlayClip: {
     height: 532,
     left: 0,
     overflow: "hidden",
     position: "absolute",
     top: -246,
+  },
+  storeOverlayClipTablet: {
+    height: 610,
+    top: -278,
   },
   storeOverlay: {
     height: 509,
@@ -4446,6 +4569,9 @@ const styles = StyleSheet.create({
     right: 0,
     top: 3,
   },
+  storeOverlayTablet: {
+    height: 584,
+  },
   moneyOverlayClip: {
     height: 507,
     left: 0,
@@ -4453,12 +4579,19 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: -221,
   },
+  moneyOverlayClipTablet: {
+    height: 582,
+    top: -252,
+  },
   moneyOverlay: {
     height: 484,
     left: 0,
     position: "absolute",
     right: 0,
     top: 23,
+  },
+  moneyOverlayTablet: {
+    height: 548,
   },
   storeScreen: {
     alignItems: "center",
@@ -4473,6 +4606,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     textAlign: "center",
   },
+  storeTitleTablet: {
+    fontSize: 28,
+    marginBottom: 10,
+  },
   storeCategories: {
     backgroundColor: "rgba(0,0,0,0.24)",
     borderColor: "rgba(255,255,255,0.18)",
@@ -4484,6 +4621,10 @@ const styles = StyleSheet.create({
     padding: 4,
     width: "92%",
   },
+  storeCategoriesTablet: {
+    marginBottom: 10,
+    padding: 5,
+  },
   storeCategoryButton: {
     alignItems: "center",
     borderRadius: 6,
@@ -4491,6 +4632,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     minHeight: 38,
     paddingHorizontal: 8,
+  },
+  storeCategoryButtonTablet: {
+    minHeight: 44,
   },
   storeCategoryButtonSelected: {
     backgroundColor: "#fff07a",
@@ -4500,6 +4644,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "900",
     textAlign: "center",
+  },
+  storeCategoryTextTablet: {
+    fontSize: 14,
   },
   storeCategoryTextSelected: {
     color: "#17201d",
@@ -4525,6 +4672,10 @@ const styles = StyleSheet.create({
     minHeight: 64,
     paddingHorizontal: 4,
   },
+  storeListingTablet: {
+    minHeight: 78,
+    paddingHorizontal: 6,
+  },
   storeListingInfo: {
     alignItems: "center",
     flexDirection: "row",
@@ -4540,11 +4691,17 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: "900",
   },
+  storeListingTierTablet: {
+    fontSize: 10,
+  },
   storeListingName: {
     color: "#ffffff",
     flexShrink: 1,
     fontSize: 14,
     fontWeight: "900",
+  },
+  storeListingNameTablet: {
+    fontSize: 16,
   },
   storeListingBonus: {
     color: "rgba(255,255,255,0.58)",
@@ -4553,10 +4710,17 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     marginTop: 1,
   },
+  storeListingBonusTablet: {
+    fontSize: 10,
+    marginTop: 2,
+  },
   storeListingPrice: {
     color: "#fff07a",
     fontSize: 12,
     fontWeight: "900",
+  },
+  storeListingPriceTablet: {
+    fontSize: 14,
   },
   storeBuyButton: {
     alignItems: "center",
@@ -4569,6 +4733,11 @@ const styles = StyleSheet.create({
     minHeight: 34,
     minWidth: 88,
     paddingHorizontal: 7,
+  },
+  storeBuyButtonTablet: {
+    minHeight: 40,
+    minWidth: 104,
+    paddingHorizontal: 9,
   },
   storeBuyButtonOwned: {
     backgroundColor: "rgba(44,226,135,0.2)",
@@ -4608,6 +4777,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     overflow: "hidden",
     width: 44,
+  },
+  storeThumbnailTablet: {
+    height: 54,
+    width: 54,
   },
   vehicleThumbnail: {
     alignItems: "center",
@@ -4745,11 +4918,19 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     width: "88%",
   },
+  moneyMachineStationTablet: {
+    minHeight: 196,
+    paddingHorizontal: 18,
+    width: "90%",
+  },
   moneyMachineStationTitle: {
     color: "#fff07a",
     fontSize: 19,
     fontWeight: "900",
     textAlign: "center",
+  },
+  moneyMachineStationTitleTablet: {
+    fontSize: 22,
   },
   moneyMachineBox: {
     alignItems: "center",
@@ -4763,6 +4944,10 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     width: 220,
   },
+  moneyMachineBoxTablet: {
+    minHeight: 98,
+    width: 260,
+  },
   moneyMachineTapZone: {
     alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.13)",
@@ -4774,12 +4959,19 @@ const styles = StyleSheet.create({
     transform: [{ translateY: -23 }],
     width: "92%",
   },
+  moneyMachineTapZoneTablet: {
+    height: 244,
+    width: "94%",
+  },
   moneyMachineTapZoneFull: {
     opacity: 0.55,
   },
   moneyMachineTapZonePressed: {
     backgroundColor: "rgba(255,240,122,0.28)",
     transform: [{ translateY: -23 }, { scale: 0.985 }],
+  },
+  moneyMachineTapZonePressedTablet: {
+    transform: [{ translateY: -23 }, { scale: 0.99 }],
   },
   moneyMachineTapText: {
     color: "#ffffff",
@@ -4788,11 +4980,18 @@ const styles = StyleSheet.create({
     maxWidth: 260,
     textAlign: "center",
   },
+  moneyMachineTapTextTablet: {
+    fontSize: 26,
+    maxWidth: 340,
+  },
   moneyMachineTapValue: {
     color: "#fff07a",
     fontSize: 18,
     fontWeight: "900",
     marginTop: 10,
+  },
+  moneyMachineTapValueTablet: {
+    fontSize: 21,
   },
   moneyMachineUpgrades: {
     flexDirection: "row",
@@ -4801,6 +5000,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     transform: [{ translateY: -12 }],
     width: "92%",
+  },
+  moneyMachineUpgradesTablet: {
+    height: 78,
+    width: "94%",
   },
   moneyMachineUpgrade: {
     alignItems: "center",
@@ -4812,6 +5015,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 4,
   },
+  moneyMachineUpgradeTablet: {
+    paddingHorizontal: 8,
+  },
   moneyMachineUpgradeDisabled: {
     opacity: 0.48,
   },
@@ -4821,12 +5027,18 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     textAlign: "center",
   },
+  moneyMachineUpgradeTitleTablet: {
+    fontSize: 15,
+  },
   moneyMachineUpgradeEffect: {
     color: "#d6ffe7",
     fontSize: 10,
     fontWeight: "800",
     marginTop: 2,
     textAlign: "center",
+  },
+  moneyMachineUpgradeEffectTablet: {
+    fontSize: 11,
   },
   moneyMachineUpgradeCost: {
     color: "#fff07a",
@@ -4835,11 +5047,18 @@ const styles = StyleSheet.create({
     marginTop: 2,
     textAlign: "center",
   },
+  moneyMachineUpgradeCostTablet: {
+    fontSize: 11,
+  },
   moneyMachineTopLight: {
     backgroundColor: "#18c96f",
     borderRadius: 6,
     height: 9,
     width: 38,
+  },
+  moneyMachineTopLightTablet: {
+    height: 10,
+    width: 46,
   },
   moneyMachineWindow: {
     alignItems: "center",
@@ -4851,10 +5070,16 @@ const styles = StyleSheet.create({
     minHeight: 34,
     width: "100%",
   },
+  moneyMachineWindowTablet: {
+    minHeight: 40,
+  },
   moneyMachineAmount: {
     color: "#2ce287",
     fontSize: 22,
     fontWeight: "900",
+  },
+  moneyMachineAmountTablet: {
+    fontSize: 25,
   },
   moneyMachineAmountRow: {
     alignItems: "center",
@@ -4869,12 +5094,19 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 8,
   },
+  moneyMachinePassiveRateTablet: {
+    fontSize: 10,
+    right: 10,
+  },
   moneyMachineProgressTrack: {
     backgroundColor: "rgba(255,255,255,0.16)",
     borderRadius: 6,
     height: 10,
     overflow: "hidden",
     width: "100%",
+  },
+  moneyMachineProgressTrackTablet: {
+    height: 11,
   },
   moneyMachineProgressFill: {
     backgroundColor: "#fff07a",
@@ -4886,6 +5118,9 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "900",
   },
+  moneyMachineCapacityTablet: {
+    fontSize: 11,
+  },
   moneyMachineCollect: {
     alignItems: "center",
     backgroundColor: "#18c96f",
@@ -4894,10 +5129,17 @@ const styles = StyleSheet.create({
     minHeight: 25,
     paddingHorizontal: 28,
   },
+  moneyMachineCollectTablet: {
+    minHeight: 30,
+    paddingHorizontal: 34,
+  },
   moneyMachineCollectText: {
     color: "#ffffff",
     fontSize: 14,
     fontWeight: "900",
+  },
+  moneyMachineCollectTextTablet: {
+    fontSize: 15,
   },
   bottomTabs: {
     alignSelf: "center",
@@ -4912,6 +5154,12 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     width: 291,
   },
+  bottomTabsTablet: {
+    gap: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    width: 339,
+  },
   bottomTabButton: {
     alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.14)",
@@ -4919,6 +5167,10 @@ const styles = StyleSheet.create({
     height: 85,
     justifyContent: "center",
     width: 85,
+  },
+  bottomTabButtonTablet: {
+    height: 99,
+    width: 99,
   },
   bottomTabButtonSelected: {
     backgroundColor: "rgba(255,240,122,0.86)",
@@ -4928,6 +5180,10 @@ const styles = StyleSheet.create({
     opacity: 0.9,
     tintColor: "#ffffff",
     width: 48,
+  },
+  bottomTabIconTablet: {
+    height: 56,
+    width: 56,
   },
   bottomTabIconSelected: {
     opacity: 1,
@@ -4948,6 +5204,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     width: 96,
   },
+  betStackTablet: {
+    height: 98,
+    width: 108,
+  },
   stackedChip: {
     position: "absolute",
   },
@@ -4955,12 +5215,20 @@ const styles = StyleSheet.create({
     height: 68,
     width: 68,
   },
+  emptyBetSpaceTablet: {
+    height: 80,
+    width: 80,
+  },
   betRow: {
     flexDirection: "row",
     gap: 4,
     justifyContent: "center",
     marginBottom: 2,
     minHeight: 92,
+  },
+  betRowTablet: {
+    gap: 8,
+    minHeight: 108,
   },
   chipButton: {
     borderRadius: 38,
@@ -4994,10 +5262,20 @@ const styles = StyleSheet.create({
     width: 70,
     elevation: 7,
   },
+  chipOuterTablet: {
+    borderRadius: 44,
+    height: 82,
+    width: 82,
+  },
   chipOuterSmall: {
     borderRadius: 34,
     height: 68,
     width: 68,
+  },
+  chipOuterSmallTablet: {
+    borderRadius: 38,
+    height: 76,
+    width: 76,
   },
   chipInner: {
     alignItems: "center",
@@ -5009,10 +5287,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     width: 50,
   },
+  chipInnerTablet: {
+    borderRadius: 30,
+    height: 58,
+    width: 58,
+  },
   chipInnerSmall: {
     borderRadius: 22,
     height: 44,
     width: 44,
+  },
+  chipInnerSmallTablet: {
+    borderRadius: 25,
+    height: 50,
+    width: 50,
   },
   chipStripeTop: {
     backgroundColor: "#ffffff",
@@ -5047,20 +5335,35 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "900",
   },
+  chipTextTablet: {
+    fontSize: 18,
+  },
   chipTextSmall: {
     fontSize: 14,
+  },
+  chipTextSmallTablet: {
+    fontSize: 15,
   },
   chipText5000: {
     fontSize: 14,
   },
+  chipText5000Tablet: {
+    fontSize: 15,
+  },
   chipText5000Small: {
     fontSize: 11,
+  },
+  chipText5000SmallTablet: {
+    fontSize: 12,
   },
   betActions: {
     alignItems: "center",
     flexDirection: "row",
     gap: 8,
     justifyContent: "center",
+  },
+  betActionsTablet: {
+    gap: 10,
   },
   dealButton: {
     alignItems: "center",
