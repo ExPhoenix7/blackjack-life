@@ -97,7 +97,7 @@ function getLayoutWidth(windowWidth) {
   const availableWidth = Math.max(320, windowWidth - 24);
 
   if (windowWidth >= 700) {
-    return Math.min(availableWidth, 600);
+    return Math.min(availableWidth, 640);
   }
 
   if (windowWidth >= 520) {
@@ -105,6 +105,24 @@ function getLayoutWidth(windowWidth) {
   }
 
   return Math.min(availableWidth, 390);
+}
+
+function getTabletUiScale(windowWidth, windowHeight) {
+  const shortSide = Math.min(windowWidth, windowHeight);
+
+  if (shortSide >= 760) {
+    return 1.16;
+  }
+
+  if (shortSide >= 650) {
+    return 1.11;
+  }
+
+  if (shortSide >= 560) {
+    return 1.06;
+  }
+
+  return 1;
 }
 
 function getSafeFrameInsets(windowWidth, windowHeight) {
@@ -1634,6 +1652,8 @@ export default function App() {
   const windowSize = useWindowDimensions();
   const layoutWidth = getLayoutWidth(windowSize.width);
   const tabPanelWidth = layoutWidth;
+  const tabletUiScale = getTabletUiScale(windowSize.width, windowSize.height);
+  const headerScale = 1 + (tabletUiScale - 1) * 0.55;
   const safeFrameInsets = getSafeFrameInsets(windowSize.width, windowSize.height);
   const [deck, setDeck] = useState(() => shuffle(createDeck()));
   const [dealer, setDealer] = useState([]);
@@ -2945,7 +2965,14 @@ export default function App() {
           </View>
         ) : (
           <>
-        <View style={[styles.header, { width: layoutWidth }]}>
+        <View
+          style={[
+            styles.header,
+            { width: layoutWidth },
+            headerScale > 1 && styles.scaledScene,
+            headerScale > 1 && { transform: [{ scale: headerScale }] },
+          ]}
+        >
           <View style={styles.headerLeftSlot}>
             <Pressable
               onPress={() => setAchievementMenuOpen(true)}
@@ -3049,7 +3076,14 @@ export default function App() {
           />
         ) : null}
 
-        <View style={[styles.table, { width: layoutWidth }]}>
+        <View
+          style={[
+            styles.table,
+            { width: layoutWidth },
+            tabletUiScale > 1 && styles.scaledScene,
+            tabletUiScale > 1 && { transform: [{ scale: tabletUiScale }] },
+          ]}
+        >
           <View
             pointerEvents={showBlackjackTable ? "auto" : "none"}
             style={[styles.blackjackHandClip, { width: tabPanelWidth }]}
@@ -3475,6 +3509,9 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 12,
     paddingVertical: 10,
+  },
+  scaledScene: {
+    alignSelf: "center",
   },
   header: {
     alignItems: "flex-start",
@@ -4739,10 +4776,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 2,
     gap: 5,
-    height: 164,
     justifyContent: "center",
+    minHeight: 174,
     paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingVertical: 7,
     width: "88%",
   },
   moneyMachineStationTitle: {
@@ -4758,7 +4795,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 2,
     gap: 5,
-    minHeight: 88,
+    minHeight: 84,
     paddingHorizontal: 16,
     paddingVertical: 6,
     width: 220,
@@ -4891,8 +4928,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#18c96f",
     borderRadius: 8,
     justifyContent: "center",
-    minHeight: 28,
-    paddingHorizontal: 32,
+    minHeight: 25,
+    paddingHorizontal: 28,
   },
   moneyMachineCollectText: {
     color: "#ffffff",
