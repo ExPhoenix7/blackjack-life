@@ -60,9 +60,5 @@
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ]
     }
-  },
-  "react-native-google-mobile-ads": {
-    "android_app_id": "ca-app-pub-9293916365182641~1844805950",
-    "ios_app_id": "ca-app-pub-9293916365182641~6099324278"
   }
 }

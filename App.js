@@ -5,7 +5,6 @@ import { setAudioModeAsync, useAudioPlayer } from "expo-audio";
 import Constants from "expo-constants";
 import {
   Animated,
-  Dimensions,
   Image,
   ImageBackground,
   Modal,
@@ -17,6 +16,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from "react-native";
 
@@ -94,7 +94,20 @@ const itemListings = [
   { name: "Pool Table", price: 8000, bonus: { capacity: 1500 } },
   { name: "Home Theater", price: 6000, bonus: { passive: 17 } },
 ];
-const tabPanelWidth = Math.min(Dimensions.get("window").width - 24, 390);
+function getLayoutWidth(windowWidth) {
+  const availableWidth = Math.max(320, windowWidth - 24);
+
+  if (windowWidth >= 700) {
+    return Math.min(availableWidth, 600);
+  }
+
+  if (windowWidth >= 520) {
+    return Math.min(availableWidth, 520);
+  }
+
+  return Math.min(availableWidth, 390);
+}
+
 const moneyMachineBaseCapacity = 1000;
 const moneyMachineCapacityStep = 1000;
 const moneyMachineBaseTapEarn = 10;
@@ -267,6 +280,7 @@ const chipColors = {
 
 const CARD_BACK = require("./assets/cards/BACK.png");
 const TABLE_FELT = require("./assets/table-felt.png");
+const APP_SPLASH = require("./assets/splash.png");
 const SOUND_ON_ICON = require("./assets/sound-on.png");
 const SOUND_OFF_ICON = require("./assets/sound-off.png");
 const TAB_BLACKJACK_ICON = require("./assets/tab-blackjack.png");
@@ -365,6 +379,7 @@ const CARD_IMAGES = {
   KC: require("./assets/cards/KC.png"),
 };
 const PRELOAD_IMAGE_ASSETS = [
+  APP_SPLASH,
   TABLE_FELT,
   SOUND_ON_ICON,
   SOUND_OFF_ICON,
@@ -1588,6 +1603,9 @@ function Hand({ cards, score, hideDealer, onDeckPress, onDeckTouchStart, showDec
 }
 
 export default function App() {
+  const windowSize = useWindowDimensions();
+  const layoutWidth = getLayoutWidth(windowSize.width);
+  const tabPanelWidth = layoutWidth;
   const [deck, setDeck] = useState(() => shuffle(createDeck()));
   const [dealer, setDealer] = useState([]);
   const [player, setPlayer] = useState([]);
@@ -1630,8 +1648,12 @@ export default function App() {
   const [blackjackCelebration, setBlackjackCelebration] = useState(false);
   const [activeTab, setActiveTab] = useState("blackjack");
   const [rewardedAdLoading, setRewardedAdLoading] = useState(false);
+  const [adStatusMessage, setAdStatusMessage] = useState("");
+  const [startupSplashVisible, setStartupSplashVisible] = useState(true);
   const resultTimer = useRef(null);
   const nextRoundTimer = useRef(null);
+  const adStatusTimer = useRef(null);
+  const startupSplashTimer = useRef(null);
   const achievementUnlocksReady = useRef(false);
   const unlockedAchievementIds = useRef(new Set());
   const developerCheatStep = useRef(0);
@@ -1997,12 +2019,28 @@ export default function App() {
   }, [accountsLoaded, activeMachinePassiveEarn, activeStoreBonuses.capacity, activeStoreBonuses.rentalPercent, ownedRealEstate]);
 
   useEffect(() => {
+    startupSplashTimer.current = setTimeout(() => {
+      setStartupSplashVisible(false);
+      startupSplashTimer.current = null;
+    }, 900);
+
+    return () => {
+      if (startupSplashTimer.current) {
+        clearTimeout(startupSplashTimer.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     return () => {
       if (nextRoundTimer.current) {
         clearTimeout(nextRoundTimer.current);
       }
       if (resultTimer.current) {
         clearTimeout(resultTimer.current);
+      }
+      if (adStatusTimer.current) {
+        clearTimeout(adStatusTimer.current);
       }
     };
   }, []);
@@ -2332,6 +2370,18 @@ export default function App() {
     setCreditDelta(rewardedAdCredit);
   }
 
+  function setTemporaryAdStatus(message) {
+    if (adStatusTimer.current) {
+      clearTimeout(adStatusTimer.current);
+    }
+
+    setAdStatusMessage(message);
+    adStatusTimer.current = setTimeout(() => {
+      setAdStatusMessage("");
+      adStatusTimer.current = null;
+    }, 2200);
+  }
+
   async function handleRewardedAdPress() {
     if (!activeAccount || creditDelta !== null || rewardedAdLoading) {
       return;
@@ -2344,6 +2394,7 @@ export default function App() {
 
     const ads = getGoogleMobileAdsModule();
     if (!ads?.RewardedAd || !ads?.RewardedAdEventType || !ads?.TestIds) {
+      setTemporaryAdStatus("Ad unavailable");
       return;
     }
 
@@ -2378,6 +2429,7 @@ export default function App() {
         rewardedAd.addAdEventListener(ads.RewardedAdEventType.LOADED, () => {
           Promise.resolve(rewardedAd.show()).catch(() => {
             cleanup();
+            setTemporaryAdStatus("Ad not ready");
             setRewardedAdLoading(false);
           });
         })
@@ -2396,12 +2448,14 @@ export default function App() {
       unsubscribers.push(
         rewardedAd.addAdEventListener(ads.AdEventType.ERROR, () => {
           cleanup();
+          setTemporaryAdStatus("Ad not ready");
           setRewardedAdLoading(false);
         })
       );
 
       rewardedAd.load();
     } catch (error) {
+      setTemporaryAdStatus("Ad unavailable");
       setRewardedAdLoading(false);
     }
   }
@@ -2823,7 +2877,7 @@ export default function App() {
         <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
         <View onTouchStart={resetDeveloperCheat} style={styles.screen}>
         {needsFirstAccountName ? (
-          <View style={styles.inlineNameOverlay}>
+          <View style={[styles.inlineNameOverlay, { width: layoutWidth }]}>
             <View onTouchStart={stopDeveloperTouchPropagation} style={styles.inlineNamePanel}>
               <TextInput
                 autoCapitalize="words"
@@ -2852,7 +2906,7 @@ export default function App() {
           </View>
         ) : (
           <>
-        <View style={styles.header}>
+        <View style={[styles.header, { width: layoutWidth }]}>
           <View style={styles.headerLeftSlot}>
             <Pressable
               onPress={() => setAchievementMenuOpen(true)}
@@ -2924,6 +2978,7 @@ export default function App() {
               <Text style={styles.rewardedAdBadge}>AD</Text>
               <Text style={styles.rewardedAdText}>{rewardedAdLoading ? "..." : "+10K"}</Text>
             </Pressable>
+            {adStatusMessage ? <Text style={styles.rewardedAdStatus}>{adStatusMessage}</Text> : null}
             {creditDelta !== null && (
               <CreditDelta
                 amount={creditDelta}
@@ -2955,7 +3010,7 @@ export default function App() {
           />
         ) : null}
 
-        <View style={styles.table}>
+        <View style={[styles.table, { width: layoutWidth }]}>
           <View
             pointerEvents={showBlackjackTable ? "auto" : "none"}
             style={[styles.blackjackHandClip, { width: tabPanelWidth }]}
@@ -3307,6 +3362,14 @@ export default function App() {
         </View>
 
       </SafeAreaView>
+      {startupSplashVisible ? (
+        <ImageBackground
+          fadeDuration={0}
+          resizeMode="cover"
+          source={APP_SPLASH}
+          style={styles.startupSplash}
+        />
+      ) : null}
     </ImageBackground>
   );
 }
@@ -3327,9 +3390,9 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     flexDirection: "row",
     gap: 8,
-    minHeight: 44,
+    minHeight: 58,
     paddingHorizontal: 8,
-    paddingVertical: 6,
+    paddingVertical: 7,
   },
   inlineNameInput: {
     backgroundColor: "rgba(255,255,255,0.12)",
@@ -3337,18 +3400,21 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     borderWidth: 1,
     color: "#ffffff",
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "900",
-    height: 34,
+    height: 44,
+    lineHeight: 20,
     paddingHorizontal: 10,
+    paddingVertical: 0,
     textAlign: "center",
+    textAlignVertical: "center",
     width: 190,
   },
   inlineNameConfirm: {
     alignItems: "center",
     backgroundColor: "#fff07a",
     borderRadius: 6,
-    height: 34,
+    height: 44,
     justifyContent: "center",
     paddingHorizontal: 14,
   },
@@ -3366,6 +3432,7 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
   },
   screen: {
+    alignItems: "center",
     flex: 1,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -4029,6 +4096,19 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "900",
   },
+  rewardedAdStatus: {
+    color: "rgba(255,255,255,0.72)",
+    fontSize: 9,
+    fontWeight: "900",
+    marginTop: 2,
+    maxWidth: 94,
+    textAlign: "right",
+  },
+  startupSplash: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "#031f09",
+    zIndex: 999,
+  },
   creditDelta: {
     fontSize: 14,
     fontWeight: "900",
@@ -4077,6 +4157,7 @@ const styles = StyleSheet.create({
     marginBottom: 7,
   },
   table: {
+    alignSelf: "center",
     flex: 1,
     justifyContent: "space-between",
     paddingBottom: 10,
