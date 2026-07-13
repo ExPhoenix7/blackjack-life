@@ -10,7 +10,6 @@ import {
   Modal,
   Platform,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -2873,8 +2872,8 @@ export default function App() {
 
   return (
     <ImageBackground fadeDuration={0} resizeMode="cover" source={TABLE_FELT} style={styles.background}>
-      <SafeAreaView style={styles.safeArea}>
-        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <View style={styles.safeArea}>
+        <StatusBar hidden barStyle="light-content" backgroundColor="transparent" translucent />
         <View onTouchStart={resetDeveloperCheat} style={styles.screen}>
         {needsFirstAccountName ? (
           <View style={[styles.inlineNameOverlay, { width: layoutWidth }]}>
@@ -3361,7 +3360,7 @@ export default function App() {
         )}
         </View>
 
-      </SafeAreaView>
+      </View>
       {startupSplashVisible ? (
         <ImageBackground
           fadeDuration={0}
