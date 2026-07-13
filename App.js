@@ -107,6 +107,22 @@ function getLayoutWidth(windowWidth) {
   return Math.min(availableWidth, 390);
 }
 
+function getSafeFrameInsets(windowWidth, windowHeight) {
+  if (Platform.OS !== "ios") {
+    return { bottom: 0, horizontal: 0, top: 0 };
+  }
+
+  const shortSide = Math.min(windowWidth, windowHeight);
+  const longSide = Math.max(windowWidth, windowHeight);
+  const hasModernSafeArea = longSide / shortSide > 1.9;
+
+  return {
+    bottom: hasModernSafeArea ? 26 : 10,
+    horizontal: 8,
+    top: hasModernSafeArea ? 38 : 20,
+  };
+}
+
 const moneyMachineBaseCapacity = 1000;
 const moneyMachineCapacityStep = 1000;
 const moneyMachineBaseTapEarn = 10;
@@ -1330,9 +1346,9 @@ function MoneyMachinePanel({
   );
 }
 
-function BottomTabs({ activeTab, onSelect }) {
+function BottomTabs({ activeTab, bottomInset = 0, onSelect }) {
   return (
-    <View style={styles.bottomTabs}>
+    <View style={[styles.bottomTabs, bottomInset > 0 && { marginBottom: bottomInset }]}>
       {mainTabs.map((tab) => {
         const selected = tab === activeTab;
         const icon = tab === "store" ? TAB_STORE_ICON : tab === "blackjack" ? TAB_BLACKJACK_ICON : TAB_MONEY_ICON;
@@ -1605,6 +1621,7 @@ export default function App() {
   const windowSize = useWindowDimensions();
   const layoutWidth = getLayoutWidth(windowSize.width);
   const tabPanelWidth = layoutWidth;
+  const safeFrameInsets = getSafeFrameInsets(windowSize.width, windowSize.height);
   const [deck, setDeck] = useState(() => shuffle(createDeck()));
   const [dealer, setDealer] = useState([]);
   const [player, setPlayer] = useState([]);
@@ -2874,7 +2891,17 @@ export default function App() {
     <ImageBackground fadeDuration={0} resizeMode="cover" source={TABLE_FELT} style={styles.background}>
       <View style={styles.safeArea}>
         <StatusBar hidden barStyle="light-content" backgroundColor="transparent" translucent />
-        <View onTouchStart={resetDeveloperCheat} style={styles.screen}>
+        <View
+          onTouchStart={resetDeveloperCheat}
+          style={[
+            styles.screen,
+            {
+              paddingBottom: 10 + safeFrameInsets.bottom,
+              paddingHorizontal: 12 + safeFrameInsets.horizontal,
+              paddingTop: 10 + safeFrameInsets.top,
+            },
+          ]}
+        >
         {needsFirstAccountName ? (
           <View style={[styles.inlineNameOverlay, { width: layoutWidth }]}>
             <View onTouchStart={stopDeveloperTouchPropagation} style={styles.inlineNamePanel}>
@@ -3178,7 +3205,7 @@ export default function App() {
                     </Animated.View>
                   </View>
                 </View>
-                <BottomTabs activeTab={activeTab} onSelect={selectTab} />
+                <BottomTabs activeTab={activeTab} bottomInset={safeFrameInsets.bottom} onSelect={selectTab} />
               </>
             ) : resultDelta !== null ? (
               <>
