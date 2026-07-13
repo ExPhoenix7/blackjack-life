@@ -108,12 +108,25 @@ function getLayoutWidth(windowWidth) {
 }
 
 function getSafeFrameInsets(windowWidth, windowHeight) {
+  const shortSide = Math.min(windowWidth, windowHeight);
+  const longSide = Math.max(windowWidth, windowHeight);
+
+  if (Platform.OS === "android") {
+    if (!isExpoGo) {
+      return { bottom: 0, horizontal: 0, top: 0 };
+    }
+
+    return {
+      bottom: 38,
+      horizontal: 0,
+      top: (StatusBar.currentHeight || 24) + 8,
+    };
+  }
+
   if (Platform.OS !== "ios") {
     return { bottom: 0, horizontal: 0, top: 0 };
   }
 
-  const shortSide = Math.min(windowWidth, windowHeight);
-  const longSide = Math.max(windowWidth, windowHeight);
   const hasModernSafeArea = longSide / shortSide > 1.9;
 
   return {
@@ -1346,9 +1359,9 @@ function MoneyMachinePanel({
   );
 }
 
-function BottomTabs({ activeTab, bottomInset = 0, onSelect }) {
+function BottomTabs({ activeTab, onSelect }) {
   return (
-    <View style={[styles.bottomTabs, bottomInset > 0 && { marginBottom: bottomInset }]}>
+    <View style={styles.bottomTabs}>
       {mainTabs.map((tab) => {
         const selected = tab === activeTab;
         const icon = tab === "store" ? TAB_STORE_ICON : tab === "blackjack" ? TAB_BLACKJACK_ICON : TAB_MONEY_ICON;
@@ -3205,7 +3218,7 @@ export default function App() {
                     </Animated.View>
                   </View>
                 </View>
-                <BottomTabs activeTab={activeTab} bottomInset={safeFrameInsets.bottom} onSelect={selectTab} />
+                <BottomTabs activeTab={activeTab} onSelect={selectTab} />
               </>
             ) : resultDelta !== null ? (
               <>
