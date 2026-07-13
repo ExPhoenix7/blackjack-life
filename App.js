@@ -107,24 +107,6 @@ function getLayoutWidth(windowWidth) {
   return Math.min(availableWidth, 390);
 }
 
-function getTabletUiScale(windowWidth, windowHeight) {
-  const shortSide = Math.min(windowWidth, windowHeight);
-
-  if (shortSide >= 760) {
-    return 1.16;
-  }
-
-  if (shortSide >= 650) {
-    return 1.11;
-  }
-
-  if (shortSide >= 560) {
-    return 1.06;
-  }
-
-  return 1;
-}
-
 function getSafeFrameInsets(windowWidth, windowHeight) {
   const shortSide = Math.min(windowWidth, windowHeight);
   const longSide = Math.max(windowWidth, windowHeight);
@@ -1652,8 +1634,6 @@ export default function App() {
   const windowSize = useWindowDimensions();
   const layoutWidth = getLayoutWidth(windowSize.width);
   const tabPanelWidth = layoutWidth;
-  const tabletUiScale = getTabletUiScale(windowSize.width, windowSize.height);
-  const headerScale = 1 + (tabletUiScale - 1) * 0.55;
   const safeFrameInsets = getSafeFrameInsets(windowSize.width, windowSize.height);
   const [deck, setDeck] = useState(() => shuffle(createDeck()));
   const [dealer, setDealer] = useState([]);
@@ -2965,14 +2945,7 @@ export default function App() {
           </View>
         ) : (
           <>
-        <View
-          style={[
-            styles.header,
-            { width: layoutWidth },
-            headerScale > 1 && styles.scaledScene,
-            headerScale > 1 && { transform: [{ scale: headerScale }] },
-          ]}
-        >
+        <View style={[styles.header, { width: layoutWidth }]}>
           <View style={styles.headerLeftSlot}>
             <Pressable
               onPress={() => setAchievementMenuOpen(true)}
@@ -3076,14 +3049,7 @@ export default function App() {
           />
         ) : null}
 
-        <View
-          style={[
-            styles.table,
-            { width: layoutWidth },
-            tabletUiScale > 1 && styles.scaledScene,
-            tabletUiScale > 1 && { transform: [{ scale: tabletUiScale }] },
-          ]}
-        >
+        <View style={[styles.table, { width: layoutWidth }]}>
           <View
             pointerEvents={showBlackjackTable ? "auto" : "none"}
             style={[styles.blackjackHandClip, { width: tabPanelWidth }]}
@@ -3509,9 +3475,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 12,
     paddingVertical: 10,
-  },
-  scaledScene: {
-    alignSelf: "center",
   },
   header: {
     alignItems: "flex-start",
