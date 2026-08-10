@@ -21,7 +21,13 @@
           "enableFullScreenImage_legacy": true
         }
       ],
-      "expo-audio",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ],
       "expo-asset",
       [
         "expo-navigation-bar",
@@ -65,10 +71,7 @@
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#031f09"
       },
-      "permissions": [
-        "android.permission.RECORD_AUDIO",
-        "android.permission.MODIFY_AUDIO_SETTINGS"
-      ]
+      "permissions": []
     },
     "androidStatusBar": {
       "hidden": true,

@@ -239,7 +239,6 @@ export default function App() {
     !dealing &&
     !resolvingDealer &&
     !betweenRounds &&
-    !outOfCredit &&
     resultDelta === null &&
     !blackjackCelebration;
   const showBlackjackTable =
@@ -1136,12 +1135,8 @@ export default function App() {
         setShownDealerScore(0);
         setShownPlayerScore(0);
         setRevealDealer(false);
-        if (nextChips <= 0) {
-          setOutOfCredit(true);
-          setMessage("");
-        } else {
-          setMessage("");
-        }
+        setOutOfCredit(nextChips <= 0);
+        setMessage("");
       }, 3000);
     };
 
@@ -1153,7 +1148,7 @@ export default function App() {
   }
 
   function addBetChip(amount) {
-    if (betweenRounds || outOfCredit || resultDelta !== null || dealing) {
+    if (betweenRounds || resultDelta !== null || dealing) {
       return;
     }
 
@@ -1172,30 +1167,12 @@ export default function App() {
   }
 
   function clearBet() {
-    if (betweenRounds || outOfCredit || resultDelta !== null || dealing) {
+    if (betweenRounds || resultDelta !== null || dealing) {
       return;
     }
 
     setBet(0);
     setBetChips([]);
-    setMessage("");
-  }
-
-  function buyCredit() {
-    setChips(startingChips);
-    saveActiveAccountCredit(startingChips);
-    setCreditDelta(null);
-    setBet(0);
-    setBetChips([]);
-    setDealer([]);
-    setPlayer([]);
-    setShownDealerScore(0);
-    setShownPlayerScore(0);
-    setDealing(false);
-    setRevealDealer(false);
-    setResolvingDealer(false);
-    setOutOfCredit(false);
-    setBetweenRounds(false);
     setMessage("");
   }
 
@@ -1211,7 +1188,7 @@ export default function App() {
       resultTimer.current = null;
     }
 
-    if (betweenRounds || outOfCredit || resultDelta !== null || dealing) {
+    if (betweenRounds || resultDelta !== null || dealing) {
       return;
     }
 
@@ -1551,7 +1528,7 @@ export default function App() {
                 hideDealer={inRound && !revealDealer}
                 isTablet={isTabletLayout}
                 onDeckPress={
-                  !inRound && !dealing && !betweenRounds && resultDelta === null && !outOfCredit
+                  !inRound && !dealing && !betweenRounds && resultDelta === null
                     ? handleDeveloperDeckPress
                     : undefined
                 }
@@ -1669,14 +1646,7 @@ export default function App() {
                         <Text style={styles.message}>{message}</Text>
                         <BetStack chips={betChips} chipScale={chipScale} isTablet={isTabletLayout} />
 
-                        {outOfCredit ? (
-                          <View style={styles.creditPanel}>
-                            <Text style={styles.creditTitle}>Out of credit</Text>
-                            <Pressable onPress={buyCredit} style={({ pressed }) => [styles.creditButton, pressed && styles.pressed]}>
-                              <Text style={styles.creditButtonText}>Get credit</Text>
-                            </Pressable>
-                          </View>
-                        ) : betweenRounds ? (
+                        {betweenRounds ? (
                           <RoundLoader />
                         ) : (
                           <>
@@ -1797,13 +1767,6 @@ export default function App() {
                 <BetStack chips={betChips} chipScale={chipScale} isTablet={isTabletLayout} />
                 <ResultSplash delta={resultDelta} />
               </>
-            ) : outOfCredit ? (
-              <View style={styles.creditPanel}>
-                <Text style={styles.creditTitle}>Out of credit</Text>
-                <Pressable onPress={buyCredit} style={({ pressed }) => [styles.creditButton, pressed && styles.pressed]}>
-                  <Text style={styles.creditButtonText}>Get credit</Text>
-                </Pressable>
-              </View>
             ) : betweenRounds ? (
               <RoundLoader />
             ) : dealing ? (

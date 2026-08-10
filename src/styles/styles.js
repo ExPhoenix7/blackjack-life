@@ -2171,30 +2171,6 @@ export const styles = StyleSheet.create({
     height: 52,
     width: 52,
   },
-  creditPanel: {
-    alignItems: "center",
-    gap: 12,
-    justifyContent: "center",
-    minHeight: 120,
-  },
-  creditTitle: {
-    color: "#ffffff",
-    fontSize: 24,
-    fontWeight: "900",
-  },
-  creditButton: {
-    alignItems: "center",
-    backgroundColor: "#fff07a",
-    borderRadius: 8,
-    justifyContent: "center",
-    minHeight: 54,
-    minWidth: 150,
-  },
-  creditButtonText: {
-    color: "#17201d",
-    fontSize: 17,
-    fontWeight: "900",
-  },
   resultSplash: {
     alignItems: "center",
     justifyContent: "center",
