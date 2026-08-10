@@ -24,6 +24,16 @@
       "expo-audio",
       "expo-asset",
       [
+        "expo-navigation-bar",
+        {
+          "visibility": "hidden",
+          "behavior": "overlay-swipe",
+          "position": "absolute",
+          "barStyle": "light",
+          "backgroundColor": "#031f09"
+        }
+      ],
+      [
         "react-native-google-mobile-ads",
         {
           "androidAppId": "ca-app-pub-9293916365182641~1844805950",

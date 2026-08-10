@@ -10,7 +10,10 @@ yarn-error.log*
 .expo-server.err.log
 .expo-live.log
 .expo-live.err.log
+.expo-8082.*.log
+.expo-start-*.cmd
 .expo-verify-*/
+.vs/
 eas-build-*.log
 metro.log
 metro.err
