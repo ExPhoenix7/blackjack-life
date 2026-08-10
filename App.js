@@ -1564,7 +1564,15 @@ export default function App() {
             </Animated.View>
           </View>
 
-          <View style={[styles.centerControls, { minHeight: responsiveLayout.centerControlsMinHeight }]}>
+          <View
+            style={[
+              styles.centerControls,
+              {
+                minHeight: responsiveLayout.centerControlsMinHeight,
+                transform: [{ translateY: responsiveLayout.centerControlsTranslateY }],
+              },
+            ]}
+          >
             {showBottomTabs ? (
               <>
                 <View

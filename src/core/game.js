@@ -79,7 +79,7 @@ function getLayoutWidth(windowWidth) {
   const availableWidth = Math.max(320, windowWidth - 24);
 
   if (windowWidth >= 700) {
-    return Math.min(availableWidth, 640);
+    return Math.min(availableWidth, 700);
   }
 
   if (windowWidth >= 520) {
@@ -121,7 +121,7 @@ function getResponsiveLayout(windowWidth, windowHeight, layoutWidth, safeFrameIn
   const referenceWidth = isTablet ? 640 : 369;
   const referenceHeight = isTablet ? 900 : 768;
   const minScale = isTablet ? 0.86 : 0.78;
-  const maxScale = isTablet ? 1.08 : 1;
+  const maxScale = isTablet ? 1.12 : 1;
   const uiScale = clamp(Math.min(layoutWidth / referenceWidth, usableHeight / referenceHeight), minScale, maxScale);
   const phoneScale = clamp(shortSide / 390, 0.86, 1.08);
   const tabletScale = clamp(shortSide / 768, 1, 1.08);
@@ -133,10 +133,11 @@ function getResponsiveLayout(windowWidth, windowHeight, layoutWidth, safeFrameIn
     blackjackClipHeight: scalePx(isTablet ? 426 : 378, uiScale),
     blackjackClipTop: scalePx(isTablet ? -100 : -92, uiScale),
     blackjackOverlayTop: scalePx(isTablet ? 24 : 34, uiScale),
-    centerControlsMinHeight: scalePx(190, uiScale),
+    centerControlsMinHeight: scalePx(isTablet ? 176 : 190, uiScale),
+    centerControlsTranslateY: scalePx(isTablet ? -82 : 0, uiScale),
     chipScale: controlScale,
-    handClipMinHeight: scalePx(isTablet ? 224 : 198, uiScale),
-    headerMinHeight: scalePx(104, uiScale),
+    handClipMinHeight: scalePx(isTablet ? 168 : 198, uiScale),
+    headerMinHeight: scalePx(isTablet ? 86 : 104, uiScale),
     moneyMachineScale,
     moneyOverlayClipHeight: scalePx(isTablet ? 612 : 507, uiScale),
     moneyOverlayClipTop: scalePx(isTablet ? -282 : -221, uiScale),
