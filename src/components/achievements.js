@@ -8,6 +8,8 @@ function AchievementsModal({ visible, stats, onClose }) {
   const unlockedCount = achievementDefinitions.filter(
     (achievement) => achievementProgress(achievement, stats) >= achievement.goal
   ).length;
+  const totalCount = achievementDefinitions.length;
+  const completionRatio = totalCount > 0 ? unlockedCount / totalCount : 0;
 
   return (
     <Modal animationType="fade" onRequestClose={onClose} transparent visible={visible}>
@@ -15,21 +17,41 @@ function AchievementsModal({ visible, stats, onClose }) {
         <Pressable style={styles.achievementModalCloseLayer} onPress={onClose} />
         <View style={styles.achievementPanel}>
           <View style={styles.achievementPanelHeader}>
-            <View>
+            <View style={styles.achievementHeaderCopy}>
+              <Text style={styles.achievementPanelEyebrow}>PLAYER PROGRESS</Text>
               <Text style={styles.achievementPanelTitle}>Achievements</Text>
               <Text style={styles.achievementPanelSubtitle}>
-                {unlockedCount}/{achievementDefinitions.length} unlocked
+                {unlockedCount}/{totalCount} unlocked
               </Text>
             </View>
             <Pressable
               onPress={onClose}
-              style={({ pressed }) => [styles.accountCloseButton, pressed && styles.pressed]}
+              style={({ pressed }) => [styles.achievementCloseButton, pressed && styles.pressed]}
             >
-              <Text style={styles.accountCloseText}>X</Text>
+              <Text style={styles.achievementCloseText}>X</Text>
             </Pressable>
           </View>
 
-          <ScrollView contentContainerStyle={styles.achievementList} style={styles.achievementListScroll}>
+          <View style={styles.achievementSummaryCard}>
+            <View style={styles.achievementSummaryTop}>
+              <View>
+                <Text style={styles.achievementSummaryLabel}>Completion</Text>
+                <Text style={styles.achievementSummaryValue}>{Math.round(completionRatio * 100)}%</Text>
+              </View>
+              <View style={styles.achievementSummaryBadge}>
+                <Text style={styles.achievementSummaryBadgeText}>{totalCount - unlockedCount} left</Text>
+              </View>
+            </View>
+            <View style={styles.achievementSummaryTrack}>
+              <View style={[styles.achievementSummaryFill, { width: `${completionRatio * 100}%` }]} />
+            </View>
+          </View>
+
+          <ScrollView
+            contentContainerStyle={styles.achievementList}
+            showsVerticalScrollIndicator={false}
+            style={styles.achievementListScroll}
+          >
             {achievementDefinitions.map((achievement) => {
               const progress = achievementProgress(achievement, stats);
               const unlocked = progress >= achievement.goal;
@@ -42,7 +64,7 @@ function AchievementsModal({ visible, stats, onClose }) {
                 >
                   <View style={[styles.achievementBadge, unlocked && styles.achievementBadgeUnlocked]}>
                     <Text style={[styles.achievementBadgeText, unlocked && styles.achievementBadgeTextUnlocked]}>
-                      {unlocked ? "✓" : "★"}
+                      {"\u2605"}
                     </Text>
                   </View>
                   <View style={styles.achievementInfo}>
@@ -54,18 +76,23 @@ function AchievementsModal({ visible, stats, onClose }) {
                         {unlocked ? "DONE" : "LOCKED"}
                       </Text>
                     </View>
-                    <Text numberOfLines={2} style={styles.achievementDescription}>
-                      {achievement.description}
-                    </Text>
+                    <View style={styles.achievementTaskRow}>
+                      <Text style={styles.achievementTaskLabel}>TASK</Text>
+                      <Text numberOfLines={2} style={styles.achievementDescription}>
+                        {achievement.description}
+                      </Text>
+                    </View>
                     <View style={styles.achievementProgressTrack}>
                       <View style={[styles.achievementProgressFill, { width: `${progressRatio * 100}%` }]} />
                     </View>
-                    <Text style={styles.achievementProgressText}>
-                      {formatAchievementValue(progress, achievement)} / {formatAchievementValue(achievement.goal, achievement)}
-                    </Text>
-                    <Text style={styles.achievementRewardText}>
-                      Reward ${achievement.reward.toLocaleString("en-US")}
-                    </Text>
+                    <View style={styles.achievementFooterRow}>
+                      <Text style={styles.achievementProgressText}>
+                        {formatAchievementValue(progress, achievement)} / {formatAchievementValue(achievement.goal, achievement)}
+                      </Text>
+                      <Text style={styles.achievementRewardText}>
+                        +${achievement.reward.toLocaleString("en-US")}
+                      </Text>
+                    </View>
                   </View>
                 </View>
               );
@@ -126,7 +153,7 @@ function AchievementToast({ achievement, onDone }) {
       ]}
     >
       <Animated.View style={[styles.achievementToastCheck, { transform: [{ scale: checkScale }] }]}>
-        <Text style={styles.achievementToastCheckText}>✓</Text>
+        <Text style={styles.achievementToastCheckText}>OK</Text>
       </Animated.View>
       <View style={styles.achievementToastTextWrap}>
         <Text style={styles.achievementToastEyebrow}>Achievement unlocked</Text>

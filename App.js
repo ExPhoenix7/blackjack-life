@@ -25,6 +25,7 @@ import {
   BetStack,
   BlackjackCelebration,
   BottomTabs,
+  Chip,
   CreditDelta,
   Hand,
   MoneyMachinePanel,
