@@ -113,6 +113,45 @@ function getResponsiveMetrics(windowWidth, windowHeight) {
   };
 }
 
+function getResponsiveLayout(windowWidth, windowHeight, layoutWidth, safeFrameInsets) {
+  const shortSide = Math.min(windowWidth, windowHeight);
+  const longSide = Math.max(windowWidth, windowHeight);
+  const isTablet = shortSide >= 650;
+  const usableHeight = Math.max(1, windowHeight - safeFrameInsets.top - safeFrameInsets.bottom - 20);
+  const referenceWidth = isTablet ? 640 : 369;
+  const referenceHeight = isTablet ? 900 : 768;
+  const minScale = isTablet ? 0.86 : 0.78;
+  const maxScale = isTablet ? 1.08 : 1;
+  const uiScale = clamp(Math.min(layoutWidth / referenceWidth, usableHeight / referenceHeight), minScale, maxScale);
+  const phoneScale = clamp(shortSide / 390, 0.86, 1.08);
+  const tabletScale = clamp(shortSide / 768, 1, 1.08);
+  const controlScale = Math.min(isTablet ? tabletScale : phoneScale, uiScale);
+  const isAndroidPhone = Platform.OS === "android" && !isTablet;
+  const moneyMachineScale = isAndroidPhone ? Math.min(controlScale, uiScale * 0.96) : controlScale;
+
+  return {
+    blackjackClipHeight: scalePx(isTablet ? 426 : 378, uiScale),
+    blackjackClipTop: scalePx(isTablet ? -100 : -92, uiScale),
+    blackjackOverlayTop: scalePx(isTablet ? 24 : 34, uiScale),
+    centerControlsMinHeight: scalePx(190, uiScale),
+    chipScale: controlScale,
+    handClipMinHeight: scalePx(isTablet ? 224 : 198, uiScale),
+    headerMinHeight: scalePx(104, uiScale),
+    moneyMachineScale,
+    moneyOverlayClipHeight: scalePx(isTablet ? 612 : 507, uiScale),
+    moneyOverlayClipTop: scalePx(isTablet ? -282 : -221, uiScale),
+    moneyOverlayHeight: scalePx(isTablet ? 548 : 484, uiScale),
+    moneyOverlayTop: scalePx(23, uiScale),
+    storeOverlayClipHeight: scalePx(isTablet ? 610 : 532, uiScale),
+    storeOverlayClipTop: scalePx(isTablet ? -278 : -246, uiScale),
+    storeOverlayHeight: scalePx(isTablet ? 584 : 509, uiScale),
+    storeOverlayTop: scalePx(3, uiScale),
+    tabAreaHeight: scalePx(isTablet ? 326 : 286, uiScale),
+    tablePaddingBottom: scalePx(10, uiScale),
+    uiScale,
+  };
+}
+
 function getBetChipButtonTransform(index, isTablet, scale) {
   const yOffsets = isTablet ? [22, 1, -9, 1, 22] : [18, 1, -7, 1, 18];
   const rotations = ["-12deg", "-6deg", null, "6deg", "12deg"];
@@ -713,6 +752,7 @@ export {
   getBetChipButtonTransform,
   getGoogleMobileAdsModule,
   getLayoutWidth,
+  getResponsiveLayout,
   getResponsiveMetrics,
   getSafeFrameInsets,
   handValue,

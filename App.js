@@ -60,6 +60,7 @@ import {
   getBetChipButtonTransform,
   getGoogleMobileAdsModule,
   getLayoutWidth,
+  getResponsiveLayout,
   getResponsiveMetrics,
   getSafeFrameInsets,
   handValue,
@@ -100,10 +101,11 @@ export default function App() {
   const layoutWidth = getLayoutWidth(windowSize.width);
   const tabPanelWidth = layoutWidth;
   const responsiveMetrics = getResponsiveMetrics(windowSize.width, windowSize.height);
-  const chipScale = responsiveMetrics.chipScale;
-  const moneyMachineScale = responsiveMetrics.moneyMachineScale;
   const isTabletLayout = responsiveMetrics.isTablet;
   const safeFrameInsets = getSafeFrameInsets(windowSize.width, windowSize.height);
+  const responsiveLayout = getResponsiveLayout(windowSize.width, windowSize.height, layoutWidth, safeFrameInsets);
+  const chipScale = responsiveLayout.chipScale;
+  const moneyMachineScale = responsiveLayout.moneyMachineScale;
   const [deck, setDeck] = useState(() => shuffle(createDeck()));
   const [dealer, setDealer] = useState([]);
   const [player, setPlayer] = useState([]);
@@ -1427,7 +1429,7 @@ export default function App() {
           </View>
         ) : (
           <>
-        <View style={[styles.header, { width: layoutWidth }]}>
+        <View style={[styles.header, { minHeight: responsiveLayout.headerMinHeight, width: layoutWidth }]}>
           <View style={styles.headerLeftSlot}>
             <Pressable
               onPress={() => setAchievementMenuOpen(true)}
@@ -1533,13 +1535,13 @@ export default function App() {
           />
         ) : null}
 
-        <View style={[styles.table, { width: layoutWidth }]}>
+        <View style={[styles.table, { paddingBottom: responsiveLayout.tablePaddingBottom, width: layoutWidth }]}>
           <View
             pointerEvents={showBlackjackTable ? "auto" : "none"}
             style={[
               styles.blackjackHandClip,
               isTabletLayout && styles.blackjackHandClipTablet,
-              { width: tabPanelWidth },
+              { minHeight: responsiveLayout.handClipMinHeight, width: tabPanelWidth },
             ]}
           >
             <Animated.View style={{ transform: [{ translateX: blackjackOverlayTranslateX }] }}>
@@ -1562,21 +1564,21 @@ export default function App() {
             </Animated.View>
           </View>
 
-          <View style={styles.centerControls}>
+          <View style={[styles.centerControls, { minHeight: responsiveLayout.centerControlsMinHeight }]}>
             {showBottomTabs ? (
               <>
                 <View
                   style={[
                     styles.tabArea,
                     isTabletLayout && styles.tabAreaTablet,
-                    { width: tabPanelWidth },
+                    { height: responsiveLayout.tabAreaHeight, width: tabPanelWidth },
                   ]}
                 >
                   <View
                     style={[
                       styles.tabViewport,
                       isTabletLayout && styles.tabViewportTablet,
-                      { width: tabPanelWidth },
+                      { height: responsiveLayout.tabAreaHeight, width: tabPanelWidth },
                     ]}
                   >
                     <Animated.View
@@ -1595,13 +1597,25 @@ export default function App() {
                   </View>
                   <View
                     pointerEvents={activeTab === "store" ? "auto" : "none"}
-                    style={[styles.storeOverlayClip, isTabletLayout && styles.storeOverlayClipTablet, { width: tabPanelWidth }]}
+                    style={[
+                      styles.storeOverlayClip,
+                      isTabletLayout && styles.storeOverlayClipTablet,
+                      {
+                        height: responsiveLayout.storeOverlayClipHeight,
+                        top: responsiveLayout.storeOverlayClipTop,
+                        width: tabPanelWidth,
+                      },
+                    ]}
                   >
                     <Animated.View
                       style={[
                         styles.storeOverlay,
                         isTabletLayout && styles.storeOverlayTablet,
-                        { transform: [{ translateX: storeOverlayTranslateX }] },
+                        {
+                          height: responsiveLayout.storeOverlayHeight,
+                          top: responsiveLayout.storeOverlayTop,
+                          transform: [{ translateX: storeOverlayTranslateX }],
+                        },
                       ]}
                     >
                       <StorePanel
@@ -1624,13 +1638,24 @@ export default function App() {
                   </View>
                   <View
                     pointerEvents={activeTab === "blackjack" ? "box-none" : "none"}
-                    style={[styles.blackjackOverlayClip, isTabletLayout && styles.blackjackOverlayClipTablet, { width: tabPanelWidth }]}
+                    style={[
+                      styles.blackjackOverlayClip,
+                      isTabletLayout && styles.blackjackOverlayClipTablet,
+                      {
+                        height: responsiveLayout.blackjackClipHeight,
+                        top: responsiveLayout.blackjackClipTop,
+                        width: tabPanelWidth,
+                      },
+                    ]}
                   >
                     <Animated.View
                       style={[
                         styles.blackjackBetOverlay,
                         isTabletLayout && styles.blackjackBetOverlayTablet,
-                        { transform: [{ translateX: blackjackOverlayTranslateX }] },
+                        {
+                          top: responsiveLayout.blackjackOverlayTop,
+                          transform: [{ translateX: blackjackOverlayTranslateX }],
+                        },
                       ]}
                     >
                         <Text style={styles.message}>{message}</Text>
@@ -1713,13 +1738,25 @@ export default function App() {
                   </View>
                   <View
                     pointerEvents={activeTab === "money" ? "auto" : "none"}
-                    style={[styles.moneyOverlayClip, isTabletLayout && styles.moneyOverlayClipTablet, { width: tabPanelWidth }]}
+                    style={[
+                      styles.moneyOverlayClip,
+                      isTabletLayout && styles.moneyOverlayClipTablet,
+                      {
+                        height: responsiveLayout.moneyOverlayClipHeight,
+                        top: responsiveLayout.moneyOverlayClipTop,
+                        width: tabPanelWidth,
+                      },
+                    ]}
                   >
                     <Animated.View
                       style={[
                         styles.moneyOverlay,
                         isTabletLayout && styles.moneyOverlayTablet,
-                        { transform: [{ translateX: moneyOverlayTranslateX }] },
+                        {
+                          height: responsiveLayout.moneyOverlayHeight,
+                          top: responsiveLayout.moneyOverlayTop,
+                          transform: [{ translateX: moneyOverlayTranslateX }],
+                        },
                       ]}
                     >
                       <MoneyMachinePanel
@@ -1740,7 +1777,12 @@ export default function App() {
                     </Animated.View>
                   </View>
                 </View>
-                <BottomTabs activeTab={activeTab} isTablet={isTabletLayout} onSelect={selectTab} />
+                <BottomTabs
+                  activeTab={activeTab}
+                  isTablet={isTabletLayout}
+                  layoutScale={responsiveLayout.uiScale}
+                  onSelect={selectTab}
+                />
               </>
             ) : resultDelta !== null ? (
               <>

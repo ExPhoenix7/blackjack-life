@@ -33,8 +33,14 @@ function MoneyMachinePanel({
   const capacityUpgradeCost = moneyMachineUpgradeCost("capacity", capacityLevel);
   const scale = moneyMachineScale;
   const isAndroidPhone = Platform.OS === "android" && !isTablet;
-  const tapZoneTranslateY = scalePx(isAndroidPhone ? -12 : -23, scale);
-  const upgradesTranslateY = scalePx(isAndroidPhone ? -8 : -12, scale);
+  const tapZoneTranslateY = scalePx(isAndroidPhone ? -6 : -23, scale);
+  const upgradesTranslateY = scalePx(isAndroidPhone ? -5 : -12, scale);
+  const tapZoneHeight = isAndroidPhone ? 206 : isTablet ? 244 : 220;
+  const upgradesHeight = isAndroidPhone ? 66 : isTablet ? 78 : 68;
+  const stationHeight = isAndroidPhone ? 166 : isTablet ? 196 : 174;
+  const boxWidth = isAndroidPhone ? 218 : isTablet ? 260 : 220;
+  const boxHeight = isAndroidPhone ? 82 : isTablet ? 98 : 84;
+  const windowHeight = isAndroidPhone ? 47 : isTablet ? 58 : 48;
 
   const content = (
     <>
@@ -45,7 +51,7 @@ function MoneyMachinePanel({
           styles.moneyMachineTapZone,
           isTablet && styles.moneyMachineTapZoneTablet,
           {
-            height: scalePx(isTablet ? 244 : 220, scale),
+            height: scalePx(tapZoneHeight, scale),
             transform: [{ translateY: tapZoneTranslateY }],
           },
           machineFull && styles.moneyMachineTapZoneFull,
@@ -59,7 +65,7 @@ function MoneyMachinePanel({
             styles.moneyMachineTapText,
             isTablet && styles.moneyMachineTapTextTablet,
             {
-              fontSize: scalePx(isTablet ? 26 : 23, scale),
+              fontSize: scalePx(isAndroidPhone ? 22 : isTablet ? 26 : 23, scale),
               maxWidth: scalePx(isTablet ? 340 : 260, scale),
             },
           ]}
@@ -80,11 +86,11 @@ function MoneyMachinePanel({
       </Pressable>
       <View
         style={[
-          styles.moneyMachineUpgrades,
-          isTablet && styles.moneyMachineUpgradesTablet,
+            styles.moneyMachineUpgrades,
+            isTablet && styles.moneyMachineUpgradesTablet,
           {
             gap: scalePx(8, scale),
-            height: scalePx(isTablet ? 78 : 68, scale),
+            height: scalePx(upgradesHeight, scale),
             transform: [{ translateY: upgradesTranslateY }],
           },
         ]}
@@ -101,18 +107,18 @@ function MoneyMachinePanel({
         >
           <Text
             style={[
-              styles.moneyMachineUpgradeTitle,
-              isTablet && styles.moneyMachineUpgradeTitleTablet,
-              { fontSize: scalePx(isTablet ? 15 : 13, scale) },
+            styles.moneyMachineUpgradeTitle,
+            isTablet && styles.moneyMachineUpgradeTitleTablet,
+              { fontSize: scalePx(isAndroidPhone ? 13 : isTablet ? 15 : 13, scale) },
             ]}
           >
             Tap Power
           </Text>
           <Text
             style={[
-              styles.moneyMachineUpgradeEffect,
-              isTablet && styles.moneyMachineUpgradeEffectTablet,
-              { fontSize: scalePx(isTablet ? 11 : 10, scale), marginTop: scalePx(2, scale) },
+            styles.moneyMachineUpgradeEffect,
+            isTablet && styles.moneyMachineUpgradeEffectTablet,
+              { fontSize: scalePx(isAndroidPhone ? 10 : isTablet ? 11 : 10, scale), marginTop: scalePx(2, scale) },
             ]}
           >
             {tapAtMax
@@ -121,9 +127,9 @@ function MoneyMachinePanel({
           </Text>
           <Text
             style={[
-              styles.moneyMachineUpgradeCost,
-              isTablet && styles.moneyMachineUpgradeCostTablet,
-              { fontSize: scalePx(isTablet ? 11 : 10, scale), marginTop: scalePx(2, scale) },
+            styles.moneyMachineUpgradeCost,
+            isTablet && styles.moneyMachineUpgradeCostTablet,
+              { fontSize: scalePx(isAndroidPhone ? 10 : isTablet ? 11 : 10, scale), marginTop: scalePx(2, scale) },
             ]}
           >
             {tapAtMax ? "MAX LEVEL" : `Upgrade  $${tapUpgradeCost}`}
@@ -141,27 +147,27 @@ function MoneyMachinePanel({
         >
           <Text
             style={[
-              styles.moneyMachineUpgradeTitle,
-              isTablet && styles.moneyMachineUpgradeTitleTablet,
-              { fontSize: scalePx(isTablet ? 15 : 13, scale) },
+            styles.moneyMachineUpgradeTitle,
+            isTablet && styles.moneyMachineUpgradeTitleTablet,
+              { fontSize: scalePx(isAndroidPhone ? 13 : isTablet ? 15 : 13, scale) },
             ]}
           >
             Storage
           </Text>
           <Text
             style={[
-              styles.moneyMachineUpgradeEffect,
-              isTablet && styles.moneyMachineUpgradeEffectTablet,
-              { fontSize: scalePx(isTablet ? 11 : 10, scale), marginTop: scalePx(2, scale) },
+            styles.moneyMachineUpgradeEffect,
+            isTablet && styles.moneyMachineUpgradeEffectTablet,
+              { fontSize: scalePx(isAndroidPhone ? 10 : isTablet ? 11 : 10, scale), marginTop: scalePx(2, scale) },
             ]}
           >
             {capacityAtMax ? `$${capacity} capacity` : `$${capacity}  >  $${capacity + moneyMachineCapacityStep}`}
           </Text>
           <Text
             style={[
-              styles.moneyMachineUpgradeCost,
-              isTablet && styles.moneyMachineUpgradeCostTablet,
-              { fontSize: scalePx(isTablet ? 11 : 10, scale), marginTop: scalePx(2, scale) },
+            styles.moneyMachineUpgradeCost,
+            isTablet && styles.moneyMachineUpgradeCostTablet,
+              { fontSize: scalePx(isAndroidPhone ? 10 : isTablet ? 11 : 10, scale), marginTop: scalePx(2, scale) },
             ]}
           >
             {capacityAtMax ? "MAX LEVEL" : `Upgrade  $${capacityUpgradeCost}`}
@@ -174,9 +180,9 @@ function MoneyMachinePanel({
           isTablet && styles.moneyMachineStationTablet,
           {
             gap: scalePx(5, scale),
-            minHeight: scalePx(isTablet ? 196 : 174, scale),
+            minHeight: scalePx(stationHeight, scale),
             paddingHorizontal: scalePx(isTablet ? 18 : 14, scale),
-            paddingVertical: scalePx(7, scale),
+            paddingVertical: scalePx(isAndroidPhone ? 5 : 7, scale),
           },
         ]}
       >
@@ -184,21 +190,21 @@ function MoneyMachinePanel({
           style={[
             styles.moneyMachineStationTitle,
             isTablet && styles.moneyMachineStationTitleTablet,
-            { fontSize: scalePx(isTablet ? 22 : 19, scale) },
+            { fontSize: scalePx(isAndroidPhone ? 19 : isTablet ? 22 : 19, scale) },
           ]}
         >
           Money Machine
         </Text>
         <View
           style={[
-            styles.moneyMachineBox,
-            isTablet && styles.moneyMachineBoxTablet,
+              styles.moneyMachineBox,
+              isTablet && styles.moneyMachineBoxTablet,
             {
               gap: scalePx(5, scale),
-              minHeight: scalePx(isTablet ? 98 : 84, scale),
+              minHeight: scalePx(boxHeight, scale),
               paddingHorizontal: scalePx(16, scale),
-              paddingVertical: scalePx(6, scale),
-              width: scalePx(isTablet ? 260 : 220, scale),
+              paddingVertical: scalePx(isAndroidPhone ? 5 : 6, scale),
+              width: scalePx(boxWidth, scale),
             },
           ]}
         >
@@ -218,9 +224,9 @@ function MoneyMachinePanel({
               styles.moneyMachineWindow,
               isTablet && styles.moneyMachineWindowTablet,
               {
-                minHeight: scalePx(isTablet ? 58 : 48, scale),
+                minHeight: scalePx(windowHeight, scale),
                 paddingHorizontal: scalePx(10, scale),
-                paddingVertical: scalePx(isTablet ? 7 : 5, scale),
+                paddingVertical: scalePx(isAndroidPhone ? 4 : isTablet ? 7 : 5, scale),
               },
             ]}
           >
@@ -230,7 +236,7 @@ function MoneyMachinePanel({
                 style={[
                   styles.moneyMachineAmount,
                   isTablet && styles.moneyMachineAmountTablet,
-                  { fontSize: scalePx(isTablet ? 25 : 22, scale) },
+                  { fontSize: scalePx(isAndroidPhone ? 21 : isTablet ? 25 : 22, scale) },
                 ]}
               >
                 ${stored}
@@ -273,8 +279,8 @@ function MoneyMachinePanel({
             styles.moneyMachineCollect,
             isTablet && styles.moneyMachineCollectTablet,
             {
-              minHeight: scalePx(isTablet ? 30 : 25, scale),
-              paddingHorizontal: scalePx(isTablet ? 34 : 28, scale),
+              minHeight: scalePx(isAndroidPhone ? 24 : isTablet ? 30 : 25, scale),
+              paddingHorizontal: scalePx(isAndroidPhone ? 26 : isTablet ? 34 : 28, scale),
             },
             stored <= 0 && styles.disabled,
             pressed && styles.pressed,
@@ -284,7 +290,7 @@ function MoneyMachinePanel({
             style={[
               styles.moneyMachineCollectText,
               isTablet && styles.moneyMachineCollectTextTablet,
-              { fontSize: scalePx(isTablet ? 15 : 14, scale) },
+              { fontSize: scalePx(isAndroidPhone ? 14 : isTablet ? 15 : 14, scale) },
             ]}
           >
             Collect
@@ -295,7 +301,16 @@ function MoneyMachinePanel({
   );
 
   return (
-    <View style={[styles.moneyMachineScreen, Platform.OS === "ios" && !isTablet && { transform: [{ translateY: -5 }] }]}>
+    <View
+      style={[
+        styles.moneyMachineScreen,
+        isAndroidPhone && {
+          paddingBottom: scalePx(12, scale),
+          paddingTop: scalePx(4, scale),
+        },
+        Platform.OS === "ios" && !isTablet && { transform: [{ translateY: -5 }] },
+      ]}
+    >
       {content}
     </View>
   );
