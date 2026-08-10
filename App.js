@@ -84,7 +84,7 @@ import {
   rentalIncomeTickMs,
   rentalRateForProperties,
   replaySound,
-  rewardedAdCredit,
+  rewardedAdCreditForWealth,
   scalePx,
   settingsStorageKey,
   shuffle,
@@ -213,6 +213,8 @@ export default function App() {
     ownedRealEstateValue +
     ownedVehiclesValue +
     ownedItemsValue;
+  const rewardedAdCredit = rewardedAdCreditForWealth(currentWealth);
+  const rewardedAdLabel = `+${rewardedAdCredit / 1000}K`;
   const achievementDisplayStats = useMemo(
     () => ({
       ...achievementStats,
@@ -1476,7 +1478,7 @@ export default function App() {
               ]}
             >
               <Text style={styles.rewardedAdBadge}>AD</Text>
-              <Text style={styles.rewardedAdText}>{rewardedAdLoading ? "..." : "+10K"}</Text>
+              <Text style={styles.rewardedAdText}>{rewardedAdLoading ? "..." : rewardedAdLabel}</Text>
             </Pressable>
             {adStatusMessage ? <Text style={styles.rewardedAdStatus}>{adStatusMessage}</Text> : null}
             {creditDelta !== null && (

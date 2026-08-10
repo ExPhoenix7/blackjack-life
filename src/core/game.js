@@ -14,6 +14,10 @@ const accountLimit = 3;
 const developerCheatChips = [100, 200, 500];
 const developerCheatReward = 50000;
 const rewardedAdCredit = 10000;
+const rewardedAdMidCredit = 30000;
+const rewardedAdHighCredit = 50000;
+const rewardedAdMidWealth = 200000;
+const rewardedAdHighWealth = 400000;
 const isExpoGo = Constants.appOwnership === "expo";
 let googleMobileAdsModule = null;
 const mainTabs = ["store", "blackjack", "money"];
@@ -715,6 +719,18 @@ function sumOwnedListingPrices(ownedNames, listings) {
   );
 }
 
+function rewardedAdCreditForWealth(wealth) {
+  if (wealth >= rewardedAdHighWealth) {
+    return rewardedAdHighCredit;
+  }
+
+  if (wealth >= rewardedAdMidWealth) {
+    return rewardedAdMidCredit;
+  }
+
+  return rewardedAdCredit;
+}
+
 export {
   APP_SPLASH,
   CARD_BACK,
@@ -788,7 +804,7 @@ export {
   rentalIncomeTickMs,
   rentalRateForProperties,
   replaySound,
-  rewardedAdCredit,
+  rewardedAdCreditForWealth,
   scalePx,
   settingsStorageKey,
   shuffle,
