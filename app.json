@@ -18,7 +18,18 @@
           "image": "./assets/splash.png",
           "resizeMode": "cover",
           "backgroundColor": "#031f09",
-          "enableFullScreenImage_legacy": true
+          "enableFullScreenImage_legacy": true,
+          "android": {
+            "image": "./assets/splash.png",
+            "resizeMode": "cover",
+            "backgroundColor": "#031f09",
+            "imageWidth": 1080
+          },
+          "ios": {
+            "image": "./assets/splash.png",
+            "resizeMode": "cover",
+            "backgroundColor": "#031f09"
+          }
         }
       ],
       [
@@ -51,6 +62,7 @@
     ],
     "extra": {
       "adMob": {
+        "useTestAds": true,
         "androidRewardedAdUnitId": "ca-app-pub-9293916365182641/5536638959",
         "iosRewardedAdUnitId": "ca-app-pub-9293916365182641/5580449520"
       },

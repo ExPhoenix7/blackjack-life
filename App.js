@@ -937,17 +937,20 @@ export default function App() {
     }
 
     const ads = getGoogleMobileAdsModule();
-    if (!ads?.RewardedAd || !ads?.RewardedAdEventType || !ads?.TestIds) {
+    if (!ads?.RewardedAd || !ads?.RewardedAdEventType || !ads?.AdEventType || !ads?.TestIds) {
       setTemporaryAdStatus("Ad unavailable");
       return;
     }
 
-    const rewardedAdUnitId =
-      Platform.select({
-        android: Constants.expoConfig?.extra?.adMob?.androidRewardedAdUnitId,
-        ios: Constants.expoConfig?.extra?.adMob?.iosRewardedAdUnitId,
-        default: null,
-      }) || ads.TestIds.REWARDED;
+    const adMobConfig = Constants.expoConfig?.extra?.adMob || {};
+    const realRewardedAdUnitId = Platform.select({
+      android: adMobConfig.androidRewardedAdUnitId,
+      ios: adMobConfig.iosRewardedAdUnitId,
+      default: null,
+    });
+    const rewardedAdUnitId = adMobConfig.useTestAds
+      ? ads.TestIds.REWARDED
+      : realRewardedAdUnitId || ads.TestIds.REWARDED;
 
     setRewardedAdLoading(true);
 
@@ -990,9 +993,9 @@ export default function App() {
         })
       );
       unsubscribers.push(
-        rewardedAd.addAdEventListener(ads.AdEventType.ERROR, () => {
+        rewardedAd.addAdEventListener(ads.AdEventType.ERROR, (error) => {
           cleanup();
-          setTemporaryAdStatus("Ad not ready");
+          setTemporaryAdStatus(error?.code ? `Ad ${error.code}` : "Ad not ready");
           setRewardedAdLoading(false);
         })
       );
