@@ -3,7 +3,15 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import { itemListings, realEstateListings, vehicleListings } from "../core/game";
 import { styles } from "../styles/styles";
 
-function ProfileScreen({ stats, currentWealth, totalCredit, ownedCounts, isTablet, onBack, safeFrameInsets }) {
+function ProfileScreen({
+  stats,
+  currentWealth,
+  totalCredit,
+  ownedCounts,
+  isTablet,
+  onBack,
+  safeFrameInsets,
+}) {
   const roundsPlayed = stats.roundsPlayed || 0;
   const handsWon = stats.handsWon || 0;
   const winRate = roundsPlayed > 0 ? Math.round((handsWon / roundsPlayed) * 100) : 0;
@@ -21,7 +29,10 @@ function ProfileScreen({ stats, currentWealth, totalCredit, ownedCounts, isTable
     { label: "Total Bets", value: `$${(stats.totalBet || 0).toLocaleString("en-US")}` },
     { label: "Machine Collected", value: `$${(stats.moneyMachineCollected || 0).toLocaleString("en-US")}` },
     { label: "Rent Collected", value: `$${(stats.rentalCollected || 0).toLocaleString("en-US")}` },
-    { label: "Store Owned", value: `${totalOwned}/${realEstateListings.length + vehicleListings.length + itemListings.length}` },
+    {
+      label: "Store Owned",
+      value: `${totalOwned}/${realEstateListings.length + vehicleListings.length + itemListings.length}`,
+    },
   ];
 
   return (
@@ -48,7 +59,10 @@ function ProfileScreen({ stats, currentWealth, totalCredit, ownedCounts, isTable
         </Pressable>
         <View style={styles.profileTitleWrap}>
           <Text style={[styles.profileTitle, isTablet && styles.profileTitleTablet]}>Profile</Text>
-          <Text numberOfLines={1} style={[styles.profileAccountName, isTablet && styles.profileAccountNameTablet]}>
+          <Text
+            numberOfLines={1}
+            style={[styles.profileAccountName, isTablet && styles.profileAccountNameTablet]}
+          >
             Player stats
           </Text>
         </View>
@@ -65,7 +79,9 @@ function ProfileScreen({ stats, currentWealth, totalCredit, ownedCounts, isTable
             <View style={[styles.profileAvatarBody, isTablet && styles.profileAvatarBodyTablet]} />
           </View>
           <View style={styles.profileHeroText}>
-            <Text style={[styles.profileHeroLabel, isTablet && styles.profileHeroLabelTablet]}>Net worth</Text>
+            <Text style={[styles.profileHeroLabel, isTablet && styles.profileHeroLabelTablet]}>
+              Net worth
+            </Text>
             <Text style={[styles.profileHeroValue, isTablet && styles.profileHeroValueTablet]}>
               ${currentWealth.toLocaleString("en-US")}
             </Text>
@@ -75,8 +91,13 @@ function ProfileScreen({ stats, currentWealth, totalCredit, ownedCounts, isTable
         <View style={[styles.profileGrid, isTablet && styles.profileGridTablet]}>
           {profileStats.map((stat) => (
             <View key={stat.label} style={[styles.profileStatCard, isTablet && styles.profileStatCardTablet]}>
-              <Text style={[styles.profileStatLabel, isTablet && styles.profileStatLabelTablet]}>{stat.label}</Text>
-              <Text numberOfLines={1} style={[styles.profileStatValue, isTablet && styles.profileStatValueTablet]}>
+              <Text style={[styles.profileStatLabel, isTablet && styles.profileStatLabelTablet]}>
+                {stat.label}
+              </Text>
+              <Text
+                numberOfLines={1}
+                style={[styles.profileStatValue, isTablet && styles.profileStatValueTablet]}
+              >
                 {stat.value}
               </Text>
             </View>

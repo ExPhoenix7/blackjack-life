@@ -118,7 +118,7 @@ function BlackjackCelebration() {
     >
       <View style={styles.blackjackCelebrationLine} />
       <Text style={styles.blackjackCelebrationText}>BLACKJACK!</Text>
-      <Text style={styles.blackjackCelebrationSuits}>♠  ♥  ♦  ♣</Text>
+      <Text style={styles.blackjackCelebrationSuits}>♠ ♥ ♦ ♣</Text>
       <View style={styles.blackjackCelebrationLine} />
     </Animated.View>
   );

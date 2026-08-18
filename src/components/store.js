@@ -42,7 +42,12 @@ function VehicleThumbnail({ isTablet, name }) {
 function ItemThumbnail({ isTablet, name }) {
   return (
     <View style={[styles.itemThumbnail, isTablet && styles.storeThumbnailTablet]}>
-      <Image fadeDuration={0} resizeMode="cover" source={ITEM_IMAGES[name]} style={styles.storeThumbnailImage} />
+      <Image
+        fadeDuration={0}
+        resizeMode="cover"
+        source={ITEM_IMAGES[name]}
+        style={styles.storeThumbnailImage}
+      />
     </View>
   );
 }
@@ -208,10 +213,16 @@ function StorePanel({
                     <Text style={[styles.storeListingTier, isTablet && styles.storeListingTierTablet]}>
                       {String(index + 1).padStart(2, "0")}
                     </Text>
-                    <Text numberOfLines={1} style={[styles.storeListingName, isTablet && styles.storeListingNameTablet]}>
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.storeListingName, isTablet && styles.storeListingNameTablet]}
+                    >
                       {property.name}
                     </Text>
-                    <Text numberOfLines={1} style={[styles.storeListingBonus, isTablet && styles.storeListingBonusTablet]}>
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.storeListingBonus, isTablet && styles.storeListingBonusTablet]}
+                    >
                       +${property.rentPerHour.toLocaleString("en-US")}/hr rent
                     </Text>
                   </View>
@@ -257,10 +268,16 @@ function StorePanel({
                     <Text style={[styles.storeListingTier, isTablet && styles.storeListingTierTablet]}>
                       {String(index + 1).padStart(2, "0")}
                     </Text>
-                    <Text numberOfLines={1} style={[styles.storeListingName, isTablet && styles.storeListingNameTablet]}>
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.storeListingName, isTablet && styles.storeListingNameTablet]}
+                    >
                       {vehicle.name}
                     </Text>
-                    <Text numberOfLines={1} style={[styles.storeListingBonus, isTablet && styles.storeListingBonusTablet]}>
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.storeListingBonus, isTablet && styles.storeListingBonusTablet]}
+                    >
                       {bonusLabel(vehicle.bonus)}
                     </Text>
                   </View>
@@ -276,7 +293,13 @@ function StorePanel({
                     pressed && styles.pressed,
                   ]}
                 >
-                  <Text style={[styles.storeListingPrice, isTablet && styles.storeListingPriceTablet, owned && styles.storeOwnedCheck]}>
+                  <Text
+                    style={[
+                      styles.storeListingPrice,
+                      isTablet && styles.storeListingPriceTablet,
+                      owned && styles.storeOwnedCheck,
+                    ]}
+                  >
                     {owned ? "✓" : `$${vehicle.price.toLocaleString("en-US")}`}
                   </Text>
                 </Pressable>
@@ -302,10 +325,16 @@ function StorePanel({
                     <Text style={[styles.storeListingTier, isTablet && styles.storeListingTierTablet]}>
                       {String(index + 1).padStart(2, "0")}
                     </Text>
-                    <Text numberOfLines={1} style={[styles.storeListingName, isTablet && styles.storeListingNameTablet]}>
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.storeListingName, isTablet && styles.storeListingNameTablet]}
+                    >
                       {item.name}
                     </Text>
-                    <Text numberOfLines={1} style={[styles.storeListingBonus, isTablet && styles.storeListingBonusTablet]}>
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.storeListingBonus, isTablet && styles.storeListingBonusTablet]}
+                    >
                       {bonusLabel(item.bonus)}
                     </Text>
                   </View>
@@ -321,7 +350,13 @@ function StorePanel({
                     pressed && styles.pressed,
                   ]}
                 >
-                  <Text style={[styles.storeListingPrice, isTablet && styles.storeListingPriceTablet, owned && styles.storeOwnedCheck]}>
+                  <Text
+                    style={[
+                      styles.storeListingPrice,
+                      isTablet && styles.storeListingPriceTablet,
+                      owned && styles.storeOwnedCheck,
+                    ]}
+                  >
                     {owned ? "✓" : `$${item.price.toLocaleString("en-US")}`}
                   </Text>
                 </Pressable>

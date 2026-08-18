@@ -86,8 +86,8 @@ function MoneyMachinePanel({
       </Pressable>
       <View
         style={[
-            styles.moneyMachineUpgrades,
-            isTablet && styles.moneyMachineUpgradesTablet,
+          styles.moneyMachineUpgrades,
+          isTablet && styles.moneyMachineUpgradesTablet,
           {
             gap: scalePx(8, scale),
             height: scalePx(upgradesHeight, scale),
@@ -107,8 +107,8 @@ function MoneyMachinePanel({
         >
           <Text
             style={[
-            styles.moneyMachineUpgradeTitle,
-            isTablet && styles.moneyMachineUpgradeTitleTablet,
+              styles.moneyMachineUpgradeTitle,
+              isTablet && styles.moneyMachineUpgradeTitleTablet,
               { fontSize: scalePx(isAndroidPhone ? 13 : isTablet ? 15 : 13, scale) },
             ]}
           >
@@ -116,20 +116,24 @@ function MoneyMachinePanel({
           </Text>
           <Text
             style={[
-            styles.moneyMachineUpgradeEffect,
-            isTablet && styles.moneyMachineUpgradeEffectTablet,
-              { fontSize: scalePx(isAndroidPhone ? 10 : isTablet ? 11 : 10, scale), marginTop: scalePx(2, scale) },
+              styles.moneyMachineUpgradeEffect,
+              isTablet && styles.moneyMachineUpgradeEffectTablet,
+              {
+                fontSize: scalePx(isAndroidPhone ? 10 : isTablet ? 11 : 10, scale),
+                marginTop: scalePx(2, scale),
+              },
             ]}
           >
-            {tapAtMax
-              ? `+$${tapEarn} per tap`
-              : `+$${tapEarn}  >  +$${tapEarn + moneyMachineTapEarnStep}`}
+            {tapAtMax ? `+$${tapEarn} per tap` : `+$${tapEarn}  >  +$${tapEarn + moneyMachineTapEarnStep}`}
           </Text>
           <Text
             style={[
-            styles.moneyMachineUpgradeCost,
-            isTablet && styles.moneyMachineUpgradeCostTablet,
-              { fontSize: scalePx(isAndroidPhone ? 10 : isTablet ? 11 : 10, scale), marginTop: scalePx(2, scale) },
+              styles.moneyMachineUpgradeCost,
+              isTablet && styles.moneyMachineUpgradeCostTablet,
+              {
+                fontSize: scalePx(isAndroidPhone ? 10 : isTablet ? 11 : 10, scale),
+                marginTop: scalePx(2, scale),
+              },
             ]}
           >
             {tapAtMax ? "MAX LEVEL" : `Upgrade  $${tapUpgradeCost}`}
@@ -147,8 +151,8 @@ function MoneyMachinePanel({
         >
           <Text
             style={[
-            styles.moneyMachineUpgradeTitle,
-            isTablet && styles.moneyMachineUpgradeTitleTablet,
+              styles.moneyMachineUpgradeTitle,
+              isTablet && styles.moneyMachineUpgradeTitleTablet,
               { fontSize: scalePx(isAndroidPhone ? 13 : isTablet ? 15 : 13, scale) },
             ]}
           >
@@ -156,18 +160,26 @@ function MoneyMachinePanel({
           </Text>
           <Text
             style={[
-            styles.moneyMachineUpgradeEffect,
-            isTablet && styles.moneyMachineUpgradeEffectTablet,
-              { fontSize: scalePx(isAndroidPhone ? 10 : isTablet ? 11 : 10, scale), marginTop: scalePx(2, scale) },
+              styles.moneyMachineUpgradeEffect,
+              isTablet && styles.moneyMachineUpgradeEffectTablet,
+              {
+                fontSize: scalePx(isAndroidPhone ? 10 : isTablet ? 11 : 10, scale),
+                marginTop: scalePx(2, scale),
+              },
             ]}
           >
-            {capacityAtMax ? `$${capacity} capacity` : `$${capacity}  >  $${capacity + moneyMachineCapacityStep}`}
+            {capacityAtMax
+              ? `$${capacity} capacity`
+              : `$${capacity}  >  $${capacity + moneyMachineCapacityStep}`}
           </Text>
           <Text
             style={[
-            styles.moneyMachineUpgradeCost,
-            isTablet && styles.moneyMachineUpgradeCostTablet,
-              { fontSize: scalePx(isAndroidPhone ? 10 : isTablet ? 11 : 10, scale), marginTop: scalePx(2, scale) },
+              styles.moneyMachineUpgradeCost,
+              isTablet && styles.moneyMachineUpgradeCostTablet,
+              {
+                fontSize: scalePx(isAndroidPhone ? 10 : isTablet ? 11 : 10, scale),
+                marginTop: scalePx(2, scale),
+              },
             ]}
           >
             {capacityAtMax ? "MAX LEVEL" : `Upgrade  $${capacityUpgradeCost}`}
@@ -197,8 +209,8 @@ function MoneyMachinePanel({
         </Text>
         <View
           style={[
-              styles.moneyMachineBox,
-              isTablet && styles.moneyMachineBoxTablet,
+            styles.moneyMachineBox,
+            isTablet && styles.moneyMachineBoxTablet,
             {
               gap: scalePx(5, scale),
               minHeight: scalePx(boxHeight, scale),
@@ -246,7 +258,10 @@ function MoneyMachinePanel({
                 style={[
                   styles.moneyMachinePassiveRate,
                   isTablet && styles.moneyMachinePassiveRateTablet,
-                  { fontSize: scalePx(isTablet ? 10 : 9, scale), marginTop: scalePx(isTablet ? 3 : 2, scale) },
+                  {
+                    fontSize: scalePx(isTablet ? 10 : 9, scale),
+                    marginTop: scalePx(isTablet ? 3 : 2, scale),
+                  },
                 ]}
               >
                 +${passiveEarn}/min

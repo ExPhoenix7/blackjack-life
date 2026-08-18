@@ -26,7 +26,8 @@ function BottomTabs({ activeTab, isTablet, layoutScale = 1, onSelect }) {
     >
       {mainTabs.map((tab) => {
         const selected = tab === activeTab;
-        const icon = tab === "store" ? TAB_STORE_ICON : tab === "blackjack" ? TAB_BLACKJACK_ICON : TAB_MONEY_ICON;
+        const icon =
+          tab === "store" ? TAB_STORE_ICON : tab === "blackjack" ? TAB_BLACKJACK_ICON : TAB_MONEY_ICON;
 
         return (
           <Pressable

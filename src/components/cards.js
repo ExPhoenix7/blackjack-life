@@ -81,7 +81,18 @@ function Card({ card, hidden, index, compact, fast, isTablet }) {
   );
 }
 
-function Hand({ cards, score, hideDealer, isTablet, onDeckPress, onDeckTouchStart, showDeck, showScore, stacked, compactStack }) {
+function Hand({
+  cards,
+  score,
+  hideDealer,
+  isTablet,
+  onDeckPress,
+  onDeckTouchStart,
+  showDeck,
+  showScore,
+  stacked,
+  compactStack,
+}) {
   const slotOffset = compactStack ? (isTablet ? 46 : 38) : isTablet ? 64 : 54;
   const cardBaseWidth = compactStack ? (isTablet ? 94 : 82) : isTablet ? 108 : 94;
   const stackWidth = compactStack
@@ -91,11 +102,19 @@ function Hand({ cards, score, hideDealer, isTablet, onDeckPress, onDeckTouchStar
   return (
     <View style={[styles.hand, isTablet && styles.handTablet]}>
       <View style={styles.handHeader}>
-        {showScore && <Text style={[styles.score, isTablet && styles.scoreTablet]}>{hideDealer ? "?" : score}</Text>}
+        {showScore && (
+          <Text style={[styles.score, isTablet && styles.scoreTablet]}>{hideDealer ? "?" : score}</Text>
+        )}
       </View>
       <View style={[styles.dealerRow, isTablet && styles.dealerRowTablet]}>
         {showDeck && <DeckShoe isTablet={isTablet} onPress={onDeckPress} onTouchStart={onDeckTouchStart} />}
-        <View style={stacked ? [styles.stackedCards, isTablet && styles.stackedCardsTablet, { width: stackWidth }] : styles.cards}>
+        <View
+          style={
+            stacked
+              ? [styles.stackedCards, isTablet && styles.stackedCardsTablet, { width: stackWidth }]
+              : styles.cards
+          }
+        >
           {cards.map((card, index) => (
             <View
               key={`${card.rank}-${card.suit}-${index}`}

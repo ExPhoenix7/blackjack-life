@@ -96,6 +96,30 @@ import {
 } from "./src/core/game";
 import { styles } from "./src/styles/styles";
 
+async function readStoredJson(key) {
+  try {
+    const savedValue = await AsyncStorage.getItem(key);
+    return savedValue === null ? null : JSON.parse(savedValue);
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredJson(key, value) {
+  AsyncStorage.setItem(key, JSON.stringify(value)).catch(() => {});
+}
+
+function normalizeSavedAccount(account, index) {
+  const fallbackName = `Account ${index + 1}`;
+  const trimmedName = typeof account.name === "string" ? account.name.trim() : "";
+
+  return {
+    id: account.id,
+    name: trimmedName ? trimmedName.slice(0, 10) : fallbackName,
+    credit: Math.max(0, Math.floor(account.credit)),
+  };
+}
+
 export default function App() {
   const windowSize = useWindowDimensions();
   const layoutWidth = getLayoutWidth(windowSize.width);
@@ -103,7 +127,12 @@ export default function App() {
   const responsiveMetrics = getResponsiveMetrics(windowSize.width, windowSize.height);
   const isTabletLayout = responsiveMetrics.isTablet;
   const safeFrameInsets = getSafeFrameInsets(windowSize.width, windowSize.height);
-  const responsiveLayout = getResponsiveLayout(windowSize.width, windowSize.height, layoutWidth, safeFrameInsets);
+  const responsiveLayout = getResponsiveLayout(
+    windowSize.width,
+    windowSize.height,
+    layoutWidth,
+    safeFrameInsets
+  );
   const chipScale = responsiveLayout.chipScale;
   const moneyMachineScale = responsiveLayout.moneyMachineScale;
   const [deck, setDeck] = useState(() => shuffle(createDeck()));
@@ -244,7 +273,12 @@ export default function App() {
     resultDelta === null &&
     !blackjackCelebration;
   const showBlackjackTable =
-    activeTab === "blackjack" || inRound || dealing || resolvingDealer || resultDelta !== null || blackjackCelebration;
+    activeTab === "blackjack" ||
+    inRound ||
+    dealing ||
+    resolvingDealer ||
+    resultDelta !== null ||
+    blackjackCelebration;
   const needsFirstAccountName = accountsLoaded && !hasChosenFirstAccountName;
 
   useEffect(() => {
@@ -279,7 +313,9 @@ export default function App() {
 
     const nextUnlockedIds = new Set(
       achievementDefinitions
-        .filter((achievement) => achievementProgress(achievement, achievementDisplayStats) >= achievement.goal)
+        .filter(
+          (achievement) => achievementProgress(achievement, achievementDisplayStats) >= achievement.goal
+        )
         .map((achievement) => achievement.id)
     );
 
@@ -290,7 +326,8 @@ export default function App() {
     }
 
     const newUnlocks = achievementDefinitions.filter(
-      (achievement) => nextUnlockedIds.has(achievement.id) && !unlockedAchievementIds.current.has(achievement.id)
+      (achievement) =>
+        nextUnlockedIds.has(achievement.id) && !unlockedAchievementIds.current.has(achievement.id)
     );
 
     unlockedAchievementIds.current = nextUnlockedIds;
@@ -300,9 +337,7 @@ export default function App() {
       if (totalReward > 0 && activeAccountId) {
         setAccounts((current) =>
           current.map((account) =>
-            account.id === activeAccountId
-              ? { ...account, credit: account.credit + totalReward }
-              : account
+            account.id === activeAccountId ? { ...account, credit: account.credit + totalReward } : account
           )
         );
         setChips((current) => current + totalReward);
@@ -332,18 +367,13 @@ export default function App() {
     let active = true;
 
     async function loadSettings() {
-      const savedSettings = await AsyncStorage.getItem(settingsStorageKey);
-      if (!active || savedSettings === null) {
+      const parsedSettings = await readStoredJson(settingsStorageKey);
+      if (!active || parsedSettings === null) {
         return;
       }
 
-      try {
-        const parsedSettings = JSON.parse(savedSettings);
-        if (typeof parsedSettings.soundEnabled === "boolean") {
-          setSoundEnabled(parsedSettings.soundEnabled);
-        }
-      } catch {
-        // Ignore old or broken settings data.
+      if (typeof parsedSettings.soundEnabled === "boolean") {
+        setSoundEnabled(parsedSettings.soundEnabled);
       }
     }
 
@@ -354,7 +384,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    AsyncStorage.setItem(settingsStorageKey, JSON.stringify({ soundEnabled }));
+    writeStoredJson(settingsStorageKey, { soundEnabled });
   }, [soundEnabled]);
 
   useEffect(() => {
@@ -362,7 +392,7 @@ export default function App() {
 
     async function loadAccounts() {
       try {
-        const savedAccounts = await AsyncStorage.getItem(accountsStorageKey);
+        const parsedSave = await readStoredJson(accountsStorageKey);
         const now = Date.now();
         let loadedAccounts = [];
         let loadedActiveId = null;
@@ -374,8 +404,7 @@ export default function App() {
         let loadedOwnedRealEstate = [];
         let loadedOwnedVehicles = [];
 
-        if (savedAccounts !== null) {
-          const parsedSave = JSON.parse(savedAccounts);
+        if (parsedSave !== null) {
           loadedHasChosenName = parsedSave.hasChosenFirstAccountName === true;
           if (parsedSave.moneyMachine) {
             loadedMoneyMachine = parsedSave.moneyMachine;
@@ -402,21 +431,22 @@ export default function App() {
             );
           }
           if (Array.isArray(parsedSave.accounts) && parsedSave.accounts.length > 0) {
-            loadedAccounts = parsedSave.accounts.filter(
-              (account) =>
-                typeof account.id === "string" &&
-                typeof account.name === "string" &&
-                Number.isFinite(account.credit) &&
-                account.credit >= 0
-            );
+            loadedAccounts = parsedSave.accounts
+              .filter(
+                (account) =>
+                  typeof account.id === "string" &&
+                  typeof account.name === "string" &&
+                  Number.isFinite(account.credit) &&
+                  account.credit >= 0
+              )
+              .slice(0, accountLimit)
+              .map(normalizeSavedAccount);
             loadedActiveId = parsedSave.activeAccountId;
           }
         }
 
         if (loadedAccounts.length === 0) {
-          loadedAccounts = [
-            { id: "account-1", name: "Account 1", credit: firstAccountChips },
-          ];
+          loadedAccounts = [{ id: "account-1", name: "Account 1", credit: firstAccountChips }];
           loadedActiveId = "account-1";
         }
 
@@ -482,20 +512,17 @@ export default function App() {
 
   useEffect(() => {
     if (accountsLoaded && activeAccountId && accounts.length > 0) {
-      AsyncStorage.setItem(
-        accountsStorageKey,
-        JSON.stringify({
-          accounts,
-          activeAccountId,
-          hasChosenFirstAccountName,
-          moneyMachine,
-          rentalIncome,
-          achievementStats,
-          ownedItems,
-          ownedRealEstate,
-          ownedVehicles,
-        })
-      );
+      writeStoredJson(accountsStorageKey, {
+        accounts,
+        activeAccountId,
+        hasChosenFirstAccountName,
+        moneyMachine,
+        rentalIncome,
+        achievementStats,
+        ownedItems,
+        ownedRealEstate,
+        ownedVehicles,
+      });
     }
   }, [
     accounts,
@@ -517,12 +544,7 @@ export default function App() {
 
     const timer = setInterval(() => {
       setMoneyMachine((current) =>
-        normalizeMoneyMachine(
-          current,
-          Date.now(),
-          activeMachinePassiveEarn,
-          activeStoreBonuses.capacity
-        )
+        normalizeMoneyMachine(current, Date.now(), activeMachinePassiveEarn, activeStoreBonuses.capacity)
       );
       setRentalIncome((current) =>
         normalizeRentalIncome(current, ownedRealEstate, Date.now(), activeStoreBonuses.rentalPercent)
@@ -530,7 +552,13 @@ export default function App() {
     }, moneyMachineTickMs);
 
     return () => clearInterval(timer);
-  }, [accountsLoaded, activeMachinePassiveEarn, activeStoreBonuses.capacity, activeStoreBonuses.rentalPercent, ownedRealEstate]);
+  }, [
+    accountsLoaded,
+    activeMachinePassiveEarn,
+    activeStoreBonuses.capacity,
+    activeStoreBonuses.rentalPercent,
+    ownedRealEstate,
+  ]);
 
   useEffect(() => {
     startupSplashTimer.current = setTimeout(() => {
@@ -561,7 +589,9 @@ export default function App() {
 
   function saveActiveAccountCredit(nextCredit) {
     setAccounts((current) =>
-      current.map((account) => (account.id === activeAccountId ? { ...account, credit: nextCredit } : account))
+      current.map((account) =>
+        account.id === activeAccountId ? { ...account, credit: nextCredit } : account
+      )
     );
   }
 
@@ -1000,7 +1030,9 @@ export default function App() {
     }
 
     setAccounts((current) =>
-      current.map((account) => (account.id === editingAccountId ? { ...account, name: trimmedName } : account))
+      current.map((account) =>
+        account.id === editingAccountId ? { ...account, name: trimmedName } : account
+      )
     );
     setEditingAccountId(null);
     setEditingAccountName("");
@@ -1378,565 +1410,595 @@ export default function App() {
             },
           ]}
         >
-        {needsFirstAccountName ? (
-          <View style={[styles.inlineNameOverlay, { width: layoutWidth }]}>
-            <View onTouchStart={stopDeveloperTouchPropagation} style={styles.inlineNamePanel}>
-              <TextInput
-                autoCapitalize="words"
-                autoCorrect={false}
-                maxLength={10}
-                onChangeText={setFirstAccountName}
-                onSubmitEditing={saveFirstAccountName}
-                placeholder="Enter name"
-                placeholderTextColor="rgba(255,255,255,0.62)"
-                returnKeyType="done"
-                style={styles.inlineNameInput}
-                value={firstAccountName}
-              />
-              <Pressable
-                disabled={!firstAccountName.trim()}
-                onPress={saveFirstAccountName}
-                style={({ pressed }) => [
-                  styles.inlineNameConfirm,
-                  !firstAccountName.trim() && styles.disabled,
-                  pressed && styles.pressed,
-                ]}
-              >
-                <Text style={styles.inlineNameConfirmText}>OK</Text>
-              </Pressable>
-            </View>
-          </View>
-        ) : (
-          <>
-        <View style={[styles.header, { minHeight: responsiveLayout.headerMinHeight, width: layoutWidth }]}>
-          <View style={styles.headerLeftSlot}>
-            <Pressable
-              onPress={() => setAchievementMenuOpen(true)}
-              onTouchStart={stopDeveloperTouchPropagation}
-              style={({ pressed }) => [styles.achievementHeaderButton, pressed && styles.pressed]}
-            >
-              <Text style={styles.achievementHeaderIcon}>★</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => setProfileScreenOpen(true)}
-              onTouchStart={stopDeveloperTouchPropagation}
-              style={({ pressed }) => [styles.profileHeaderButton, pressed && styles.pressed]}
-            >
-              <View style={styles.profileHeaderIcon}>
-                <View style={styles.profileHeaderIconHead} />
-                <View style={styles.profileHeaderIconBody} />
-              </View>
-            </Pressable>
-          </View>
-          <Pressable
-            onPress={() => setSoundEnabled((current) => !current)}
-            style={({ pressed }) => [styles.soundHeaderButton, pressed && styles.pressed]}
-          >
-            <Image
-              fadeDuration={0}
-              resizeMode="contain"
-              source={soundEnabled ? SOUND_ON_ICON : SOUND_OFF_ICON}
-              style={styles.soundHeaderIcon}
-            />
-          </Pressable>
-          <View style={styles.headerRight}>
-          <Pressable
-            onPress={() => {
-              setAccountMenuMessage(accountSwitchLocked ? "Finish the round first." : "");
-              setAccountMenuOpen(true);
-            }}
-            style={({ pressed }) => [styles.accountMenuButton, pressed && styles.pressed]}
-          >
-            <View style={styles.menuIcon}>
-              <View style={styles.menuIconLine} />
-              <View style={styles.menuIconLine} />
-              <View style={styles.menuIconLine} />
-            </View>
-            <Text numberOfLines={1} style={styles.accountMenuButtonText}>
-              {activeAccount?.name || "Account"}
-            </Text>
-          </Pressable>
-          <View style={styles.wallet}>
-            <View style={styles.walletLabelRow}>
-              <Pressable
-                onPress={handleDeveloperCreditPress}
-                onTouchStart={stopDeveloperTouchPropagation}
-                style={({ pressed }) => [pressed && styles.pressed]}
-              >
-                <Text style={styles.walletLabel}>Credit</Text>
-              </Pressable>
-            </View>
-            <Text style={styles.walletValue}>{chips}</Text>
-            <Pressable
-              disabled={creditDelta !== null || rewardedAdLoading}
-              onPress={handleRewardedAdPress}
-              onTouchStart={stopDeveloperTouchPropagation}
-              style={({ pressed }) => [
-                styles.rewardedAdButton,
-                (creditDelta !== null || rewardedAdLoading) && styles.disabled,
-                pressed && styles.pressed,
-              ]}
-            >
-              <Text style={styles.rewardedAdBadge}>AD</Text>
-              <Text style={styles.rewardedAdText}>{rewardedAdLoading ? "..." : rewardedAdLabel}</Text>
-            </Pressable>
-            {adStatusMessage ? <Text style={styles.rewardedAdStatus}>{adStatusMessage}</Text> : null}
-            {creditDelta !== null && (
-              <CreditDelta
-                amount={creditDelta}
-                onDone={() => {
-                  setChips((current) => current + creditDelta);
-                  setCreditDelta(null);
-                }}
-              />
-            )}
-          </View>
-          </View>
-        </View>
-
-        {achievementToast ? (
-          <AchievementToast achievement={achievementToast} onDone={() => setAchievementToast(null)} />
-        ) : null}
-
-        {profileScreenOpen ? (
-          <ProfileScreen
-            currentWealth={currentWealth}
-            isTablet={isTabletLayout}
-            onBack={() => setProfileScreenOpen(false)}
-            ownedCounts={{
-              realEstate: ownedRealEstate.length,
-              vehicles: ownedVehicles.length,
-              items: ownedItems.length,
-            }}
-            safeFrameInsets={safeFrameInsets}
-            stats={achievementStats}
-            totalCredit={totalAccountCredit}
-          />
-        ) : null}
-
-        <View style={[styles.table, { paddingBottom: responsiveLayout.tablePaddingBottom, width: layoutWidth }]}>
-          <View
-            pointerEvents={showBlackjackTable ? "auto" : "none"}
-            style={[
-              styles.blackjackHandClip,
-              isTabletLayout && styles.blackjackHandClipTablet,
-              { minHeight: responsiveLayout.handClipMinHeight, width: tabPanelWidth },
-            ]}
-          >
-            <Animated.View style={{ transform: [{ translateX: blackjackOverlayTranslateX }] }}>
-              <Hand
-                cards={dealer}
-                score={shownDealerScore}
-                hideDealer={inRound && !revealDealer}
-                isTablet={isTabletLayout}
-                onDeckPress={
-                  !inRound && !dealing && !betweenRounds && resultDelta === null
-                    ? handleDeveloperDeckPress
-                    : undefined
-                }
-                onDeckTouchStart={stopDeveloperTouchPropagation}
-                showDeck
-                showScore={inRound}
-                stacked
-                compactStack
-              />
-            </Animated.View>
-          </View>
-
-          <View
-            style={[
-              styles.centerControls,
-              {
-                minHeight: responsiveLayout.centerControlsMinHeight,
-                transform: [{ translateY: responsiveLayout.centerControlsTranslateY }],
-              },
-            ]}
-          >
-            {showBottomTabs ? (
-              <>
-                <View
-                  style={[
-                    styles.tabArea,
-                    isTabletLayout && styles.tabAreaTablet,
-                    { height: responsiveLayout.tabAreaHeight, width: tabPanelWidth },
+          {needsFirstAccountName ? (
+            <View style={[styles.inlineNameOverlay, { width: layoutWidth }]}>
+              <View onTouchStart={stopDeveloperTouchPropagation} style={styles.inlineNamePanel}>
+                <TextInput
+                  autoCapitalize="words"
+                  autoCorrect={false}
+                  maxLength={10}
+                  onChangeText={setFirstAccountName}
+                  onSubmitEditing={saveFirstAccountName}
+                  placeholder="Enter name"
+                  placeholderTextColor="rgba(255,255,255,0.62)"
+                  returnKeyType="done"
+                  style={styles.inlineNameInput}
+                  value={firstAccountName}
+                />
+                <Pressable
+                  disabled={!firstAccountName.trim()}
+                  onPress={saveFirstAccountName}
+                  style={({ pressed }) => [
+                    styles.inlineNameConfirm,
+                    !firstAccountName.trim() && styles.disabled,
+                    pressed && styles.pressed,
                   ]}
                 >
-                  <View
-                    style={[
-                      styles.tabViewport,
-                      isTabletLayout && styles.tabViewportTablet,
-                      { height: responsiveLayout.tabAreaHeight, width: tabPanelWidth },
-                    ]}
+                  <Text style={styles.inlineNameConfirmText}>OK</Text>
+                </Pressable>
+              </View>
+            </View>
+          ) : (
+            <>
+              <View
+                style={[styles.header, { minHeight: responsiveLayout.headerMinHeight, width: layoutWidth }]}
+              >
+                <View style={styles.headerLeftSlot}>
+                  <Pressable
+                    onPress={() => setAchievementMenuOpen(true)}
+                    onTouchStart={stopDeveloperTouchPropagation}
+                    style={({ pressed }) => [styles.achievementHeaderButton, pressed && styles.pressed]}
                   >
-                    <Animated.View
-                      style={[
-                        styles.tabTrack,
-                        {
-                          width: tabPanelWidth * mainTabs.length,
-                          transform: [{ translateX: tabTrackTranslateX }],
-                        },
+                    <Text style={styles.achievementHeaderIcon}>★</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => setProfileScreenOpen(true)}
+                    onTouchStart={stopDeveloperTouchPropagation}
+                    style={({ pressed }) => [styles.profileHeaderButton, pressed && styles.pressed]}
+                  >
+                    <View style={styles.profileHeaderIcon}>
+                      <View style={styles.profileHeaderIconHead} />
+                      <View style={styles.profileHeaderIconBody} />
+                    </View>
+                  </Pressable>
+                </View>
+                <Pressable
+                  onPress={() => setSoundEnabled((current) => !current)}
+                  style={({ pressed }) => [styles.soundHeaderButton, pressed && styles.pressed]}
+                >
+                  <Image
+                    fadeDuration={0}
+                    resizeMode="contain"
+                    source={soundEnabled ? SOUND_ON_ICON : SOUND_OFF_ICON}
+                    style={styles.soundHeaderIcon}
+                  />
+                </Pressable>
+                <View style={styles.headerRight}>
+                  <Pressable
+                    onPress={() => {
+                      setAccountMenuMessage(accountSwitchLocked ? "Finish the round first." : "");
+                      setAccountMenuOpen(true);
+                    }}
+                    style={({ pressed }) => [styles.accountMenuButton, pressed && styles.pressed]}
+                  >
+                    <View style={styles.menuIcon}>
+                      <View style={styles.menuIconLine} />
+                      <View style={styles.menuIconLine} />
+                      <View style={styles.menuIconLine} />
+                    </View>
+                    <Text numberOfLines={1} style={styles.accountMenuButtonText}>
+                      {activeAccount?.name || "Account"}
+                    </Text>
+                  </Pressable>
+                  <View style={styles.wallet}>
+                    <View style={styles.walletLabelRow}>
+                      <Pressable
+                        onPress={handleDeveloperCreditPress}
+                        onTouchStart={stopDeveloperTouchPropagation}
+                        style={({ pressed }) => [pressed && styles.pressed]}
+                      >
+                        <Text style={styles.walletLabel}>Credit</Text>
+                      </Pressable>
+                    </View>
+                    <Text style={styles.walletValue}>{chips}</Text>
+                    <Pressable
+                      disabled={creditDelta !== null || rewardedAdLoading}
+                      onPress={handleRewardedAdPress}
+                      onTouchStart={stopDeveloperTouchPropagation}
+                      style={({ pressed }) => [
+                        styles.rewardedAdButton,
+                        (creditDelta !== null || rewardedAdLoading) && styles.disabled,
+                        pressed && styles.pressed,
                       ]}
                     >
-                      <View style={[styles.tabPanel, { width: tabPanelWidth }]} />
-                      <View style={[styles.tabPanel, { width: tabPanelWidth }]} />
-                      <View style={[styles.tabPanel, { width: tabPanelWidth }]} />
-                    </Animated.View>
-                  </View>
-                  <View
-                    pointerEvents={activeTab === "store" ? "auto" : "none"}
-                    style={[
-                      styles.storeOverlayClip,
-                      isTabletLayout && styles.storeOverlayClipTablet,
-                      {
-                        height: responsiveLayout.storeOverlayClipHeight,
-                        top: responsiveLayout.storeOverlayClipTop,
-                        width: tabPanelWidth,
-                      },
-                    ]}
-                  >
-                    <Animated.View
-                      style={[
-                        styles.storeOverlay,
-                        isTabletLayout && styles.storeOverlayTablet,
-                        {
-                          height: responsiveLayout.storeOverlayHeight,
-                          top: responsiveLayout.storeOverlayTop,
-                          transform: [{ translateX: storeOverlayTranslateX }],
-                        },
-                      ]}
-                    >
-                      <StorePanel
-                        credit={chips}
-                        isTablet={isTabletLayout}
-                        ownedItems={ownedItems}
-                        ownedRealEstate={ownedRealEstate}
-                        ownedVehicles={ownedVehicles}
-                        rentalIncome={rentalIncomeStored}
-                        rentalProgress={rentalPayoutProgress}
-                        rentalRate={rentalRate}
-                        rentalCountdownText={rentalCountdownText}
-                        onBuyRealEstate={buyRealEstate}
-                        onBuyVehicle={buyVehicle}
-                        onBuyItem={buyItem}
-                        onCollectRentalIncome={collectRentalIncome}
-                        visible={activeTab === "store"}
+                      <Text style={styles.rewardedAdBadge}>AD</Text>
+                      <Text style={styles.rewardedAdText}>{rewardedAdLoading ? "..." : rewardedAdLabel}</Text>
+                    </Pressable>
+                    {adStatusMessage ? <Text style={styles.rewardedAdStatus}>{adStatusMessage}</Text> : null}
+                    {creditDelta !== null && (
+                      <CreditDelta
+                        amount={creditDelta}
+                        onDone={() => {
+                          setChips((current) => current + creditDelta);
+                          setCreditDelta(null);
+                        }}
                       />
-                    </Animated.View>
+                    )}
                   </View>
-                  <View
-                    pointerEvents={activeTab === "blackjack" ? "box-none" : "none"}
-                    style={[
-                      styles.blackjackOverlayClip,
-                      isTabletLayout && styles.blackjackOverlayClipTablet,
-                      {
-                        height: responsiveLayout.blackjackClipHeight,
-                        top: responsiveLayout.blackjackClipTop,
-                        width: tabPanelWidth,
-                      },
-                    ]}
-                  >
-                    <Animated.View
-                      style={[
-                        styles.blackjackBetOverlay,
-                        isTabletLayout && styles.blackjackBetOverlayTablet,
-                        {
-                          top: responsiveLayout.blackjackOverlayTop,
-                          transform: [{ translateX: blackjackOverlayTranslateX }],
-                        },
-                      ]}
-                    >
-                        <Text style={styles.message}>{message}</Text>
-                        <BetStack chips={betChips} chipScale={chipScale} isTablet={isTabletLayout} />
+                </View>
+              </View>
 
-                        {betweenRounds ? (
-                          <RoundLoader />
-                        ) : (
-                          <>
-                            <View
-                              style={[
-                                styles.betRow,
-                                isTabletLayout && styles.betRowTablet,
-                                {
-                                  gap: scalePx(isTabletLayout ? 8 : 4, chipScale),
-                                  minHeight: scalePx(isTabletLayout ? 108 : 78, chipScale),
-                                },
-                              ]}
-                            >
-                              {betOptions.map((amount, index) => (
-                                <Pressable
-                                  key={amount}
-                                  onPress={() => addBetChip(amount)}
-                                  onTouchStart={stopDeveloperTouchPropagation}
-                                  style={({ pressed }) => [
-                                    styles.chipButton,
-                                    isTabletLayout && styles.chipButtonTablet,
-                                    styles[`chipButton${index}`],
-                                    isTabletLayout && styles[`chipButton${index}Tablet`],
+              {achievementToast ? (
+                <AchievementToast achievement={achievementToast} onDone={() => setAchievementToast(null)} />
+              ) : null}
+
+              {profileScreenOpen ? (
+                <ProfileScreen
+                  currentWealth={currentWealth}
+                  isTablet={isTabletLayout}
+                  onBack={() => setProfileScreenOpen(false)}
+                  ownedCounts={{
+                    realEstate: ownedRealEstate.length,
+                    vehicles: ownedVehicles.length,
+                    items: ownedItems.length,
+                  }}
+                  safeFrameInsets={safeFrameInsets}
+                  stats={achievementStats}
+                  totalCredit={totalAccountCredit}
+                />
+              ) : null}
+
+              <View
+                style={[
+                  styles.table,
+                  { paddingBottom: responsiveLayout.tablePaddingBottom, width: layoutWidth },
+                ]}
+              >
+                <View
+                  pointerEvents={showBlackjackTable ? "auto" : "none"}
+                  style={[
+                    styles.blackjackHandClip,
+                    isTabletLayout && styles.blackjackHandClipTablet,
+                    { minHeight: responsiveLayout.handClipMinHeight, width: tabPanelWidth },
+                  ]}
+                >
+                  <Animated.View style={{ transform: [{ translateX: blackjackOverlayTranslateX }] }}>
+                    <Hand
+                      cards={dealer}
+                      score={shownDealerScore}
+                      hideDealer={inRound && !revealDealer}
+                      isTablet={isTabletLayout}
+                      onDeckPress={
+                        !inRound && !dealing && !betweenRounds && resultDelta === null
+                          ? handleDeveloperDeckPress
+                          : undefined
+                      }
+                      onDeckTouchStart={stopDeveloperTouchPropagation}
+                      showDeck
+                      showScore={inRound}
+                      stacked
+                      compactStack
+                    />
+                  </Animated.View>
+                </View>
+
+                <View
+                  style={[
+                    styles.centerControls,
+                    {
+                      minHeight: responsiveLayout.centerControlsMinHeight,
+                      transform: [{ translateY: responsiveLayout.centerControlsTranslateY }],
+                    },
+                  ]}
+                >
+                  {showBottomTabs ? (
+                    <>
+                      <View
+                        style={[
+                          styles.tabArea,
+                          isTabletLayout && styles.tabAreaTablet,
+                          { height: responsiveLayout.tabAreaHeight, width: tabPanelWidth },
+                        ]}
+                      >
+                        <View
+                          style={[
+                            styles.tabViewport,
+                            isTabletLayout && styles.tabViewportTablet,
+                            { height: responsiveLayout.tabAreaHeight, width: tabPanelWidth },
+                          ]}
+                        >
+                          <Animated.View
+                            style={[
+                              styles.tabTrack,
+                              {
+                                width: tabPanelWidth * mainTabs.length,
+                                transform: [{ translateX: tabTrackTranslateX }],
+                              },
+                            ]}
+                          >
+                            <View style={[styles.tabPanel, { width: tabPanelWidth }]} />
+                            <View style={[styles.tabPanel, { width: tabPanelWidth }]} />
+                            <View style={[styles.tabPanel, { width: tabPanelWidth }]} />
+                          </Animated.View>
+                        </View>
+                        <View
+                          pointerEvents={activeTab === "store" ? "auto" : "none"}
+                          style={[
+                            styles.storeOverlayClip,
+                            isTabletLayout && styles.storeOverlayClipTablet,
+                            {
+                              height: responsiveLayout.storeOverlayClipHeight,
+                              top: responsiveLayout.storeOverlayClipTop,
+                              width: tabPanelWidth,
+                            },
+                          ]}
+                        >
+                          <Animated.View
+                            style={[
+                              styles.storeOverlay,
+                              isTabletLayout && styles.storeOverlayTablet,
+                              {
+                                height: responsiveLayout.storeOverlayHeight,
+                                top: responsiveLayout.storeOverlayTop,
+                                transform: [{ translateX: storeOverlayTranslateX }],
+                              },
+                            ]}
+                          >
+                            <StorePanel
+                              credit={chips}
+                              isTablet={isTabletLayout}
+                              ownedItems={ownedItems}
+                              ownedRealEstate={ownedRealEstate}
+                              ownedVehicles={ownedVehicles}
+                              rentalIncome={rentalIncomeStored}
+                              rentalProgress={rentalPayoutProgress}
+                              rentalRate={rentalRate}
+                              rentalCountdownText={rentalCountdownText}
+                              onBuyRealEstate={buyRealEstate}
+                              onBuyVehicle={buyVehicle}
+                              onBuyItem={buyItem}
+                              onCollectRentalIncome={collectRentalIncome}
+                              visible={activeTab === "store"}
+                            />
+                          </Animated.View>
+                        </View>
+                        <View
+                          pointerEvents={activeTab === "blackjack" ? "box-none" : "none"}
+                          style={[
+                            styles.blackjackOverlayClip,
+                            isTabletLayout && styles.blackjackOverlayClipTablet,
+                            {
+                              height: responsiveLayout.blackjackClipHeight,
+                              top: responsiveLayout.blackjackClipTop,
+                              width: tabPanelWidth,
+                            },
+                          ]}
+                        >
+                          <Animated.View
+                            style={[
+                              styles.blackjackBetOverlay,
+                              isTabletLayout && styles.blackjackBetOverlayTablet,
+                              {
+                                top: responsiveLayout.blackjackOverlayTop,
+                                transform: [{ translateX: blackjackOverlayTranslateX }],
+                              },
+                            ]}
+                          >
+                            <Text style={styles.message}>{message}</Text>
+                            <BetStack chips={betChips} chipScale={chipScale} isTablet={isTabletLayout} />
+
+                            {betweenRounds ? (
+                              <RoundLoader />
+                            ) : (
+                              <>
+                                <View
+                                  style={[
+                                    styles.betRow,
+                                    isTabletLayout && styles.betRowTablet,
                                     {
-                                      borderRadius: scalePx(isTabletLayout ? 44 : 31, chipScale),
-                                      transform: getBetChipButtonTransform(index, isTabletLayout, chipScale),
+                                      gap: scalePx(isTabletLayout ? 8 : 4, chipScale),
+                                      minHeight: scalePx(isTabletLayout ? 108 : 78, chipScale),
                                     },
+                                  ]}
+                                >
+                                  {betOptions.map((amount, index) => (
+                                    <Pressable
+                                      key={amount}
+                                      onPress={() => addBetChip(amount)}
+                                      onTouchStart={stopDeveloperTouchPropagation}
+                                      style={({ pressed }) => [
+                                        styles.chipButton,
+                                        isTabletLayout && styles.chipButtonTablet,
+                                        styles[`chipButton${index}`],
+                                        isTabletLayout && styles[`chipButton${index}Tablet`],
+                                        {
+                                          borderRadius: scalePx(isTabletLayout ? 44 : 31, chipScale),
+                                          transform: getBetChipButtonTransform(
+                                            index,
+                                            isTabletLayout,
+                                            chipScale
+                                          ),
+                                        },
+                                        pressed && styles.pressed,
+                                      ]}
+                                    >
+                                      <Chip amount={amount} chipScale={chipScale} isTablet={isTabletLayout} />
+                                    </Pressable>
+                                  ))}
+                                </View>
+                                <View style={[styles.betActions, isTabletLayout && styles.betActionsTablet]}>
+                                  <Pressable
+                                    disabled={bet <= 0}
+                                    onPress={clearBet}
+                                    style={({ pressed }) => [
+                                      styles.clearButton,
+                                      bet <= 0 && styles.disabled,
+                                      pressed && styles.pressed,
+                                    ]}
+                                  >
+                                    <Text style={styles.clearButtonText}>Clear</Text>
+                                  </Pressable>
+                                  <View style={styles.totalBetBadge}>
+                                    <Text
+                                      style={[
+                                        styles.totalBetText,
+                                        bet >= 10000 && styles.totalBetTextCompact,
+                                      ]}
+                                    >
+                                      ${bet}
+                                    </Text>
+                                  </View>
+                                  <Pressable
+                                    disabled={bet <= 0}
+                                    onPress={startRound}
+                                    style={({ pressed }) => [
+                                      styles.dealButton,
+                                      bet <= 0 && styles.disabled,
+                                      pressed && styles.pressed,
+                                    ]}
+                                  >
+                                    <Text style={styles.dealButtonText}>Ready</Text>
+                                  </Pressable>
+                                </View>
+                              </>
+                            )}
+                          </Animated.View>
+                        </View>
+                        <View
+                          pointerEvents={activeTab === "money" ? "auto" : "none"}
+                          style={[
+                            styles.moneyOverlayClip,
+                            isTabletLayout && styles.moneyOverlayClipTablet,
+                            {
+                              height: responsiveLayout.moneyOverlayClipHeight,
+                              top: responsiveLayout.moneyOverlayClipTop,
+                              width: tabPanelWidth,
+                            },
+                          ]}
+                        >
+                          <Animated.View
+                            style={[
+                              styles.moneyOverlay,
+                              isTabletLayout && styles.moneyOverlayTablet,
+                              {
+                                height: responsiveLayout.moneyOverlayHeight,
+                                top: responsiveLayout.moneyOverlayTop,
+                                transform: [{ translateX: moneyOverlayTranslateX }],
+                              },
+                            ]}
+                          >
+                            <MoneyMachinePanel
+                              stored={moneyMachineStored}
+                              isTablet={isTabletLayout}
+                              moneyMachineScale={moneyMachineScale}
+                              capacity={activeMoneyMachineCapacity}
+                              tapEarn={activeMoneyMachineTapEarn}
+                              passiveEarn={activeMachinePassiveEarn}
+                              tapLevel={moneyMachineTapLevel}
+                              capacityLevel={moneyMachineCapacityLevel}
+                              credit={chips}
+                              onCollect={collectMoneyMachine}
+                              onTapEarn={tapMoneyMachine}
+                              onUpgradeTap={() => upgradeMoneyMachine("tap")}
+                              onUpgradeCapacity={() => upgradeMoneyMachine("capacity")}
+                            />
+                          </Animated.View>
+                        </View>
+                      </View>
+                      <BottomTabs
+                        activeTab={activeTab}
+                        isTablet={isTabletLayout}
+                        layoutScale={responsiveLayout.uiScale}
+                        onSelect={selectTab}
+                      />
+                    </>
+                  ) : resultDelta !== null ? (
+                    <>
+                      <BetStack chips={betChips} chipScale={chipScale} isTablet={isTabletLayout} />
+                      <ResultSplash delta={resultDelta} />
+                    </>
+                  ) : betweenRounds ? (
+                    <RoundLoader />
+                  ) : dealing ? (
+                    <>
+                      <BetStack chips={betChips} chipScale={chipScale} isTablet={isTabletLayout} />
+                      <View style={styles.dealingSpace} />
+                    </>
+                  ) : (
+                    <>
+                      <BetStack chips={betChips} chipScale={chipScale} isTablet={isTabletLayout} />
+                      <View style={styles.actionRow}>
+                        <Pressable
+                          disabled={resolvingDealer || dealing}
+                          onPress={hit}
+                          style={({ pressed }) => [
+                            styles.actionButton,
+                            styles.hitButton,
+                            (resolvingDealer || dealing) && styles.disabled,
+                            pressed && styles.pressed,
+                          ]}
+                        >
+                          <Text style={styles.actionText}>Hit</Text>
+                        </Pressable>
+                        <Pressable
+                          disabled={resolvingDealer || dealing}
+                          onPress={stand}
+                          style={({ pressed }) => [
+                            styles.actionButton,
+                            styles.standButton,
+                            (resolvingDealer || dealing) && styles.disabled,
+                            pressed && styles.pressed,
+                          ]}
+                        >
+                          <Text style={styles.actionText}>Stand</Text>
+                        </Pressable>
+                      </View>
+                    </>
+                  )}
+                </View>
+
+                {!showBottomTabs && showBlackjackTable ? (
+                  <Hand
+                    cards={player}
+                    isTablet={isTabletLayout}
+                    score={shownPlayerScore}
+                    showScore={inRound}
+                    stacked
+                  />
+                ) : null}
+                {blackjackCelebration && <BlackjackCelebration />}
+              </View>
+
+              <Modal
+                animationType="fade"
+                onRequestClose={closeAccountMenu}
+                transparent
+                visible={accountMenuOpen}
+              >
+                <Pressable style={styles.accountModalBackdrop} onPress={closeAccountMenu}>
+                  <Pressable onPress={() => {}} style={styles.accountPanel}>
+                    <View style={styles.accountPanelHeader}>
+                      <Text style={styles.accountPanelTitle}>Accounts</Text>
+                      <Pressable
+                        onPress={closeAccountMenu}
+                        style={({ pressed }) => [styles.accountCloseButton, pressed && styles.pressed]}
+                      >
+                        <Text style={styles.accountCloseText}>X</Text>
+                      </Pressable>
+                    </View>
+
+                    <ScrollView contentContainerStyle={styles.accountList} style={styles.accountListScroll}>
+                      {accounts.map((account) => {
+                        const selected = account.id === activeAccountId;
+                        const editing = account.id === editingAccountId;
+
+                        if (editing) {
+                          return (
+                            <View
+                              key={account.id}
+                              style={[styles.accountRow, selected && styles.accountRowActive]}
+                            >
+                              <TextInput
+                                autoCapitalize="words"
+                                autoCorrect={false}
+                                autoFocus
+                                maxLength={10}
+                                onChangeText={setEditingAccountName}
+                                onSubmitEditing={saveAccountName}
+                                returnKeyType="done"
+                                style={styles.accountRenameInput}
+                                value={editingAccountName}
+                              />
+                              <View style={styles.accountRenameActions}>
+                                <Pressable
+                                  disabled={!editingAccountName.trim()}
+                                  onPress={saveAccountName}
+                                  style={({ pressed }) => [
+                                    styles.accountRenameSave,
+                                    !editingAccountName.trim() && styles.disabled,
                                     pressed && styles.pressed,
                                   ]}
                                 >
-                                  <Chip amount={amount} chipScale={chipScale} isTablet={isTabletLayout} />
+                                  <Text style={styles.accountRenameSaveText}>SAVE</Text>
                                 </Pressable>
-                              ))}
-                            </View>
-                            <View style={[styles.betActions, isTabletLayout && styles.betActionsTablet]}>
-                              <Pressable
-                                disabled={bet <= 0}
-                                onPress={clearBet}
-                                style={({ pressed }) => [
-                                  styles.clearButton,
-                                  bet <= 0 && styles.disabled,
-                                  pressed && styles.pressed,
-                                ]}
-                              >
-                                <Text style={styles.clearButtonText}>Clear</Text>
-                              </Pressable>
-                              <View style={styles.totalBetBadge}>
-                                <Text style={[styles.totalBetText, bet >= 10000 && styles.totalBetTextCompact]}>
-                                  ${bet}
-                                </Text>
+                                <Pressable
+                                  onPress={cancelRenamingAccount}
+                                  style={({ pressed }) => [
+                                    styles.accountRenameCancel,
+                                    pressed && styles.pressed,
+                                  ]}
+                                >
+                                  <Text style={styles.accountRenameCancelText}>X</Text>
+                                </Pressable>
                               </View>
-                              <Pressable
-                                disabled={bet <= 0}
-                                onPress={startRound}
-                                style={({ pressed }) => [
-                                  styles.dealButton,
-                                  bet <= 0 && styles.disabled,
-                                  pressed && styles.pressed,
-                                ]}
-                              >
-                                <Text style={styles.dealButtonText}>Ready</Text>
-                              </Pressable>
                             </View>
-                          </>
-                      )}
-                    </Animated.View>
-                  </View>
-                  <View
-                    pointerEvents={activeTab === "money" ? "auto" : "none"}
-                    style={[
-                      styles.moneyOverlayClip,
-                      isTabletLayout && styles.moneyOverlayClipTablet,
-                      {
-                        height: responsiveLayout.moneyOverlayClipHeight,
-                        top: responsiveLayout.moneyOverlayClipTop,
-                        width: tabPanelWidth,
-                      },
-                    ]}
-                  >
-                    <Animated.View
-                      style={[
-                        styles.moneyOverlay,
-                        isTabletLayout && styles.moneyOverlayTablet,
-                        {
-                          height: responsiveLayout.moneyOverlayHeight,
-                          top: responsiveLayout.moneyOverlayTop,
-                          transform: [{ translateX: moneyOverlayTranslateX }],
-                        },
-                      ]}
-                    >
-                      <MoneyMachinePanel
-                        stored={moneyMachineStored}
-                        isTablet={isTabletLayout}
-                        moneyMachineScale={moneyMachineScale}
-                        capacity={activeMoneyMachineCapacity}
-                        tapEarn={activeMoneyMachineTapEarn}
-                        passiveEarn={activeMachinePassiveEarn}
-                        tapLevel={moneyMachineTapLevel}
-                        capacityLevel={moneyMachineCapacityLevel}
-                        credit={chips}
-                        onCollect={collectMoneyMachine}
-                        onTapEarn={tapMoneyMachine}
-                        onUpgradeTap={() => upgradeMoneyMachine("tap")}
-                        onUpgradeCapacity={() => upgradeMoneyMachine("capacity")}
-                      />
-                    </Animated.View>
-                  </View>
-                </View>
-                <BottomTabs
-                  activeTab={activeTab}
-                  isTablet={isTabletLayout}
-                  layoutScale={responsiveLayout.uiScale}
-                  onSelect={selectTab}
-                />
-              </>
-            ) : resultDelta !== null ? (
-              <>
-                <BetStack chips={betChips} chipScale={chipScale} isTablet={isTabletLayout} />
-                <ResultSplash delta={resultDelta} />
-              </>
-            ) : betweenRounds ? (
-              <RoundLoader />
-            ) : dealing ? (
-              <>
-                <BetStack chips={betChips} chipScale={chipScale} isTablet={isTabletLayout} />
-                <View style={styles.dealingSpace} />
-              </>
-            ) : (
-              <>
-                <BetStack chips={betChips} chipScale={chipScale} isTablet={isTabletLayout} />
-                <View style={styles.actionRow}>
-                  <Pressable
-                    disabled={resolvingDealer || dealing}
-                    onPress={hit}
-                    style={({ pressed }) => [
-                      styles.actionButton,
-                      styles.hitButton,
-                      (resolvingDealer || dealing) && styles.disabled,
-                      pressed && styles.pressed,
-                    ]}
-                  >
-                    <Text style={styles.actionText}>Hit</Text>
-                  </Pressable>
-                  <Pressable
-                    disabled={resolvingDealer || dealing}
-                    onPress={stand}
-                    style={({ pressed }) => [
-                      styles.actionButton,
-                      styles.standButton,
-                      (resolvingDealer || dealing) && styles.disabled,
-                      pressed && styles.pressed,
-                    ]}
-                  >
-                    <Text style={styles.actionText}>Stand</Text>
-                  </Pressable>
-                </View>
-              </>
-            )}
-          </View>
+                          );
+                        }
 
-          {!showBottomTabs && showBlackjackTable ? (
-            <Hand cards={player} isTablet={isTabletLayout} score={shownPlayerScore} showScore={inRound} stacked />
-          ) : null}
-          {blackjackCelebration && <BlackjackCelebration />}
-        </View>
-
-        <Modal
-          animationType="fade"
-          onRequestClose={closeAccountMenu}
-          transparent
-          visible={accountMenuOpen}
-        >
-          <Pressable style={styles.accountModalBackdrop} onPress={closeAccountMenu}>
-            <Pressable onPress={() => {}} style={styles.accountPanel}>
-              <View style={styles.accountPanelHeader}>
-                <Text style={styles.accountPanelTitle}>Accounts</Text>
-                <Pressable
-                  onPress={closeAccountMenu}
-                  style={({ pressed }) => [styles.accountCloseButton, pressed && styles.pressed]}
-                >
-                  <Text style={styles.accountCloseText}>X</Text>
-                </Pressable>
-              </View>
-
-              <ScrollView contentContainerStyle={styles.accountList} style={styles.accountListScroll}>
-                {accounts.map((account) => {
-                  const selected = account.id === activeAccountId;
-                  const editing = account.id === editingAccountId;
-
-                  if (editing) {
-                    return (
-                      <View key={account.id} style={[styles.accountRow, selected && styles.accountRowActive]}>
-                        <TextInput
-                          autoCapitalize="words"
-                          autoCorrect={false}
-                          autoFocus
-                          maxLength={10}
-                          onChangeText={setEditingAccountName}
-                          onSubmitEditing={saveAccountName}
-                          returnKeyType="done"
-                          style={styles.accountRenameInput}
-                          value={editingAccountName}
-                        />
-                        <View style={styles.accountRenameActions}>
-                          <Pressable
-                            disabled={!editingAccountName.trim()}
-                            onPress={saveAccountName}
-                            style={({ pressed }) => [
-                              styles.accountRenameSave,
-                              !editingAccountName.trim() && styles.disabled,
-                              pressed && styles.pressed,
+                        return (
+                          <View
+                            key={account.id}
+                            style={[
+                              styles.accountRow,
+                              selected && styles.accountRowActive,
+                              accountSwitchLocked && !selected && styles.accountRowDisabled,
                             ]}
                           >
-                            <Text style={styles.accountRenameSaveText}>SAVE</Text>
-                          </Pressable>
-                          <Pressable
-                            onPress={cancelRenamingAccount}
-                            style={({ pressed }) => [styles.accountRenameCancel, pressed && styles.pressed]}
-                          >
-                            <Text style={styles.accountRenameCancelText}>X</Text>
-                          </Pressable>
-                        </View>
-                      </View>
-                    );
-                  }
+                            <Pressable
+                              disabled={accountSwitchLocked || selected}
+                              onPress={() => switchAccount(account)}
+                              style={({ pressed }) => [styles.accountSelectArea, pressed && styles.pressed]}
+                            >
+                              <View>
+                                <Text style={styles.accountName}>{account.name}</Text>
+                                <Text style={styles.accountCredit}>${account.credit}</Text>
+                              </View>
+                            </Pressable>
+                            <View style={styles.accountRowActions}>
+                              {selected && <Text style={styles.activeAccountText}>ACTIVE</Text>}
+                              <Pressable
+                                onPress={() => startRenamingAccount(account)}
+                                style={({ pressed }) => [styles.accountEditButton, pressed && styles.pressed]}
+                              >
+                                <Text style={styles.accountEditButtonText}>EDIT</Text>
+                              </Pressable>
+                            </View>
+                          </View>
+                        );
+                      })}
+                    </ScrollView>
 
-                  return (
-                    <View
-                      key={account.id}
-                      style={[
-                        styles.accountRow,
-                        selected && styles.accountRowActive,
-                        accountSwitchLocked && !selected && styles.accountRowDisabled,
+                    {!!accountMenuMessage && (
+                      <Text style={styles.accountMenuMessage}>{accountMenuMessage}</Text>
+                    )}
+
+                    <Pressable
+                      disabled={accountSwitchLocked || chips < accountCost || accounts.length >= accountLimit}
+                      onPress={createAccount}
+                      style={({ pressed }) => [
+                        styles.createAccountButton,
+                        (accountSwitchLocked || chips < accountCost || accounts.length >= accountLimit) &&
+                          styles.disabled,
+                        pressed && styles.pressed,
                       ]}
                     >
-                      <Pressable
-                        disabled={accountSwitchLocked || selected}
-                        onPress={() => switchAccount(account)}
-                        style={({ pressed }) => [styles.accountSelectArea, pressed && styles.pressed]}
-                      >
-                        <View>
-                          <Text style={styles.accountName}>{account.name}</Text>
-                          <Text style={styles.accountCredit}>${account.credit}</Text>
-                        </View>
-                      </Pressable>
-                      <View style={styles.accountRowActions}>
-                        {selected && <Text style={styles.activeAccountText}>ACTIVE</Text>}
-                        <Pressable
-                          onPress={() => startRenamingAccount(account)}
-                          style={({ pressed }) => [styles.accountEditButton, pressed && styles.pressed]}
-                        >
-                          <Text style={styles.accountEditButtonText}>EDIT</Text>
-                        </Pressable>
-                      </View>
-                    </View>
-                  );
-                })}
-              </ScrollView>
+                      <Text style={styles.createAccountButtonText}>New account</Text>
+                      <Text style={styles.createAccountCost}>
+                        {accounts.length >= accountLimit ? "MAX" : `$${accountCost}`}
+                      </Text>
+                    </Pressable>
+                  </Pressable>
+                </Pressable>
+              </Modal>
 
-              {!!accountMenuMessage && <Text style={styles.accountMenuMessage}>{accountMenuMessage}</Text>}
-
-              <Pressable
-                disabled={accountSwitchLocked || chips < accountCost || accounts.length >= accountLimit}
-                onPress={createAccount}
-                style={({ pressed }) => [
-                  styles.createAccountButton,
-                  (accountSwitchLocked || chips < accountCost || accounts.length >= accountLimit) && styles.disabled,
-                  pressed && styles.pressed,
-                ]}
-              >
-                <Text style={styles.createAccountButtonText}>New account</Text>
-                <Text style={styles.createAccountCost}>
-                  {accounts.length >= accountLimit ? "MAX" : `$${accountCost}`}
-                </Text>
-              </Pressable>
-            </Pressable>
-          </Pressable>
-        </Modal>
-
-        <AchievementsModal
-          onClose={() => setAchievementMenuOpen(false)}
-          stats={achievementDisplayStats}
-          visible={achievementMenuOpen}
-        />
-          </>
-        )}
+              <AchievementsModal
+                onClose={() => setAchievementMenuOpen(false)}
+                stats={achievementDisplayStats}
+                visible={achievementMenuOpen}
+              />
+            </>
+          )}
         </View>
-
       </View>
       {startupSplashVisible ? (
         <ImageBackground

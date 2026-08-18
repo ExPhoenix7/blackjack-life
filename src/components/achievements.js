@@ -63,7 +63,9 @@ function AchievementsModal({ visible, stats, onClose }) {
                   style={[styles.achievementRow, unlocked && styles.achievementRowUnlocked]}
                 >
                   <View style={[styles.achievementBadge, unlocked && styles.achievementBadgeUnlocked]}>
-                    <Text style={[styles.achievementBadgeText, unlocked && styles.achievementBadgeTextUnlocked]}>
+                    <Text
+                      style={[styles.achievementBadgeText, unlocked && styles.achievementBadgeTextUnlocked]}
+                    >
                       {"\u2605"}
                     </Text>
                   </View>
@@ -87,7 +89,8 @@ function AchievementsModal({ visible, stats, onClose }) {
                     </View>
                     <View style={styles.achievementFooterRow}>
                       <Text style={styles.achievementProgressText}>
-                        {formatAchievementValue(progress, achievement)} / {formatAchievementValue(achievement.goal, achievement)}
+                        {formatAchievementValue(progress, achievement)} /{" "}
+                        {formatAchievementValue(achievement.goal, achievement)}
                       </Text>
                       <Text style={styles.achievementRewardText}>
                         +${achievement.reward.toLocaleString("en-US")}

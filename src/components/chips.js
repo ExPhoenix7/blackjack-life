@@ -46,10 +46,34 @@ function Chip({ amount, chipScale = 1, isTablet, small }) {
         { backgroundColor: chipColors[amount] },
       ]}
     >
-      <View style={[styles.chipStripeTop, isTablet && styles.chipStripeTopTablet, { height: stripeLong, width: stripeShort }]} />
-      <View style={[styles.chipStripeRight, isTablet && styles.chipStripeRightTablet, { height: stripeShort, width: stripeLong }]} />
-      <View style={[styles.chipStripeBottom, isTablet && styles.chipStripeBottomTablet, { height: stripeLong, width: stripeShort }]} />
-      <View style={[styles.chipStripeLeft, isTablet && styles.chipStripeLeftTablet, { height: stripeShort, width: stripeLong }]} />
+      <View
+        style={[
+          styles.chipStripeTop,
+          isTablet && styles.chipStripeTopTablet,
+          { height: stripeLong, width: stripeShort },
+        ]}
+      />
+      <View
+        style={[
+          styles.chipStripeRight,
+          isTablet && styles.chipStripeRightTablet,
+          { height: stripeShort, width: stripeLong },
+        ]}
+      />
+      <View
+        style={[
+          styles.chipStripeBottom,
+          isTablet && styles.chipStripeBottomTablet,
+          { height: stripeLong, width: stripeShort },
+        ]}
+      />
+      <View
+        style={[
+          styles.chipStripeLeft,
+          isTablet && styles.chipStripeLeftTablet,
+          { height: stripeShort, width: stripeLong },
+        ]}
+      />
       <View
         style={[
           styles.chipInner,
@@ -66,7 +90,9 @@ function Chip({ amount, chipScale = 1, isTablet, small }) {
             small && styles.chipTextSmall,
             small && isTablet && styles.chipTextSmallTablet,
             amount === 5000 && (small ? styles.chipText5000Small : styles.chipText5000),
-            amount === 5000 && isTablet && (small ? styles.chipText5000SmallTablet : styles.chipText5000Tablet),
+            amount === 5000 &&
+              isTablet &&
+              (small ? styles.chipText5000SmallTablet : styles.chipText5000Tablet),
             { fontSize: scalePx(textBaseSize, chipScale) },
           ]}
         >

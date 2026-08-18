@@ -58,9 +58,7 @@
         "projectId": "3e79624b-1832-43e6-9b3c-8016db59ec39"
       }
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.exphoenix.blackjacklife"

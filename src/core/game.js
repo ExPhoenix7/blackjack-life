@@ -113,7 +113,9 @@ function getResponsiveMetrics(windowWidth, windowHeight) {
   return {
     chipScale: isTablet ? tabletScale : phoneScale,
     isTablet,
-    moneyMachineScale: isTablet ? tabletMoneyScale : clamp(Math.min(phoneScale, phoneHeightScale), 0.82, 1.06),
+    moneyMachineScale: isTablet
+      ? tabletMoneyScale
+      : clamp(Math.min(phoneScale, phoneHeightScale), 0.82, 1.06),
   };
 }
 
@@ -126,7 +128,11 @@ function getResponsiveLayout(windowWidth, windowHeight, layoutWidth, safeFrameIn
   const referenceHeight = isTablet ? 900 : 768;
   const minScale = isTablet ? 0.86 : 0.78;
   const maxScale = isTablet ? 1.12 : 1;
-  const uiScale = clamp(Math.min(layoutWidth / referenceWidth, usableHeight / referenceHeight), minScale, maxScale);
+  const uiScale = clamp(
+    Math.min(layoutWidth / referenceWidth, usableHeight / referenceHeight),
+    minScale,
+    maxScale
+  );
   const phoneScale = clamp(shortSide / 390, 0.86, 1.08);
   const tabletScale = clamp(shortSide / 768, 1, 1.08);
   const controlScale = Math.min(isTablet ? tabletScale : phoneScale, uiScale);
@@ -553,9 +559,7 @@ function createMoneyMachine(now = Date.now()) {
 }
 
 function normalizeMoneyMachineLevel(level, maxLevel) {
-  return Number.isFinite(level)
-    ? Math.max(1, Math.min(maxLevel, Math.floor(level)))
-    : 1;
+  return Number.isFinite(level) ? Math.max(1, Math.min(maxLevel, Math.floor(level))) : 1;
 }
 
 function bonusLabel(bonus) {
@@ -594,17 +598,21 @@ function moneyMachinePassiveEarnForBonuses(bonuses) {
 }
 
 function moneyMachineCapacityForLevel(level, capacityBonus = 0) {
-  return moneyMachineBaseCapacity +
+  return (
+    moneyMachineBaseCapacity +
     (normalizeMoneyMachineLevel(level, moneyMachineMaxCapacityLevel) - 1) * moneyMachineCapacityStep +
-    capacityBonus;
+    capacityBonus
+  );
 }
 
 function moneyMachineTapEarnForLevel(level, tapBonus = 0) {
-  return Math.min(
-    moneyMachineMaxTapEarn,
-    moneyMachineBaseTapEarn +
-      (normalizeMoneyMachineLevel(level, moneyMachineMaxTapLevel) - 1) * moneyMachineTapEarnStep
-  ) + tapBonus;
+  return (
+    Math.min(
+      moneyMachineMaxTapEarn,
+      moneyMachineBaseTapEarn +
+        (normalizeMoneyMachineLevel(level, moneyMachineMaxTapLevel) - 1) * moneyMachineTapEarnStep
+    ) + tapBonus
+  );
 }
 
 function moneyMachineUpgradeCost(type, level) {
@@ -675,8 +683,7 @@ function normalizeRentalIncome(income, ownedRealEstate, now = Date.now(), rental
 
   return {
     stored: nextStored,
-    lastUpdated:
-      nextStored >= rentalIncomeCapacity ? now : lastUpdated + completedHours * rentalIncomeTickMs,
+    lastUpdated: nextStored >= rentalIncomeCapacity ? now : lastUpdated + completedHours * rentalIncomeTickMs,
   };
 }
 

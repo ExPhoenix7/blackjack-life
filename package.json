@@ -5,27 +5,35 @@
   "main": "expo/AppEntry.js",
   "scripts": {
     "start": "expo start",
+    "start:8082": "expo start --port 8082",
     "android": "expo start --android",
     "ios": "expo start --ios",
+    "doctor": "npx expo-doctor",
+    "format": "prettier --write \"App.js\" \"src/**/*.js\" \"scripts/**/*.mjs\" \"*.json\" \"*.js\" \"*.md\"",
+    "format:check": "prettier --check \"App.js\" \"src/**/*.js\" \"scripts/**/*.mjs\" \"*.json\" \"*.js\" \"*.md\"",
+    "audit": "npm audit",
     "postinstall": "node scripts/patch-google-mobile-ads-sdk.mjs"
   },
   "dependencies": {
-    "@expo/metro-runtime": "~6.1.2",
     "@react-native-async-storage/async-storage": "2.2.0",
-    "expo": "~54.0.36",
+    "expo": "~54.0.37",
     "expo-asset": "~12.0.13",
     "expo-audio": "~1.1.1",
-    "expo-constants": "~18.0.13",
+    "expo-constants": "~18.0.14",
     "expo-navigation-bar": "~5.0.10",
     "expo-splash-screen": "~31.0.13",
     "react": "19.1.0",
-    "react-dom": "^19.1.0",
     "react-native": "0.81.5",
-    "react-native-google-mobile-ads": "15.7.0",
-    "react-native-web": "^0.21.2"
+    "react-native-google-mobile-ads": "15.7.0"
   },
   "devDependencies": {
     "@babel/core": "^7.24.0",
-    "babel-preset-expo": "~54.0.10"
+    "babel-preset-expo": "~54.0.10",
+    "expo-doctor": "^1.20.2",
+    "prettier": "^3.9.6"
+  },
+  "overrides": {
+    "postcss": "8.5.26",
+    "uuid": "11.1.1"
   }
 }
