@@ -78,7 +78,7 @@
     "android": {
       "package": "com.exphoenix.blackjacklife",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.png",
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#031f09"
       },
       "permissions": []
