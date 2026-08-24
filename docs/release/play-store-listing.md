@@ -55,11 +55,14 @@ This first release includes blackjack gameplay, virtual credit progression, the 
 - App icon: `assets/icon.png`
 - Android adaptive icon foreground: `assets/adaptive-icon.png`
 - Splash image: `assets/splash.png`
-- Feature graphic: TODO create Play Store feature graphic
-- Phone screenshots: TODO capture from latest APK
-  - Blackjack table
-  - Store
-  - Money Machine
+- Feature graphic source: `docs/release/store-assets/feature-graphic-source/blackjack-life-poster.png`
+- Feature graphic: TODO create final 1024x500 Play Store feature graphic
+- Phone screenshots:
+  - `docs/release/store-assets/phone-screenshots/01-blackjack-bet.jpg`
+  - `docs/release/store-assets/phone-screenshots/02-blackjack-win.jpg`
+  - `docs/release/store-assets/phone-screenshots/03-store-real-estate.jpg`
+  - `docs/release/store-assets/phone-screenshots/04-money-machine.jpg`
+- Optional additional screenshots:
   - Profile or Achievements
   - Account menu
 - Tablet screenshots: TODO optional
