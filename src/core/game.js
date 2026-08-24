@@ -663,7 +663,7 @@ function rentalRateForProperties(ownedRealEstate, rentalPercentBonus = 0) {
   return Math.floor(baseRate * (1 + rentalPercentBonus / 100));
 }
 
-function normalizeRentalIncome(income, ownedRealEstate, now = Date.now(), rentalPercentBonus = 0) {
+function normalizeRentalIncome(income, ownedRealEstate = [], now = Date.now(), rentalPercentBonus = 0) {
   const stored = Number.isFinite(income?.stored) ? Math.max(0, Math.floor(income.stored)) : 0;
   const lastUpdated = Number.isFinite(income?.lastUpdated) ? income.lastUpdated : now;
   const elapsed = Math.max(0, now - lastUpdated);
