@@ -56,7 +56,8 @@ This first release includes blackjack gameplay, virtual credit progression, the 
 - Android adaptive icon foreground: `assets/adaptive-icon.png`
 - Splash image: `assets/splash.png`
 - Feature graphic source: `docs/release/store-assets/feature-graphic-source/blackjack-life-poster.png`
-- Feature graphic: TODO create final 1024x500 Play Store feature graphic
+- Feature graphic: `docs/release/store-assets/feature-graphic-1024x500.png`
+- Feature graphic JPG fallback: `docs/release/store-assets/feature-graphic-1024x500.jpg`
 - Phone screenshots:
   - `docs/release/store-assets/phone-screenshots/01-blackjack-bet.jpg`
   - `docs/release/store-assets/phone-screenshots/02-blackjack-win.jpg`

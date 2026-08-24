@@ -45,7 +45,9 @@
   - `docs/release/store-assets/phone-screenshots/02-blackjack-win.jpg`
   - `docs/release/store-assets/phone-screenshots/03-store-real-estate.jpg`
   - `docs/release/store-assets/phone-screenshots/04-money-machine.jpg`
-- Create Play Store feature graphic.
+- Play Store feature graphic created:
+  - `docs/release/store-assets/feature-graphic-1024x500.png`
+  - `docs/release/store-assets/feature-graphic-1024x500.jpg`
 - Optional: capture Profile/Achievements and Account menu screenshots.
 - Confirm launcher icon and adaptive icon look correct on device.
 - Confirm splash launch sequence looks clean.
