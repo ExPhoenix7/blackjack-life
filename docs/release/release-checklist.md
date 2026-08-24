@@ -29,7 +29,7 @@
 
 - Developer name: Couzeens.
 - Privacy contact: `couzeensdev@gmail.com`.
-- Publish privacy policy at a public URL.
+- Publish privacy policy at a public URL: `https://exphoenix7.github.io/blackjack-life/release/privacy-policy.html`.
 - Add privacy policy URL to Play Console.
 - Add in-app privacy policy access/text before public Play release.
 - Complete Google Play Data safety form.
@@ -41,6 +41,11 @@
 ## Store Assets
 
 - Capture phone screenshots from the latest APK.
+  - Blackjack table.
+  - Store.
+  - Money Machine.
+  - Profile or Achievements.
+  - Account menu.
 - Create Play Store feature graphic.
 - Confirm launcher icon and adaptive icon look correct on device.
 - Confirm splash launch sequence looks clean.
