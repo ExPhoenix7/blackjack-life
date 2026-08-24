@@ -180,14 +180,12 @@ function getSafeFrameInsets(windowWidth, windowHeight) {
   const longSide = Math.max(windowWidth, windowHeight);
 
   if (Platform.OS === "android") {
-    if (!isExpoGo) {
-      return { bottom: 0, horizontal: 0, top: 0 };
-    }
-
+    const hasModernSafeArea = longSide / shortSide > 1.9;
+    const statusBarHeight = StatusBar.currentHeight || (hasModernSafeArea ? 28 : 18);
     return {
-      bottom: 38,
+      bottom: isExpoGo ? 38 : hasModernSafeArea ? 20 : 10,
       horizontal: 0,
-      top: (StatusBar.currentHeight || 24) + 8,
+      top: statusBarHeight + 8,
     };
   }
 

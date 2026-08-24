@@ -20,10 +20,10 @@
           "backgroundColor": "#031f09",
           "enableFullScreenImage_legacy": true,
           "android": {
-            "image": "./assets/splash.png",
-            "resizeMode": "cover",
+            "image": "./assets/native-splash-icon.png",
+            "resizeMode": "contain",
             "backgroundColor": "#031f09",
-            "imageWidth": 1080
+            "imageWidth": 1
           },
           "ios": {
             "image": "./assets/splash.png",
