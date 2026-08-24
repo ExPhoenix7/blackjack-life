@@ -27,6 +27,8 @@
 
 ## Privacy And Play Console
 
+- Developer name: Couzeens.
+- Privacy contact: `couzeensdev@gmail.com`.
 - Publish privacy policy at a public URL.
 - Add privacy policy URL to Play Console.
 - Add in-app privacy policy access/text before public Play release.

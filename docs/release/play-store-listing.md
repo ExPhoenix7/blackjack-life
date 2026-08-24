@@ -4,6 +4,10 @@
 
 Blackjack Life
 
+## Developer Name
+
+Couzeens
+
 ## Short Description
 
 Play blackjack, build wealth, and grow your in-game lifestyle.
@@ -81,11 +85,10 @@ Data collected by Google Mobile Ads SDK is encrypted in transit according to Goo
 
 ### Deletion
 
-Local game progress can be deleted by clearing app storage or uninstalling the app. If a support email is added, deletion requests should be handled through that contact.
+Local game progress can be deleted by clearing app storage or uninstalling the app. Privacy questions can be sent to `couzeensdev@gmail.com`.
 
 ## Before Publishing
 
-- Replace TODO developer name and privacy contact in `docs/release/privacy-policy.md`.
 - Publish the privacy policy to a public, non-geofenced, non-editable URL.
 - Add the privacy policy URL to Play Console.
 - Add an in-app privacy policy access point or text before public Play release.

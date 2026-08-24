@@ -1,11 +1,11 @@
 # Privacy Policy
 
-Last updated: TODO
+Last updated: August 24, 2026
 
 Blackjack Life is a mobile blackjack and money management game.
 
-Developer: TODO developer or company name  
-Privacy contact: TODO privacy contact email  
+Developer: Couzeens
+Privacy contact: couzeensdev@gmail.com
 App package: `com.exphoenix.blackjacklife`
 
 ## Data We Store On Your Device
@@ -87,4 +87,4 @@ This policy may be updated when the app changes. The updated date at the top of 
 
 ## Contact
 
-For privacy questions, contact: TODO privacy contact email
+For privacy questions, contact: couzeensdev@gmail.com
