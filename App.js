@@ -176,12 +176,21 @@ export default function App() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [blackjackCelebration, setBlackjackCelebration] = useState(false);
   const [activeTab, setActiveTab] = useState("blackjack");
+  const [rewardedAdReady, setRewardedAdReady] = useState(false);
   const [rewardedAdLoading, setRewardedAdLoading] = useState(false);
   const [adStatusMessage, setAdStatusMessage] = useState("");
   const [startupSplashVisible, setStartupSplashVisible] = useState(true);
   const resultTimer = useRef(null);
   const nextRoundTimer = useRef(null);
   const adStatusTimer = useRef(null);
+  const rewardedAdRetryTimer = useRef(null);
+  const rewardedAdRef = useRef(null);
+  const rewardedAdReadyRef = useRef(false);
+  const rewardedAdPreloading = useRef(false);
+  const rewardedAdShowWhenLoaded = useRef(false);
+  const rewardedAdRewardEarned = useRef(false);
+  const rewardedAdUnsubscribers = useRef([]);
+  const rewardedAdAward = useRef({ activeAccountId: null, chips: 0, credit: 0 });
   const startupSplashTimer = useRef(null);
   const achievementUnlocksReady = useRef(false);
   const unlockedAchievementIds = useRef(new Set());
@@ -282,6 +291,14 @@ export default function App() {
   const needsFirstAccountName = accountsLoaded && !hasChosenFirstAccountName;
 
   useEffect(() => {
+    rewardedAdAward.current = {
+      activeAccountId,
+      chips,
+      credit: rewardedAdCredit,
+    };
+  }, [activeAccountId, chips, rewardedAdCredit]);
+
+  useEffect(() => {
     if (Platform.OS !== "android") {
       return;
     }
@@ -296,6 +313,10 @@ export default function App() {
 
   useEffect(() => {
     Asset.loadAsync(PRELOAD_IMAGE_ASSETS).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    loadRewardedAd();
   }, []);
 
   useEffect(() => {
@@ -584,6 +605,8 @@ export default function App() {
       if (adStatusTimer.current) {
         clearTimeout(adStatusTimer.current);
       }
+      clearRewardedAdRetryTimer();
+      resetRewardedAdInstance({ updateState: false });
     };
   }, []);
 
@@ -908,10 +931,19 @@ export default function App() {
   }
 
   function awardRewardedAdCredit() {
-    const nextCredit = chips + rewardedAdCredit;
-    saveActiveAccountCredit(nextCredit);
+    const award = rewardedAdAward.current;
+    if (!award.activeAccountId) {
+      return;
+    }
+
+    const nextCredit = award.chips + award.credit;
+    setAccounts((current) =>
+      current.map((account) =>
+        account.id === award.activeAccountId ? { ...account, credit: nextCredit } : account
+      )
+    );
     setOutOfCredit(false);
-    setCreditDelta(rewardedAdCredit);
+    setCreditDelta(award.credit);
   }
 
   function setTemporaryAdStatus(message) {
@@ -926,7 +958,172 @@ export default function App() {
     }, 2200);
   }
 
-  async function handleRewardedAdPress() {
+  function clearRewardedAdRetryTimer() {
+    if (rewardedAdRetryTimer.current) {
+      clearTimeout(rewardedAdRetryTimer.current);
+      rewardedAdRetryTimer.current = null;
+    }
+  }
+
+  function cleanupRewardedAdListeners() {
+    while (rewardedAdUnsubscribers.current.length) {
+      const unsubscribe = rewardedAdUnsubscribers.current.pop();
+      if (typeof unsubscribe === "function") {
+        unsubscribe();
+      }
+    }
+  }
+
+  function resetRewardedAdInstance({ updateState = true } = {}) {
+    cleanupRewardedAdListeners();
+    rewardedAdRef.current = null;
+    rewardedAdReadyRef.current = false;
+    rewardedAdPreloading.current = false;
+    rewardedAdShowWhenLoaded.current = false;
+    rewardedAdRewardEarned.current = false;
+
+    if (updateState) {
+      setRewardedAdReady(false);
+    }
+  }
+
+  function getRewardedAdUnitId(ads) {
+    const adMobConfig = Constants.expoConfig?.extra?.adMob || {};
+    const realRewardedAdUnitId = Platform.select({
+      android: adMobConfig.androidRewardedAdUnitId,
+      ios: adMobConfig.iosRewardedAdUnitId,
+      default: null,
+    });
+
+    return adMobConfig.useTestAds ? ads.TestIds.REWARDED : realRewardedAdUnitId || ads.TestIds.REWARDED;
+  }
+
+  function scheduleRewardedAdPreload(delayMs = 5000) {
+    if (isExpoGo || rewardedAdRetryTimer.current) {
+      return;
+    }
+
+    rewardedAdRetryTimer.current = setTimeout(() => {
+      rewardedAdRetryTimer.current = null;
+      loadRewardedAd();
+    }, delayMs);
+  }
+
+  async function loadRewardedAd({ showWhenLoaded = false } = {}) {
+    const ads = getGoogleMobileAdsModule();
+    if (!ads?.RewardedAd || !ads?.RewardedAdEventType || !ads?.AdEventType || !ads?.TestIds) {
+      if (showWhenLoaded) {
+        setTemporaryAdStatus("Ad unavailable");
+        setRewardedAdLoading(false);
+      }
+      return;
+    }
+
+    if (showWhenLoaded) {
+      rewardedAdShowWhenLoaded.current = true;
+    }
+
+    if (rewardedAdReadyRef.current && rewardedAdRef.current) {
+      if (showWhenLoaded) {
+        showRewardedAd();
+      }
+      return;
+    }
+
+    if (rewardedAdPreloading.current || rewardedAdRef.current) {
+      return;
+    }
+
+    rewardedAdPreloading.current = true;
+    setRewardedAdReady(false);
+
+    try {
+      if (typeof ads.mobileAds === "function") {
+        await ads.mobileAds().initialize();
+      }
+
+      const rewardedAdUnitId = getRewardedAdUnitId(ads);
+      const rewardedAd = ads.RewardedAd.createForAdRequest(rewardedAdUnitId, {
+        requestNonPersonalizedAdsOnly: true,
+      });
+      rewardedAdRef.current = rewardedAd;
+      rewardedAdRewardEarned.current = false;
+
+      rewardedAdUnsubscribers.current.push(
+        rewardedAd.addAdEventListener(ads.RewardedAdEventType.LOADED, () => {
+          rewardedAdPreloading.current = false;
+          rewardedAdReadyRef.current = true;
+          setRewardedAdReady(true);
+
+          if (rewardedAdShowWhenLoaded.current) {
+            showRewardedAd();
+          }
+        })
+      );
+      rewardedAdUnsubscribers.current.push(
+        rewardedAd.addAdEventListener(ads.RewardedAdEventType.EARNED_REWARD, () => {
+          if (!rewardedAdRewardEarned.current) {
+            rewardedAdRewardEarned.current = true;
+            awardRewardedAdCredit();
+          }
+        })
+      );
+      rewardedAdUnsubscribers.current.push(
+        rewardedAd.addAdEventListener(ads.AdEventType.CLOSED, () => {
+          resetRewardedAdInstance();
+          setRewardedAdLoading(false);
+          scheduleRewardedAdPreload(700);
+        })
+      );
+      rewardedAdUnsubscribers.current.push(
+        rewardedAd.addAdEventListener(ads.AdEventType.ERROR, (error) => {
+          const shouldNotify = rewardedAdShowWhenLoaded.current;
+          resetRewardedAdInstance();
+          if (shouldNotify) {
+            setTemporaryAdStatus(error?.code ? `Ad ${error.code}` : "Ad not ready");
+          }
+          setRewardedAdLoading(false);
+          scheduleRewardedAdPreload();
+        })
+      );
+
+      rewardedAd.load();
+    } catch (error) {
+      const shouldNotify = rewardedAdShowWhenLoaded.current;
+      resetRewardedAdInstance();
+      if (shouldNotify) {
+        setTemporaryAdStatus("Ad unavailable");
+      }
+      setRewardedAdLoading(false);
+      scheduleRewardedAdPreload();
+    }
+  }
+
+  async function showRewardedAd() {
+    const rewardedAd = rewardedAdRef.current;
+    if (!rewardedAdReadyRef.current || !rewardedAd) {
+      setTemporaryAdStatus("Ad loading");
+      setRewardedAdLoading(true);
+      loadRewardedAd({ showWhenLoaded: true });
+      return;
+    }
+
+    rewardedAdShowWhenLoaded.current = false;
+    rewardedAdReadyRef.current = false;
+    setRewardedAdReady(false);
+    setRewardedAdLoading(true);
+
+    try {
+      await Promise.resolve(rewardedAd.show());
+    } catch (error) {
+      resetRewardedAdInstance();
+      setTemporaryAdStatus("Ad not ready");
+      setRewardedAdLoading(false);
+      scheduleRewardedAdPreload(1000);
+    }
+  }
+
+  function handleRewardedAdPress() {
     if (!activeAccount || creditDelta !== null || rewardedAdLoading) {
       return;
     }
@@ -936,75 +1133,7 @@ export default function App() {
       return;
     }
 
-    const ads = getGoogleMobileAdsModule();
-    if (!ads?.RewardedAd || !ads?.RewardedAdEventType || !ads?.AdEventType || !ads?.TestIds) {
-      setTemporaryAdStatus("Ad unavailable");
-      return;
-    }
-
-    const adMobConfig = Constants.expoConfig?.extra?.adMob || {};
-    const realRewardedAdUnitId = Platform.select({
-      android: adMobConfig.androidRewardedAdUnitId,
-      ios: adMobConfig.iosRewardedAdUnitId,
-      default: null,
-    });
-    const rewardedAdUnitId = adMobConfig.useTestAds
-      ? ads.TestIds.REWARDED
-      : realRewardedAdUnitId || ads.TestIds.REWARDED;
-
-    setRewardedAdLoading(true);
-
-    try {
-      if (typeof ads.mobileAds === "function") {
-        await ads.mobileAds().initialize();
-      }
-
-      const rewardedAd = ads.RewardedAd.createForAdRequest(rewardedAdUnitId, {
-        requestNonPersonalizedAdsOnly: true,
-      });
-      const unsubscribers = [];
-      const cleanup = () => {
-        while (unsubscribers.length) {
-          const unsubscribe = unsubscribers.pop();
-          if (typeof unsubscribe === "function") {
-            unsubscribe();
-          }
-        }
-      };
-
-      unsubscribers.push(
-        rewardedAd.addAdEventListener(ads.RewardedAdEventType.LOADED, () => {
-          Promise.resolve(rewardedAd.show()).catch(() => {
-            cleanup();
-            setTemporaryAdStatus("Ad not ready");
-            setRewardedAdLoading(false);
-          });
-        })
-      );
-      unsubscribers.push(
-        rewardedAd.addAdEventListener(ads.RewardedAdEventType.EARNED_REWARD, () => {
-          awardRewardedAdCredit();
-        })
-      );
-      unsubscribers.push(
-        rewardedAd.addAdEventListener(ads.AdEventType.CLOSED, () => {
-          cleanup();
-          setRewardedAdLoading(false);
-        })
-      );
-      unsubscribers.push(
-        rewardedAd.addAdEventListener(ads.AdEventType.ERROR, (error) => {
-          cleanup();
-          setTemporaryAdStatus(error?.code ? `Ad ${error.code}` : "Ad not ready");
-          setRewardedAdLoading(false);
-        })
-      );
-
-      rewardedAd.load();
-    } catch (error) {
-      setTemporaryAdStatus("Ad unavailable");
-      setRewardedAdLoading(false);
-    }
+    showRewardedAd();
   }
 
   function saveFirstAccountName() {
@@ -1515,7 +1644,9 @@ export default function App() {
                       ]}
                     >
                       <Text style={styles.rewardedAdBadge}>AD</Text>
-                      <Text style={styles.rewardedAdText}>{rewardedAdLoading ? "..." : rewardedAdLabel}</Text>
+                      <Text style={styles.rewardedAdText}>
+                        {rewardedAdLoading || (!isExpoGo && !rewardedAdReady) ? "..." : rewardedAdLabel}
+                      </Text>
                     </Pressable>
                     {adStatusMessage ? <Text style={styles.rewardedAdStatus}>{adStatusMessage}</Text> : null}
                     {creditDelta !== null && (
