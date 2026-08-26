@@ -2066,6 +2066,8 @@ export const styles = StyleSheet.create({
     color: "#111111",
     fontSize: 14,
     fontWeight: "900",
+    includeFontPadding: false,
+    textAlign: "center",
   },
   chipTextTablet: {
     fontSize: 18,
@@ -2076,16 +2078,16 @@ export const styles = StyleSheet.create({
   chipTextSmallTablet: {
     fontSize: 15,
   },
-  chipText5000: {
+  chipTextWide: {
     fontSize: 12,
   },
-  chipText5000Tablet: {
+  chipTextWideTablet: {
     fontSize: 15,
   },
-  chipText5000Small: {
+  chipTextWideSmall: {
     fontSize: 9,
   },
-  chipText5000SmallTablet: {
+  chipTextWideSmallTablet: {
     fontSize: 12,
   },
   betActions: {

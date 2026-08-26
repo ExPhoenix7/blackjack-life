@@ -3,27 +3,30 @@ import { View, Text } from "react-native";
 import { chipColors, scalePx } from "../core/game";
 import { styles } from "../styles/styles";
 
+const CHIP_TEXT_SIZES = {
+  default: {
+    normal: { phone: 14, tablet: 18 },
+    small: { phone: 11, tablet: 15 },
+  },
+  wide: {
+    normal: { phone: 12, tablet: 15 },
+    small: { phone: 9, tablet: 12 },
+  },
+};
+
+function getChipTextBaseSize(amount, small, isTablet) {
+  const sizeGroup = amount >= 1000 ? CHIP_TEXT_SIZES.wide : CHIP_TEXT_SIZES.default;
+  const chipMode = small ? sizeGroup.small : sizeGroup.normal;
+
+  return isTablet ? chipMode.tablet : chipMode.phone;
+}
+
 function Chip({ amount, chipScale = 1, isTablet, small }) {
   const chipSize = scalePx(small ? (isTablet ? 76 : 54) : isTablet ? 82 : 62, chipScale);
   const chipInnerSize = scalePx(small ? (isTablet ? 50 : 36) : isTablet ? 58 : 44, chipScale);
   const stripeLong = scalePx(isTablet ? 16 : 14, chipScale);
   const stripeShort = scalePx(isTablet ? 13 : 11, chipScale);
-  const textBaseSize =
-    amount === 5000
-      ? small
-        ? isTablet
-          ? 12
-          : 9
-        : isTablet
-          ? 15
-          : 12
-      : small
-        ? isTablet
-          ? 15
-          : 11
-        : isTablet
-          ? 18
-          : 14;
+  const textBaseSize = getChipTextBaseSize(amount, small, isTablet);
   const chipDynamicStyle = {
     borderRadius: chipSize / 2,
     height: chipSize,
@@ -33,6 +36,10 @@ function Chip({ amount, chipScale = 1, isTablet, small }) {
     borderRadius: chipInnerSize / 2,
     height: chipInnerSize,
     width: chipInnerSize,
+  };
+  const chipTextDynamicStyle = {
+    fontSize: scalePx(textBaseSize, chipScale),
+    width: chipInnerSize - scalePx(4, chipScale),
   };
 
   return (
@@ -84,16 +91,20 @@ function Chip({ amount, chipScale = 1, isTablet, small }) {
         ]}
       >
         <Text
+          adjustsFontSizeToFit
+          allowFontScaling={false}
+          minimumFontScale={0.72}
+          numberOfLines={1}
           style={[
             styles.chipText,
             isTablet && styles.chipTextTablet,
             small && styles.chipTextSmall,
             small && isTablet && styles.chipTextSmallTablet,
-            amount === 5000 && (small ? styles.chipText5000Small : styles.chipText5000),
-            amount === 5000 &&
+            amount >= 1000 && (small ? styles.chipTextWideSmall : styles.chipTextWide),
+            amount >= 1000 &&
               isTablet &&
-              (small ? styles.chipText5000SmallTablet : styles.chipText5000Tablet),
-            { fontSize: scalePx(textBaseSize, chipScale) },
+              (small ? styles.chipTextWideSmallTablet : styles.chipTextWideTablet),
+            chipTextDynamicStyle,
           ]}
         >
           {amount}
