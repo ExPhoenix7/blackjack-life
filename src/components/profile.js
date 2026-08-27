@@ -4,10 +4,20 @@ import { itemListings, realEstateListings, vehicleListings } from "../core/game"
 import { styles } from "../styles/styles";
 
 function ProfileScreen({
+  accountName,
+  activeCredit,
+  achievementsUnlocked,
   stats,
   currentWealth,
+  machineCapacity,
+  machinePassiveEarn,
+  machineStored,
+  machineTapEarn,
+  totalAchievements,
   totalCredit,
   ownedCounts,
+  ownedValues,
+  rentalRate,
   isTablet,
   onBack,
   safeFrameInsets,
@@ -16,6 +26,17 @@ function ProfileScreen({
   const handsWon = stats.handsWon || 0;
   const winRate = roundsPlayed > 0 ? Math.round((handsWon / roundsPlayed) * 100) : 0;
   const totalOwned = ownedCounts.realEstate + ownedCounts.vehicles + ownedCounts.items;
+  const totalStoreItems = realEstateListings.length + vehicleListings.length + itemListings.length;
+  const storeCompletion = totalStoreItems > 0 ? Math.round((totalOwned / totalStoreItems) * 100) : 0;
+  const assetValue = ownedValues.realEstate + ownedValues.vehicles + ownedValues.items;
+  const machineFill =
+    machineCapacity > 0 ? Math.round((Math.min(machineStored, machineCapacity) / machineCapacity) * 100) : 0;
+  const headlineStats = [
+    { label: "Credit", value: `$${activeCredit.toLocaleString("en-US")}` },
+    { label: "Assets", value: `$${assetValue.toLocaleString("en-US")}` },
+    { label: "Store", value: `${storeCompletion}%` },
+    { label: "Achievements", value: `${achievementsUnlocked}/${totalAchievements}` },
+  ];
   const profileStats = [
     { label: "Total Credit", value: `$${totalCredit.toLocaleString("en-US")}` },
     { label: "Net Worth", value: `$${currentWealth.toLocaleString("en-US")}` },
@@ -31,8 +52,15 @@ function ProfileScreen({
     { label: "Rent Collected", value: `$${(stats.rentalCollected || 0).toLocaleString("en-US")}` },
     {
       label: "Store Owned",
-      value: `${totalOwned}/${realEstateListings.length + vehicleListings.length + itemListings.length}`,
+      value: `${totalOwned}/${totalStoreItems}`,
     },
+    { label: "Real Estate Value", value: `$${ownedValues.realEstate.toLocaleString("en-US")}` },
+    { label: "Vehicle Value", value: `$${ownedValues.vehicles.toLocaleString("en-US")}` },
+    { label: "Item Value", value: `$${ownedValues.items.toLocaleString("en-US")}` },
+    { label: "Rental Rate", value: `$${rentalRate.toLocaleString("en-US")}/hr` },
+    { label: "Machine Tap", value: `$${machineTapEarn.toLocaleString("en-US")}` },
+    { label: "Machine Passive", value: `$${machinePassiveEarn.toLocaleString("en-US")}/min` },
+    { label: "Machine Storage", value: `${machineFill}%` },
   ];
 
   return (
@@ -63,7 +91,7 @@ function ProfileScreen({
             numberOfLines={1}
             style={[styles.profileAccountName, isTablet && styles.profileAccountNameTablet]}
           >
-            Player stats
+            {accountName}
           </Text>
         </View>
         <View style={[styles.profileTopSpacer, isTablet && styles.profileTopSpacerTablet]} />
@@ -87,6 +115,29 @@ function ProfileScreen({
             </Text>
           </View>
         </View>
+
+        <View style={[styles.profileHeadlineGrid, isTablet && styles.profileHeadlineGridTablet]}>
+          {headlineStats.map((stat) => (
+            <View
+              key={stat.label}
+              style={[styles.profileHeadlineCard, isTablet && styles.profileHeadlineCardTablet]}
+            >
+              <Text style={[styles.profileHeadlineLabel, isTablet && styles.profileHeadlineLabelTablet]}>
+                {stat.label}
+              </Text>
+              <Text
+                numberOfLines={1}
+                style={[styles.profileHeadlineValue, isTablet && styles.profileHeadlineValueTablet]}
+              >
+                {stat.value}
+              </Text>
+            </View>
+          ))}
+        </View>
+
+        <Text style={[styles.profileSectionTitle, isTablet && styles.profileSectionTitleTablet]}>
+          Lifetime
+        </Text>
 
         <View style={[styles.profileGrid, isTablet && styles.profileGridTablet]}>
           {profileStats.map((stat) => (

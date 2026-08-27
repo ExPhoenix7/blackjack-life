@@ -341,72 +341,51 @@ export const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "900",
   },
-  achievementModalBackdrop: {
-    backgroundColor: "rgba(0,0,0,0.72)",
-    flex: 1,
-    justifyContent: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 42,
-  },
-  achievementModalCloseLayer: {
+  achievementScreen: {
+    backgroundColor: "rgba(6,38,25,0.96)",
     bottom: 0,
     left: 0,
+    paddingHorizontal: 12,
     position: "absolute",
     right: 0,
     top: 0,
+    zIndex: 90,
   },
-  achievementPanel: {
-    alignSelf: "center",
-    backgroundColor: "rgba(8,26,18,0.98)",
-    borderColor: "rgba(255,240,122,0.78)",
-    borderRadius: 8,
-    borderWidth: 2,
-    height: "88%",
-    maxHeight: "92%",
-    maxWidth: 420,
-    padding: 14,
-    width: "100%",
-  },
-  achievementPanelHeader: {
+  achievementFullHeader: {
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 12,
+    minHeight: 54,
   },
-  achievementPanelTitle: {
+  achievementFullHeaderTablet: {
+    minHeight: 72,
+  },
+  achievementFullTitle: {
     color: "#fff07a",
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: "900",
   },
-  achievementPanelEyebrow: {
-    color: "rgba(214,255,231,0.68)",
-    fontSize: 10,
-    fontWeight: "900",
-    textTransform: "uppercase",
+  achievementFullTitleTablet: {
+    fontSize: 34,
   },
-  achievementPanelSubtitle: {
+  achievementFullSubtitle: {
     color: "#d6ffe7",
     fontSize: 12,
-    fontWeight: "900",
-    marginTop: 2,
+    fontWeight: "800",
+    marginTop: 1,
+    maxWidth: 170,
   },
-  achievementHeaderCopy: {
-    flex: 1,
-  },
-  achievementCloseButton: {
-    alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.12)",
-    borderColor: "rgba(255,255,255,0.3)",
-    borderRadius: 8,
-    borderWidth: 2,
-    height: 38,
-    justifyContent: "center",
-    width: 38,
-  },
-  achievementCloseText: {
-    color: "#ffffff",
+  achievementFullSubtitleTablet: {
     fontSize: 16,
-    fontWeight: "900",
+    maxWidth: 260,
+  },
+  achievementFullContent: {
+    paddingBottom: 24,
+    paddingTop: 10,
+  },
+  achievementFullContentTablet: {
+    paddingBottom: 34,
+    paddingTop: 16,
   },
   achievementSummaryCard: {
     backgroundColor: "rgba(255,240,122,0.12)",
@@ -415,6 +394,10 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 12,
     padding: 12,
+  },
+  achievementSummaryCardTablet: {
+    marginBottom: 16,
+    padding: 18,
   },
   achievementSummaryTop: {
     alignItems: "center",
@@ -427,11 +410,18 @@ export const styles = StyleSheet.create({
     fontWeight: "900",
     textTransform: "uppercase",
   },
+  achievementSummaryLabelTablet: {
+    fontSize: 13,
+  },
   achievementSummaryValue: {
     color: "#ffffff",
     fontSize: 24,
     fontWeight: "900",
     marginTop: 1,
+  },
+  achievementSummaryValueTablet: {
+    fontSize: 34,
+    marginTop: 3,
   },
   achievementSummaryBadge: {
     alignItems: "center",
@@ -443,10 +433,17 @@ export const styles = StyleSheet.create({
     minHeight: 30,
     paddingHorizontal: 10,
   },
+  achievementSummaryBadgeTablet: {
+    minHeight: 42,
+    paddingHorizontal: 16,
+  },
   achievementSummaryBadgeText: {
     color: "#d6ffe7",
     fontSize: 11,
     fontWeight: "900",
+  },
+  achievementSummaryBadgeTextTablet: {
+    fontSize: 15,
   },
   achievementSummaryTrack: {
     backgroundColor: "rgba(255,255,255,0.16)",
@@ -454,6 +451,10 @@ export const styles = StyleSheet.create({
     height: 9,
     marginTop: 10,
     overflow: "hidden",
+  },
+  achievementSummaryTrackTablet: {
+    height: 12,
+    marginTop: 14,
   },
   achievementSummaryFill: {
     backgroundColor: "#fff07a",
@@ -468,6 +469,9 @@ export const styles = StyleSheet.create({
     gap: 10,
     paddingBottom: 6,
   },
+  achievementListTablet: {
+    gap: 14,
+  },
   achievementRow: {
     alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.08)",
@@ -477,6 +481,10 @@ export const styles = StyleSheet.create({
     flexDirection: "row",
     minHeight: 112,
     padding: 11,
+  },
+  achievementRowTablet: {
+    minHeight: 144,
+    padding: 16,
   },
   achievementRowUnlocked: {
     backgroundColor: "rgba(24,201,111,0.14)",
@@ -493,6 +501,12 @@ export const styles = StyleSheet.create({
     marginRight: 11,
     width: 42,
   },
+  achievementBadgeTablet: {
+    borderRadius: 28,
+    height: 56,
+    marginRight: 16,
+    width: 56,
+  },
   achievementBadgeUnlocked: {
     backgroundColor: "rgba(255,240,122,0.18)",
     borderColor: "#fff7ad",
@@ -501,6 +515,9 @@ export const styles = StyleSheet.create({
     color: "#c8d0d0",
     fontSize: 21,
     fontWeight: "900",
+  },
+  achievementBadgeTextTablet: {
+    fontSize: 29,
   },
   achievementBadgeTextUnlocked: {
     color: "#fff07a",
@@ -520,6 +537,9 @@ export const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "900",
   },
+  achievementTitleTablet: {
+    fontSize: 21,
+  },
   achievementStatus: {
     backgroundColor: "rgba(255,255,255,0.1)",
     borderRadius: 5,
@@ -529,6 +549,11 @@ export const styles = StyleSheet.create({
     overflow: "hidden",
     paddingHorizontal: 7,
     paddingVertical: 3,
+  },
+  achievementStatusTablet: {
+    fontSize: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
   },
   achievementStatusUnlocked: {
     backgroundColor: "#fff07a",
@@ -540,6 +565,10 @@ export const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "900",
     lineHeight: 15,
+  },
+  achievementDescriptionTablet: {
+    fontSize: 16,
+    lineHeight: 21,
   },
   achievementTaskRow: {
     alignItems: "flex-start",
@@ -559,12 +588,21 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 3,
   },
+  achievementTaskLabelTablet: {
+    fontSize: 11,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+  },
   achievementProgressTrack: {
     backgroundColor: "rgba(255,255,255,0.14)",
     borderRadius: 5,
     height: 7,
     marginTop: 9,
     overflow: "hidden",
+  },
+  achievementProgressTrackTablet: {
+    height: 9,
+    marginTop: 13,
   },
   achievementProgressFill: {
     backgroundColor: "#2ce287",
@@ -582,10 +620,16 @@ export const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "900",
   },
+  achievementProgressTextTablet: {
+    fontSize: 14,
+  },
   achievementRewardText: {
     color: "#fff07a",
     fontSize: 10,
     fontWeight: "900",
+  },
+  achievementRewardTextTablet: {
+    fontSize: 14,
   },
   achievementToast: {
     alignItems: "center",
@@ -809,6 +853,61 @@ export const styles = StyleSheet.create({
     fontSize: 42,
     marginTop: 4,
   },
+  profileHeadlineGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 14,
+  },
+  profileHeadlineGridTablet: {
+    gap: 12,
+    marginBottom: 18,
+  },
+  profileHeadlineCard: {
+    backgroundColor: "rgba(255,240,122,0.13)",
+    borderColor: "rgba(255,240,122,0.42)",
+    borderRadius: 8,
+    borderWidth: 1,
+    minHeight: 64,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    width: "48%",
+  },
+  profileHeadlineCardTablet: {
+    minHeight: 86,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  profileHeadlineLabel: {
+    color: "#d6ffe7",
+    fontSize: 10,
+    fontWeight: "900",
+    textTransform: "uppercase",
+  },
+  profileHeadlineLabelTablet: {
+    fontSize: 13,
+  },
+  profileHeadlineValue: {
+    color: "#fff07a",
+    fontSize: 18,
+    fontWeight: "900",
+    marginTop: 6,
+  },
+  profileHeadlineValueTablet: {
+    fontSize: 26,
+    marginTop: 9,
+  },
+  profileSectionTitle: {
+    color: "#fff07a",
+    fontSize: 15,
+    fontWeight: "900",
+    marginBottom: 8,
+    textTransform: "uppercase",
+  },
+  profileSectionTitleTablet: {
+    fontSize: 20,
+    marginBottom: 12,
+  },
   profileGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -885,6 +984,9 @@ export const styles = StyleSheet.create({
     minHeight: 22,
     paddingHorizontal: 7,
   },
+  rewardedAdButtonLoading: {
+    opacity: 0.72,
+  },
   rewardedAdBadge: {
     backgroundColor: "#fff07a",
     borderRadius: 4,
@@ -906,6 +1008,24 @@ export const styles = StyleSheet.create({
     marginTop: 2,
     maxWidth: 94,
     textAlign: "right",
+  },
+  systemNotice: {
+    alignSelf: "center",
+    backgroundColor: "rgba(0,0,0,0.58)",
+    borderColor: "rgba(255,240,122,0.44)",
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    position: "absolute",
+    top: 118,
+    zIndex: 80,
+  },
+  systemNoticeText: {
+    color: "#fff7b0",
+    fontSize: 11,
+    fontWeight: "900",
+    textAlign: "center",
   },
   startupSplash: {
     ...StyleSheet.absoluteFillObject,
@@ -1074,16 +1194,8 @@ export const styles = StyleSheet.create({
   card: {
     width: 94,
     height: 147,
-    overflow: "hidden",
-    borderColor: "#111111",
-    borderWidth: 2,
-    borderRadius: 8,
     backgroundColor: "transparent",
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.24,
-    shadowRadius: 10,
-    elevation: 6,
+    position: "relative",
   },
   cardTablet: {
     height: 172,
@@ -1096,6 +1208,22 @@ export const styles = StyleSheet.create({
   compactCardTablet: {
     height: 147,
     width: 94,
+  },
+  cardImage: {
+    backgroundColor: "transparent",
+    borderColor: "#111111",
+    borderRadius: 8,
+    borderWidth: 2,
+    elevation: 6,
+    height: "100%",
+    left: 0,
+    position: "absolute",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.24,
+    shadowRadius: 10,
+    top: 0,
+    width: "100%",
   },
   cardBack: {
     borderColor: "#fff8ec",
@@ -1188,7 +1316,7 @@ export const styles = StyleSheet.create({
   blackjackHandClip: {
     alignSelf: "center",
     minHeight: 198,
-    overflow: "hidden",
+    overflow: "visible",
   },
   blackjackHandClipTablet: {
     minHeight: 224,

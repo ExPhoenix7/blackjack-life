@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Animated, Image, Pressable, Text, View } from "react-native";
+import { Animated, Image, Platform, Pressable, Text, View } from "react-native";
 
 import { CARD_BACK, CARD_IMAGES } from "../core/game";
 import { styles } from "../styles/styles";
@@ -37,8 +37,9 @@ function DeckShoe({ isTablet, onPress, onTouchStart }) {
 
 function Card({ card, hidden, index, compact, fast, isTablet }) {
   const animated = useRef(new Animated.Value(0)).current;
+  const revealProgress = useRef(new Animated.Value(hidden ? 0 : 1)).current;
+  const previousHidden = useRef(hidden);
   const rotation = `${index - 1}deg`;
-  const cardSource = hidden ? CARD_BACK : CARD_IMAGES[`${card.rank}${card.suit}`];
   const animatedStyle = {
     opacity: animated,
     transform: [
@@ -53,6 +54,24 @@ function Card({ card, hidden, index, compact, fast, isTablet }) {
       },
     ],
   };
+  const revealScale = revealProgress.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [1, 0.04, 1],
+  });
+  const cardBackStyle = {
+    opacity: revealProgress.interpolate({
+      inputRange: [0, 0.49, 0.5, 1],
+      outputRange: [1, 1, 0, 0],
+    }),
+    transform: [{ scaleX: revealScale }],
+  };
+  const cardFaceStyle = {
+    opacity: revealProgress.interpolate({
+      inputRange: [0, 0.5, 0.51, 1],
+      outputRange: [0, 0, 1, 1],
+    }),
+    transform: [{ scaleX: revealScale }],
+  };
 
   useEffect(() => {
     animated.setValue(0);
@@ -63,13 +82,36 @@ function Card({ card, hidden, index, compact, fast, isTablet }) {
       tension: fast ? 70 : 32,
       useNativeDriver: true,
     }).start();
-  }, [animated, card.rank, card.suit, hidden, index, fast]);
+  }, [animated, card.rank, card.suit, index, fast]);
+
+  useEffect(() => {
+    const wasHidden = previousHidden.current;
+    previousHidden.current = hidden;
+    revealProgress.stopAnimation();
+
+    if (hidden) {
+      revealProgress.setValue(0);
+      return undefined;
+    }
+
+    if (!wasHidden) {
+      revealProgress.setValue(1);
+      return undefined;
+    }
+
+    animated.stopAnimation();
+    animated.setValue(1);
+    Animated.timing(revealProgress, {
+      toValue: 1,
+      duration: 240,
+      useNativeDriver: Platform.OS !== "ios",
+    }).start();
+
+    return () => revealProgress.stopAnimation();
+  }, [animated, hidden, revealProgress]);
 
   return (
-    <Animated.Image
-      fadeDuration={0}
-      resizeMode="stretch"
-      source={cardSource}
+    <Animated.View
       style={[
         styles.card,
         isTablet && styles.cardTablet,
@@ -77,7 +119,20 @@ function Card({ card, hidden, index, compact, fast, isTablet }) {
         compact && isTablet && styles.compactCardTablet,
         animatedStyle,
       ]}
-    />
+    >
+      <Animated.Image
+        fadeDuration={0}
+        resizeMode="stretch"
+        source={CARD_BACK}
+        style={[styles.cardImage, cardBackStyle]}
+      />
+      <Animated.Image
+        fadeDuration={0}
+        resizeMode="stretch"
+        source={CARD_IMAGES[`${card.rank}${card.suit}`]}
+        style={[styles.cardImage, cardFaceStyle]}
+      />
+    </Animated.View>
   );
 }
 

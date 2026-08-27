@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Platform, Pressable, Text, View } from "react-native";
 
 import {
@@ -14,6 +15,7 @@ function MoneyMachinePanel({
   stored,
   isTablet,
   moneyMachineScale = 1,
+  panelHeight,
   capacity,
   tapEarn,
   passiveEarn,
@@ -31,16 +33,34 @@ function MoneyMachinePanel({
   const capacityAtMax = capacityLevel >= moneyMachineMaxCapacityLevel;
   const tapUpgradeCost = moneyMachineUpgradeCost("tap", tapLevel);
   const capacityUpgradeCost = moneyMachineUpgradeCost("capacity", capacityLevel);
+  const [measuredStationHeight, setMeasuredStationHeight] = useState(0);
   const scale = moneyMachineScale;
   const isAndroidPhone = Platform.OS === "android" && !isTablet;
-  const tapZoneTranslateY = scalePx(isAndroidPhone ? -6 : -23, scale);
-  const upgradesTranslateY = scalePx(isAndroidPhone ? -5 : -12, scale);
   const tapZoneHeight = isAndroidPhone ? 206 : isTablet ? 244 : 220;
   const upgradesHeight = isAndroidPhone ? 66 : isTablet ? 78 : 68;
   const stationHeight = isAndroidPhone ? 166 : isTablet ? 196 : 174;
   const boxWidth = isAndroidPhone ? 218 : isTablet ? 260 : 220;
   const boxHeight = isAndroidPhone ? 82 : isTablet ? 98 : 84;
   const windowHeight = isAndroidPhone ? 47 : isTablet ? 58 : 48;
+  const panelGap = scalePx(isTablet ? 12 : 8, scale);
+  const panelPaddingTop = scalePx(isAndroidPhone ? 4 : 8, scale);
+  const panelPaddingBottom = scalePx(isAndroidPhone ? 10 : 6, scale);
+  const baseTapZoneHeight = scalePx(tapZoneHeight, scale);
+  const renderedUpgradesHeight = scalePx(upgradesHeight, scale);
+  const renderedStationHeight = scalePx(stationHeight, scale);
+  const stationSafetySpace = scalePx(isTablet ? 32 : 24, scale);
+  const stationLayoutHeight = Math.max(renderedStationHeight + stationSafetySpace, measuredStationHeight);
+  const availableTapZoneHeight =
+    (panelHeight || 0) -
+    panelPaddingTop -
+    panelPaddingBottom -
+    renderedUpgradesHeight -
+    stationLayoutHeight -
+    panelGap * 2;
+  const renderedTapZoneHeight = Math.max(
+    0,
+    Math.min(Math.round(baseTapZoneHeight * (isTablet ? 1.65 : 1.5)), availableTapZoneHeight)
+  );
 
   const content = (
     <>
@@ -51,13 +71,13 @@ function MoneyMachinePanel({
           styles.moneyMachineTapZone,
           isTablet && styles.moneyMachineTapZoneTablet,
           {
-            height: scalePx(tapZoneHeight, scale),
-            transform: [{ translateY: tapZoneTranslateY }],
+            height: renderedTapZoneHeight,
+            transform: [{ translateY: 0 }],
           },
           machineFull && styles.moneyMachineTapZoneFull,
           pressed && styles.moneyMachineTapZonePressed,
           pressed && isTablet && styles.moneyMachineTapZonePressedTablet,
-          pressed && { transform: [{ translateY: tapZoneTranslateY }, { scale: isTablet ? 0.99 : 0.985 }] },
+          pressed && { transform: [{ scale: isTablet ? 0.99 : 0.985 }] },
         ]}
       >
         <Text
@@ -90,13 +110,13 @@ function MoneyMachinePanel({
           isTablet && styles.moneyMachineUpgradesTablet,
           {
             gap: scalePx(8, scale),
-            height: scalePx(upgradesHeight, scale),
-            transform: [{ translateY: upgradesTranslateY }],
+            height: renderedUpgradesHeight,
+            transform: [{ translateY: 0 }],
           },
         ]}
       >
         <Pressable
-          disabled={tapAtMax || credit < tapUpgradeCost}
+          disabled={tapAtMax}
           onPress={onUpgradeTap}
           style={({ pressed }) => [
             styles.moneyMachineUpgrade,
@@ -140,7 +160,7 @@ function MoneyMachinePanel({
           </Text>
         </Pressable>
         <Pressable
-          disabled={capacityAtMax || credit < capacityUpgradeCost}
+          disabled={capacityAtMax}
           onPress={onUpgradeCapacity}
           style={({ pressed }) => [
             styles.moneyMachineUpgrade,
@@ -187,12 +207,18 @@ function MoneyMachinePanel({
         </Pressable>
       </View>
       <View
+        onLayout={(event) => {
+          const nextHeight = Math.ceil(event.nativeEvent.layout.height);
+          setMeasuredStationHeight((currentHeight) =>
+            Math.abs(currentHeight - nextHeight) > 1 ? nextHeight : currentHeight
+          );
+        }}
         style={[
           styles.moneyMachineStation,
           isTablet && styles.moneyMachineStationTablet,
           {
             gap: scalePx(5, scale),
-            minHeight: scalePx(stationHeight, scale),
+            minHeight: renderedStationHeight,
             paddingHorizontal: scalePx(isTablet ? 18 : 14, scale),
             paddingVertical: scalePx(isAndroidPhone ? 5 : 7, scale),
           },
@@ -319,11 +345,12 @@ function MoneyMachinePanel({
     <View
       style={[
         styles.moneyMachineScreen,
-        isAndroidPhone && {
-          paddingBottom: scalePx(12, scale),
-          paddingTop: scalePx(4, scale),
+        {
+          gap: panelGap,
+          justifyContent: "flex-start",
+          paddingBottom: panelPaddingBottom,
+          paddingTop: panelPaddingTop,
         },
-        Platform.OS === "ios" && !isTablet && { transform: [{ translateY: -5 }] },
       ]}
     >
       {content}

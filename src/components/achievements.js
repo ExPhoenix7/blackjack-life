@@ -1,109 +1,187 @@
 import { useEffect, useRef } from "react";
-import { Animated, Modal, Pressable, ScrollView, Text, View } from "react-native";
+import { Animated, Pressable, ScrollView, Text, View } from "react-native";
 
 import { achievementDefinitions, achievementProgress, formatAchievementValue } from "../core/game";
 import { styles } from "../styles/styles";
 
-function AchievementsModal({ visible, stats, onClose }) {
+function AchievementsModal({ visible, stats, isTablet, onClose, safeFrameInsets }) {
   const unlockedCount = achievementDefinitions.filter(
     (achievement) => achievementProgress(achievement, stats) >= achievement.goal
   ).length;
   const totalCount = achievementDefinitions.length;
   const completionRatio = totalCount > 0 ? unlockedCount / totalCount : 0;
 
+  if (!visible) {
+    return null;
+  }
+
   return (
-    <Modal animationType="fade" onRequestClose={onClose} transparent visible={visible}>
-      <View style={styles.achievementModalBackdrop}>
-        <Pressable style={styles.achievementModalCloseLayer} onPress={onClose} />
-        <View style={styles.achievementPanel}>
-          <View style={styles.achievementPanelHeader}>
-            <View style={styles.achievementHeaderCopy}>
-              <Text style={styles.achievementPanelEyebrow}>PLAYER PROGRESS</Text>
-              <Text style={styles.achievementPanelTitle}>Achievements</Text>
-              <Text style={styles.achievementPanelSubtitle}>
-                {unlockedCount}/{totalCount} unlocked
+    <View
+      style={[
+        styles.achievementScreen,
+        {
+          paddingBottom: 18 + safeFrameInsets.bottom,
+          paddingHorizontal: (isTablet ? 20 : 12) + safeFrameInsets.horizontal,
+          paddingTop: 8 + safeFrameInsets.top,
+        },
+      ]}
+    >
+      <View style={[styles.achievementFullHeader, isTablet && styles.achievementFullHeaderTablet]}>
+        <Pressable
+          onPress={onClose}
+          style={({ pressed }) => [
+            styles.profileBackButton,
+            isTablet && styles.profileBackButtonTablet,
+            pressed && styles.pressed,
+          ]}
+        >
+          <Text style={[styles.profileBackText, isTablet && styles.profileBackTextTablet]}>Back</Text>
+        </Pressable>
+        <View style={styles.profileTitleWrap}>
+          <Text style={[styles.achievementFullTitle, isTablet && styles.achievementFullTitleTablet]}>
+            Achievements
+          </Text>
+          <Text
+            numberOfLines={1}
+            style={[styles.achievementFullSubtitle, isTablet && styles.achievementFullSubtitleTablet]}
+          >
+            {unlockedCount}/{totalCount} unlocked
+          </Text>
+        </View>
+        <View style={[styles.profileTopSpacer, isTablet && styles.profileTopSpacerTablet]} />
+      </View>
+
+      <ScrollView
+        contentContainerStyle={[
+          styles.achievementFullContent,
+          isTablet && styles.achievementFullContentTablet,
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={[styles.achievementSummaryCard, isTablet && styles.achievementSummaryCardTablet]}>
+          <View style={styles.achievementSummaryTop}>
+            <View>
+              <Text
+                style={[styles.achievementSummaryLabel, isTablet && styles.achievementSummaryLabelTablet]}
+              >
+                Completion
+              </Text>
+              <Text
+                style={[styles.achievementSummaryValue, isTablet && styles.achievementSummaryValueTablet]}
+              >
+                {Math.round(completionRatio * 100)}%
               </Text>
             </View>
-            <Pressable
-              onPress={onClose}
-              style={({ pressed }) => [styles.achievementCloseButton, pressed && styles.pressed]}
-            >
-              <Text style={styles.achievementCloseText}>X</Text>
-            </Pressable>
-          </View>
-
-          <View style={styles.achievementSummaryCard}>
-            <View style={styles.achievementSummaryTop}>
-              <View>
-                <Text style={styles.achievementSummaryLabel}>Completion</Text>
-                <Text style={styles.achievementSummaryValue}>{Math.round(completionRatio * 100)}%</Text>
-              </View>
-              <View style={styles.achievementSummaryBadge}>
-                <Text style={styles.achievementSummaryBadgeText}>{totalCount - unlockedCount} left</Text>
-              </View>
-            </View>
-            <View style={styles.achievementSummaryTrack}>
-              <View style={[styles.achievementSummaryFill, { width: `${completionRatio * 100}%` }]} />
+            <View style={[styles.achievementSummaryBadge, isTablet && styles.achievementSummaryBadgeTablet]}>
+              <Text
+                style={[
+                  styles.achievementSummaryBadgeText,
+                  isTablet && styles.achievementSummaryBadgeTextTablet,
+                ]}
+              >
+                {totalCount - unlockedCount} left
+              </Text>
             </View>
           </View>
+          <View style={[styles.achievementSummaryTrack, isTablet && styles.achievementSummaryTrackTablet]}>
+            <View style={[styles.achievementSummaryFill, { width: `${completionRatio * 100}%` }]} />
+          </View>
+        </View>
 
-          <ScrollView
-            contentContainerStyle={styles.achievementList}
-            showsVerticalScrollIndicator={false}
-            style={styles.achievementListScroll}
-          >
-            {achievementDefinitions.map((achievement) => {
-              const progress = achievementProgress(achievement, stats);
-              const unlocked = progress >= achievement.goal;
-              const progressRatio = Math.min(1, progress / achievement.goal);
+        <View style={[styles.achievementList, isTablet && styles.achievementListTablet]}>
+          {achievementDefinitions.map((achievement) => {
+            const progress = achievementProgress(achievement, stats);
+            const unlocked = progress >= achievement.goal;
+            const progressRatio = Math.min(1, progress / achievement.goal);
 
-              return (
+            return (
+              <View
+                key={achievement.id}
+                style={[
+                  styles.achievementRow,
+                  isTablet && styles.achievementRowTablet,
+                  unlocked && styles.achievementRowUnlocked,
+                ]}
+              >
                 <View
-                  key={achievement.id}
-                  style={[styles.achievementRow, unlocked && styles.achievementRowUnlocked]}
+                  style={[
+                    styles.achievementBadge,
+                    isTablet && styles.achievementBadgeTablet,
+                    unlocked && styles.achievementBadgeUnlocked,
+                  ]}
                 >
-                  <View style={[styles.achievementBadge, unlocked && styles.achievementBadgeUnlocked]}>
+                  <Text
+                    style={[
+                      styles.achievementBadgeText,
+                      isTablet && styles.achievementBadgeTextTablet,
+                      unlocked && styles.achievementBadgeTextUnlocked,
+                    ]}
+                  >
+                    {"\u2605"}
+                  </Text>
+                </View>
+                <View style={styles.achievementInfo}>
+                  <View style={styles.achievementTitleRow}>
                     <Text
-                      style={[styles.achievementBadgeText, unlocked && styles.achievementBadgeTextUnlocked]}
+                      numberOfLines={1}
+                      style={[styles.achievementTitle, isTablet && styles.achievementTitleTablet]}
                     >
-                      {"\u2605"}
+                      {achievement.title}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.achievementStatus,
+                        isTablet && styles.achievementStatusTablet,
+                        unlocked && styles.achievementStatusUnlocked,
+                      ]}
+                    >
+                      {unlocked ? "DONE" : "LOCKED"}
                     </Text>
                   </View>
-                  <View style={styles.achievementInfo}>
-                    <View style={styles.achievementTitleRow}>
-                      <Text numberOfLines={1} style={styles.achievementTitle}>
-                        {achievement.title}
-                      </Text>
-                      <Text style={[styles.achievementStatus, unlocked && styles.achievementStatusUnlocked]}>
-                        {unlocked ? "DONE" : "LOCKED"}
-                      </Text>
-                    </View>
-                    <View style={styles.achievementTaskRow}>
-                      <Text style={styles.achievementTaskLabel}>TASK</Text>
-                      <Text numberOfLines={2} style={styles.achievementDescription}>
-                        {achievement.description}
-                      </Text>
-                    </View>
-                    <View style={styles.achievementProgressTrack}>
-                      <View style={[styles.achievementProgressFill, { width: `${progressRatio * 100}%` }]} />
-                    </View>
-                    <View style={styles.achievementFooterRow}>
-                      <Text style={styles.achievementProgressText}>
-                        {formatAchievementValue(progress, achievement)} /{" "}
-                        {formatAchievementValue(achievement.goal, achievement)}
-                      </Text>
-                      <Text style={styles.achievementRewardText}>
-                        +${achievement.reward.toLocaleString("en-US")}
-                      </Text>
-                    </View>
+                  <View style={styles.achievementTaskRow}>
+                    <Text
+                      style={[styles.achievementTaskLabel, isTablet && styles.achievementTaskLabelTablet]}
+                    >
+                      TASK
+                    </Text>
+                    <Text
+                      numberOfLines={2}
+                      style={[styles.achievementDescription, isTablet && styles.achievementDescriptionTablet]}
+                    >
+                      {achievement.description}
+                    </Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.achievementProgressTrack,
+                      isTablet && styles.achievementProgressTrackTablet,
+                    ]}
+                  >
+                    <View style={[styles.achievementProgressFill, { width: `${progressRatio * 100}%` }]} />
+                  </View>
+                  <View style={styles.achievementFooterRow}>
+                    <Text
+                      style={[
+                        styles.achievementProgressText,
+                        isTablet && styles.achievementProgressTextTablet,
+                      ]}
+                    >
+                      {formatAchievementValue(progress, achievement)} /{" "}
+                      {formatAchievementValue(achievement.goal, achievement)}
+                    </Text>
+                    <Text
+                      style={[styles.achievementRewardText, isTablet && styles.achievementRewardTextTablet]}
+                    >
+                      +${achievement.reward.toLocaleString("en-US")}
+                    </Text>
                   </View>
                 </View>
-              );
-            })}
-          </ScrollView>
+              </View>
+            );
+          })}
         </View>
-      </View>
-    </Modal>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -156,7 +234,7 @@ function AchievementToast({ achievement, onDone }) {
       ]}
     >
       <Animated.View style={[styles.achievementToastCheck, { transform: [{ scale: checkScale }] }]}>
-        <Text style={styles.achievementToastCheckText}>OK</Text>
+        <Text style={styles.achievementToastCheckText}>{"\u2605"}</Text>
       </Animated.View>
       <View style={styles.achievementToastTextWrap}>
         <Text style={styles.achievementToastEyebrow}>Achievement unlocked</Text>

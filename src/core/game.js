@@ -1,5 +1,5 @@
 import Constants from "expo-constants";
-import { Platform, StatusBar } from "react-native";
+import { NativeModules, Platform, StatusBar } from "react-native";
 
 const suits = ["S", "H", "D", "C"];
 const ranks = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
@@ -24,6 +24,10 @@ const mainTabs = ["store", "blackjack", "money"];
 const mainTabIndex = { store: 0, blackjack: 1, money: 2 };
 
 function getGoogleMobileAdsModule() {
+  if (isExpoGo || !NativeModules.RNGoogleMobileAdsRewardedModule) {
+    return null;
+  }
+
   if (googleMobileAdsModule !== null) {
     return googleMobileAdsModule;
   }
@@ -138,27 +142,57 @@ function getResponsiveLayout(windowWidth, windowHeight, layoutWidth, safeFrameIn
   const controlScale = Math.min(isTablet ? tabletScale : phoneScale, uiScale);
   const isAndroidPhone = Platform.OS === "android" && !isTablet;
   const moneyMachineScale = isAndroidPhone ? Math.min(controlScale, uiScale * 0.96) : controlScale;
+  const headerMinHeight = scalePx(isTablet ? 86 : 104, uiScale);
+  const tabAreaHeight = scalePx(isTablet ? 326 : 286, uiScale);
+  const tablePaddingBottom = scalePx(10, uiScale);
+  const centerControlsTranslateY = scalePx(isTablet ? -82 : 0, uiScale);
+  const bottomTabButtonSize = scalePx(isTablet ? 99 : 85, uiScale);
+  const bottomTabPaddingVertical = scalePx(isTablet ? 10 : 8, uiScale);
+  const bottomTabsHeight = bottomTabButtonSize + bottomTabPaddingVertical * 2 + 4;
+  const tabAreaScreenTop =
+    windowHeight -
+    (10 + safeFrameInsets.bottom) -
+    tablePaddingBottom -
+    bottomTabsHeight -
+    tabAreaHeight +
+    centerControlsTranslateY;
+  const overlaySafeScreenTop = 10 + safeFrameInsets.top + headerMinHeight + scalePx(8, uiScale);
+  const storeOverlayTop = scalePx(3, uiScale);
+  const moneyOverlayTop = scalePx(23, uiScale);
+  const storeOverlayClipTop = Math.max(
+    scalePx(isTablet ? -550 : -340, uiScale),
+    overlaySafeScreenTop - tabAreaScreenTop - storeOverlayTop
+  );
+  const moneyOverlayClipTop = Math.max(
+    scalePx(isTablet ? -450 : -350, uiScale),
+    overlaySafeScreenTop - tabAreaScreenTop - moneyOverlayTop
+  );
+  const storeOverlayBottom = tabAreaHeight - scalePx(isTablet ? 17 : 20, uiScale);
+  const moneyOverlayBottom = tabAreaHeight - scalePx(isTablet ? 12 : 14, uiScale);
+  const storeOverlayHeight = storeOverlayBottom - storeOverlayClipTop - storeOverlayTop;
+  const moneyOverlayHeight = moneyOverlayBottom - moneyOverlayClipTop - moneyOverlayTop;
 
   return {
     blackjackClipHeight: scalePx(isTablet ? 426 : 378, uiScale),
     blackjackClipTop: scalePx(isTablet ? -100 : -92, uiScale),
     blackjackOverlayTop: scalePx(isTablet ? 24 : 34, uiScale),
     centerControlsMinHeight: scalePx(isTablet ? 176 : 190, uiScale),
-    centerControlsTranslateY: scalePx(isTablet ? -82 : 0, uiScale),
+    centerControlsTranslateY,
     chipScale: controlScale,
     handClipMinHeight: scalePx(isTablet ? 168 : 198, uiScale),
-    headerMinHeight: scalePx(isTablet ? 86 : 104, uiScale),
+    idleHandClipMinHeight: scalePx(isTablet ? 76 : 124, uiScale),
+    headerMinHeight,
     moneyMachineScale,
-    moneyOverlayClipHeight: scalePx(isTablet ? 612 : 507, uiScale),
-    moneyOverlayClipTop: scalePx(isTablet ? -282 : -221, uiScale),
-    moneyOverlayHeight: scalePx(isTablet ? 548 : 484, uiScale),
-    moneyOverlayTop: scalePx(23, uiScale),
-    storeOverlayClipHeight: scalePx(isTablet ? 610 : 532, uiScale),
-    storeOverlayClipTop: scalePx(isTablet ? -278 : -246, uiScale),
-    storeOverlayHeight: scalePx(isTablet ? 584 : 509, uiScale),
-    storeOverlayTop: scalePx(3, uiScale),
-    tabAreaHeight: scalePx(isTablet ? 326 : 286, uiScale),
-    tablePaddingBottom: scalePx(10, uiScale),
+    moneyOverlayClipHeight: moneyOverlayBottom - moneyOverlayClipTop,
+    moneyOverlayClipTop,
+    moneyOverlayHeight,
+    moneyOverlayTop,
+    storeOverlayClipHeight: storeOverlayBottom - storeOverlayClipTop,
+    storeOverlayClipTop,
+    storeOverlayHeight,
+    storeOverlayTop,
+    tabAreaHeight,
+    tablePaddingBottom,
     uiScale,
   };
 }

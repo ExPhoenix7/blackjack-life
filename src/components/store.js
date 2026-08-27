@@ -228,7 +228,7 @@ function StorePanel({
                   </View>
                 </View>
                 <Pressable
-                  disabled={owned || !affordable}
+                  disabled={owned}
                   onPress={() => onBuyRealEstate(property)}
                   style={({ pressed }) => [
                     styles.storeBuyButton,
@@ -283,7 +283,7 @@ function StorePanel({
                   </View>
                 </View>
                 <Pressable
-                  disabled={owned || !affordable}
+                  disabled={owned}
                   onPress={() => onBuyVehicle(vehicle)}
                   style={({ pressed }) => [
                     styles.storeBuyButton,
@@ -340,7 +340,7 @@ function StorePanel({
                   </View>
                 </View>
                 <Pressable
-                  disabled={owned || !affordable}
+                  disabled={owned}
                   onPress={() => onBuyItem(item)}
                   style={({ pressed }) => [
                     styles.storeBuyButton,

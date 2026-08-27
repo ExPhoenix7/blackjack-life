@@ -97,16 +97,16 @@ import {
 import { styles } from "./src/styles/styles";
 
 async function readStoredJson(key) {
-  try {
-    const savedValue = await AsyncStorage.getItem(key);
-    return savedValue === null ? null : JSON.parse(savedValue);
-  } catch {
-    return null;
-  }
+  const savedValue = await AsyncStorage.getItem(key);
+  return savedValue === null ? null : JSON.parse(savedValue);
 }
 
-function writeStoredJson(key, value) {
-  AsyncStorage.setItem(key, JSON.stringify(value)).catch(() => {});
+function writeStoredJson(key, value, onError) {
+  AsyncStorage.setItem(key, JSON.stringify(value)).catch((error) => {
+    if (typeof onError === "function") {
+      onError(error);
+    }
+  });
 }
 
 function normalizeSavedAccount(account, index) {
@@ -174,15 +174,19 @@ export default function App() {
   const [editingAccountId, setEditingAccountId] = useState(null);
   const [editingAccountName, setEditingAccountName] = useState("");
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [blackjackCelebration, setBlackjackCelebration] = useState(false);
   const [activeTab, setActiveTab] = useState("blackjack");
   const [rewardedAdReady, setRewardedAdReady] = useState(false);
   const [rewardedAdLoading, setRewardedAdLoading] = useState(false);
   const [adStatusMessage, setAdStatusMessage] = useState("");
+  const [systemNotice, setSystemNotice] = useState("");
   const [startupSplashVisible, setStartupSplashVisible] = useState(true);
   const resultTimer = useRef(null);
   const nextRoundTimer = useRef(null);
   const adStatusTimer = useRef(null);
+  const systemNoticeTimer = useRef(null);
+  const rewardedAdLoadFeedbackTimer = useRef(null);
   const rewardedAdRetryTimer = useRef(null);
   const rewardedAdRef = useRef(null);
   const rewardedAdReadyRef = useRef(false);
@@ -192,6 +196,7 @@ export default function App() {
   const rewardedAdUnsubscribers = useRef([]);
   const rewardedAdAward = useRef({ activeAccountId: null, chips: 0, credit: 0 });
   const startupSplashTimer = useRef(null);
+  const storageWarningShown = useRef(false);
   const achievementUnlocksReady = useRef(false);
   const unlockedAchievementIds = useRef(new Set());
   const developerCheatStep = useRef(0);
@@ -253,6 +258,13 @@ export default function App() {
     ownedItemsValue;
   const rewardedAdCredit = rewardedAdCreditForWealth(currentWealth);
   const rewardedAdLabel = `+${rewardedAdCredit / 1000}K`;
+  const rewardedAdButtonDisabled = creditDelta !== null || rewardedAdLoading;
+  const rewardedAdButtonText =
+    rewardedAdLoading || (!isExpoGo && rewardedAdPreloading.current)
+      ? "LOADING"
+      : isExpoGo || rewardedAdReady
+        ? rewardedAdLabel
+        : "LOAD";
   const achievementDisplayStats = useMemo(
     () => ({
       ...achievementStats,
@@ -272,6 +284,13 @@ export default function App() {
       ownedVehicles.length,
     ]
   );
+  const unlockedAchievementCount = useMemo(
+    () =>
+      achievementDefinitions.filter(
+        (achievement) => achievementProgress(achievement, achievementDisplayStats) >= achievement.goal
+      ).length,
+    [achievementDisplayStats]
+  );
   const accountSwitchLocked =
     inRound || dealing || resolvingDealer || betweenRounds || resultDelta !== null || creditDelta !== null;
   const showBottomTabs =
@@ -288,6 +307,9 @@ export default function App() {
     resolvingDealer ||
     resultDelta !== null ||
     blackjackCelebration;
+  const handClipMinHeight = showBlackjackTable
+    ? responsiveLayout.handClipMinHeight
+    : responsiveLayout.idleHandClipMinHeight;
   const needsFirstAccountName = accountsLoaded && !hasChosenFirstAccountName;
 
   useEffect(() => {
@@ -388,13 +410,22 @@ export default function App() {
     let active = true;
 
     async function loadSettings() {
-      const parsedSettings = await readStoredJson(settingsStorageKey);
-      if (!active || parsedSettings === null) {
+      let parsedSettings = null;
+      try {
+        parsedSettings = await readStoredJson(settingsStorageKey);
+      } catch {
+        if (active) {
+          showSystemNotice("Settings reset on this device.");
+          setSettingsLoaded(true);
+        }
         return;
       }
 
-      if (typeof parsedSettings.soundEnabled === "boolean") {
+      if (active && parsedSettings !== null && typeof parsedSettings.soundEnabled === "boolean") {
         setSoundEnabled(parsedSettings.soundEnabled);
+      }
+      if (active) {
+        setSettingsLoaded(true);
       }
     }
 
@@ -405,8 +436,12 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    writeStoredJson(settingsStorageKey, { soundEnabled });
-  }, [soundEnabled]);
+    if (!settingsLoaded) {
+      return;
+    }
+
+    writeStoredJson(settingsStorageKey, { soundEnabled }, handleStorageWriteError);
+  }, [settingsLoaded, soundEnabled]);
 
   useEffect(() => {
     let active = true;
@@ -508,6 +543,7 @@ export default function App() {
           credit: firstAccountChips,
         };
         if (active) {
+          showSystemNotice("Save could not be loaded. New game started.");
           setAccounts([fallbackAccount]);
           setActiveAccountId(fallbackAccount.id);
           setMoneyMachine(createMoneyMachine());
@@ -533,17 +569,21 @@ export default function App() {
 
   useEffect(() => {
     if (accountsLoaded && activeAccountId && accounts.length > 0) {
-      writeStoredJson(accountsStorageKey, {
-        accounts,
-        activeAccountId,
-        hasChosenFirstAccountName,
-        moneyMachine,
-        rentalIncome,
-        achievementStats,
-        ownedItems,
-        ownedRealEstate,
-        ownedVehicles,
-      });
+      writeStoredJson(
+        accountsStorageKey,
+        {
+          accounts,
+          activeAccountId,
+          hasChosenFirstAccountName,
+          moneyMachine,
+          rentalIncome,
+          achievementStats,
+          ownedItems,
+          ownedRealEstate,
+          ownedVehicles,
+        },
+        handleStorageWriteError
+      );
     }
   }, [
     accounts,
@@ -605,6 +645,10 @@ export default function App() {
       if (adStatusTimer.current) {
         clearTimeout(adStatusTimer.current);
       }
+      if (systemNoticeTimer.current) {
+        clearTimeout(systemNoticeTimer.current);
+      }
+      clearRewardedAdLoadFeedbackTimer();
       clearRewardedAdRetryTimer();
       resetRewardedAdInstance({ updateState: false });
     };
@@ -753,7 +797,13 @@ export default function App() {
     const maxLevel = type === "tap" ? moneyMachineMaxTapLevel : moneyMachineMaxCapacityLevel;
     const cost = moneyMachineUpgradeCost(type, currentLevel);
 
-    if (currentLevel >= maxLevel || chips < cost) {
+    if (currentLevel >= maxLevel) {
+      showSystemNotice("Upgrade is already maxed.");
+      return;
+    }
+
+    if (chips < cost) {
+      showSystemNotice(`Need $${cost.toLocaleString("en-US")} credit.`);
       return;
     }
 
@@ -777,12 +827,12 @@ export default function App() {
   }
 
   function buyRealEstate(property) {
-    if (
-      !activeAccount ||
-      ownedRealEstate.includes(property.name) ||
-      chips < property.price ||
-      creditDelta !== null
-    ) {
+    if (!activeAccount || ownedRealEstate.includes(property.name) || creditDelta !== null) {
+      return;
+    }
+
+    if (chips < property.price) {
+      showSystemNotice(`Need $${property.price.toLocaleString("en-US")} credit.`);
       return;
     }
 
@@ -831,12 +881,12 @@ export default function App() {
   }
 
   function buyVehicle(vehicle) {
-    if (
-      !activeAccount ||
-      ownedVehicles.includes(vehicle.name) ||
-      chips < vehicle.price ||
-      creditDelta !== null
-    ) {
+    if (!activeAccount || ownedVehicles.includes(vehicle.name) || creditDelta !== null) {
+      return;
+    }
+
+    if (chips < vehicle.price) {
+      showSystemNotice(`Need $${vehicle.price.toLocaleString("en-US")} credit.`);
       return;
     }
 
@@ -855,7 +905,12 @@ export default function App() {
   }
 
   function buyItem(item) {
-    if (!activeAccount || ownedItems.includes(item.name) || chips < item.price || creditDelta !== null) {
+    if (!activeAccount || ownedItems.includes(item.name) || creditDelta !== null) {
+      return;
+    }
+
+    if (chips < item.price) {
+      showSystemNotice(`Need $${item.price.toLocaleString("en-US")} credit.`);
       return;
     }
 
@@ -958,6 +1013,34 @@ export default function App() {
     }, 2200);
   }
 
+  function clearRewardedAdLoadFeedbackTimer() {
+    if (rewardedAdLoadFeedbackTimer.current) {
+      clearTimeout(rewardedAdLoadFeedbackTimer.current);
+      rewardedAdLoadFeedbackTimer.current = null;
+    }
+  }
+
+  function showSystemNotice(message, duration = 2800) {
+    if (systemNoticeTimer.current) {
+      clearTimeout(systemNoticeTimer.current);
+    }
+
+    setSystemNotice(message);
+    systemNoticeTimer.current = setTimeout(() => {
+      setSystemNotice("");
+      systemNoticeTimer.current = null;
+    }, duration);
+  }
+
+  function handleStorageWriteError() {
+    if (storageWarningShown.current) {
+      return;
+    }
+
+    storageWarningShown.current = true;
+    showSystemNotice("Save failed on this device.");
+  }
+
   function clearRewardedAdRetryTimer() {
     if (rewardedAdRetryTimer.current) {
       clearTimeout(rewardedAdRetryTimer.current);
@@ -975,6 +1058,7 @@ export default function App() {
   }
 
   function resetRewardedAdInstance({ updateState = true } = {}) {
+    clearRewardedAdLoadFeedbackTimer();
     cleanupRewardedAdListeners();
     rewardedAdRef.current = null;
     rewardedAdReadyRef.current = false;
@@ -1010,10 +1094,16 @@ export default function App() {
   }
 
   async function loadRewardedAd({ showWhenLoaded = false } = {}) {
+    if (isExpoGo) {
+      setRewardedAdReady(true);
+      setRewardedAdLoading(false);
+      return;
+    }
+
     const ads = getGoogleMobileAdsModule();
     if (!ads?.RewardedAd || !ads?.RewardedAdEventType || !ads?.AdEventType || !ads?.TestIds) {
       if (showWhenLoaded) {
-        setTemporaryAdStatus("Ad unavailable");
+        setTemporaryAdStatus("Ad unavailable offline");
         setRewardedAdLoading(false);
       }
       return;
@@ -1021,6 +1111,11 @@ export default function App() {
 
     if (showWhenLoaded) {
       rewardedAdShowWhenLoaded.current = true;
+      clearRewardedAdLoadFeedbackTimer();
+      rewardedAdLoadFeedbackTimer.current = setTimeout(() => {
+        setTemporaryAdStatus("Still loading ad");
+        rewardedAdLoadFeedbackTimer.current = null;
+      }, 7000);
     }
 
     if (rewardedAdReadyRef.current && rewardedAdRef.current) {
@@ -1051,6 +1146,7 @@ export default function App() {
 
       rewardedAdUnsubscribers.current.push(
         rewardedAd.addAdEventListener(ads.RewardedAdEventType.LOADED, () => {
+          clearRewardedAdLoadFeedbackTimer();
           rewardedAdPreloading.current = false;
           rewardedAdReadyRef.current = true;
           setRewardedAdReady(true);
@@ -1070,6 +1166,7 @@ export default function App() {
       );
       rewardedAdUnsubscribers.current.push(
         rewardedAd.addAdEventListener(ads.AdEventType.CLOSED, () => {
+          clearRewardedAdLoadFeedbackTimer();
           resetRewardedAdInstance();
           setRewardedAdLoading(false);
           scheduleRewardedAdPreload(700);
@@ -1078,9 +1175,10 @@ export default function App() {
       rewardedAdUnsubscribers.current.push(
         rewardedAd.addAdEventListener(ads.AdEventType.ERROR, (error) => {
           const shouldNotify = rewardedAdShowWhenLoaded.current;
+          clearRewardedAdLoadFeedbackTimer();
           resetRewardedAdInstance();
           if (shouldNotify) {
-            setTemporaryAdStatus(error?.code ? `Ad ${error.code}` : "Ad not ready");
+            setTemporaryAdStatus(error?.code ? `Ad error ${error.code}` : "Ad not ready");
           }
           setRewardedAdLoading(false);
           scheduleRewardedAdPreload();
@@ -1090,6 +1188,7 @@ export default function App() {
       rewardedAd.load();
     } catch (error) {
       const shouldNotify = rewardedAdShowWhenLoaded.current;
+      clearRewardedAdLoadFeedbackTimer();
       resetRewardedAdInstance();
       if (shouldNotify) {
         setTemporaryAdStatus("Ad unavailable");
@@ -1102,7 +1201,7 @@ export default function App() {
   async function showRewardedAd() {
     const rewardedAd = rewardedAdRef.current;
     if (!rewardedAdReadyRef.current || !rewardedAd) {
-      setTemporaryAdStatus("Ad loading");
+      setTemporaryAdStatus("Loading ad");
       setRewardedAdLoading(true);
       loadRewardedAd({ showWhenLoaded: true });
       return;
@@ -1116,6 +1215,7 @@ export default function App() {
     try {
       await Promise.resolve(rewardedAd.show());
     } catch (error) {
+      clearRewardedAdLoadFeedbackTimer();
       resetRewardedAdInstance();
       setTemporaryAdStatus("Ad not ready");
       setRewardedAdLoading(false);
@@ -1634,19 +1734,17 @@ export default function App() {
                     </View>
                     <Text style={styles.walletValue}>{chips}</Text>
                     <Pressable
-                      disabled={creditDelta !== null || rewardedAdLoading}
+                      disabled={rewardedAdButtonDisabled}
                       onPress={handleRewardedAdPress}
                       onTouchStart={stopDeveloperTouchPropagation}
                       style={({ pressed }) => [
                         styles.rewardedAdButton,
-                        (creditDelta !== null || rewardedAdLoading) && styles.disabled,
+                        rewardedAdButtonDisabled && styles.rewardedAdButtonLoading,
                         pressed && styles.pressed,
                       ]}
                     >
                       <Text style={styles.rewardedAdBadge}>AD</Text>
-                      <Text style={styles.rewardedAdText}>
-                        {rewardedAdLoading || (!isExpoGo && !rewardedAdReady) ? "..." : rewardedAdLabel}
-                      </Text>
+                      <Text style={styles.rewardedAdText}>{rewardedAdButtonText}</Text>
                     </Pressable>
                     {adStatusMessage ? <Text style={styles.rewardedAdStatus}>{adStatusMessage}</Text> : null}
                     {creditDelta !== null && (
@@ -1665,17 +1763,38 @@ export default function App() {
               {achievementToast ? (
                 <AchievementToast achievement={achievementToast} onDone={() => setAchievementToast(null)} />
               ) : null}
+              {systemNotice ? (
+                <View pointerEvents="none" style={[styles.systemNotice, { width: layoutWidth }]}>
+                  <Text numberOfLines={2} style={styles.systemNoticeText}>
+                    {systemNotice}
+                  </Text>
+                </View>
+              ) : null}
 
               {profileScreenOpen ? (
                 <ProfileScreen
+                  accountName={activeAccount?.name || "Account"}
+                  activeCredit={chips}
+                  achievementsUnlocked={unlockedAchievementCount}
+                  totalAchievements={achievementDefinitions.length}
                   currentWealth={currentWealth}
                   isTablet={isTabletLayout}
+                  machineCapacity={activeMoneyMachineCapacity}
+                  machinePassiveEarn={activeMachinePassiveEarn}
+                  machineStored={moneyMachineStored}
+                  machineTapEarn={activeMoneyMachineTapEarn}
                   onBack={() => setProfileScreenOpen(false)}
                   ownedCounts={{
                     realEstate: ownedRealEstate.length,
                     vehicles: ownedVehicles.length,
                     items: ownedItems.length,
                   }}
+                  ownedValues={{
+                    realEstate: ownedRealEstateValue,
+                    vehicles: ownedVehiclesValue,
+                    items: ownedItemsValue,
+                  }}
+                  rentalRate={rentalRate}
                   safeFrameInsets={safeFrameInsets}
                   stats={achievementStats}
                   totalCredit={totalAccountCredit}
@@ -1693,7 +1812,11 @@ export default function App() {
                   style={[
                     styles.blackjackHandClip,
                     isTabletLayout && styles.blackjackHandClipTablet,
-                    { minHeight: responsiveLayout.handClipMinHeight, width: tabPanelWidth },
+                    {
+                      height: showBlackjackTable ? undefined : handClipMinHeight,
+                      minHeight: handClipMinHeight,
+                      width: tabPanelWidth,
+                    },
                   ]}
                 >
                   <Animated.View style={{ transform: [{ translateX: blackjackOverlayTranslateX }] }}>
@@ -1925,6 +2048,7 @@ export default function App() {
                               stored={moneyMachineStored}
                               isTablet={isTabletLayout}
                               moneyMachineScale={moneyMachineScale}
+                              panelHeight={responsiveLayout.moneyOverlayHeight}
                               capacity={activeMoneyMachineCapacity}
                               tapEarn={activeMoneyMachineTapEarn}
                               passiveEarn={activeMachinePassiveEarn}
@@ -2126,7 +2250,9 @@ export default function App() {
               </Modal>
 
               <AchievementsModal
+                isTablet={isTabletLayout}
                 onClose={() => setAchievementMenuOpen(false)}
+                safeFrameInsets={safeFrameInsets}
                 stats={achievementDisplayStats}
                 visible={achievementMenuOpen}
               />
