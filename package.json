@@ -10,6 +10,7 @@
     "ios": "expo start --ios",
     "doctor": "npx expo-doctor",
     "economy:sim": "node scripts/simulate-economy.mjs",
+    "security:check": "node scripts/security-check.mjs",
     "format": "prettier --write \"App.js\" \"src/**/*.js\" \"scripts/**/*.mjs\" \"*.json\" \"*.js\" \"*.md\"",
     "format:check": "prettier --check \"App.js\" \"src/**/*.js\" \"scripts/**/*.mjs\" \"*.json\" \"*.js\" \"*.md\"",
     "audit": "npm audit",

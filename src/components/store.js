@@ -134,6 +134,9 @@ function StorePanel({
       <Text style={[styles.storeTitle, isTablet && styles.storeTitleTablet]}>Store</Text>
       <View style={[styles.storeCategories, isTablet && styles.storeCategoriesTablet]}>
         <Pressable
+          accessibilityLabel="Real estate category"
+          accessibilityRole="tab"
+          accessibilityState={{ selected: category === "realEstate" }}
           disabled={category === "realEstate"}
           onPress={() => setCategory("realEstate")}
           style={({ pressed }) => [
@@ -154,6 +157,9 @@ function StorePanel({
           </Text>
         </Pressable>
         <Pressable
+          accessibilityLabel="Cars category"
+          accessibilityRole="tab"
+          accessibilityState={{ selected: category === "cars" }}
           disabled={category === "cars"}
           onPress={() => setCategory("cars")}
           style={({ pressed }) => [
@@ -174,6 +180,9 @@ function StorePanel({
           </Text>
         </Pressable>
         <Pressable
+          accessibilityLabel="Items category"
+          accessibilityRole="tab"
+          accessibilityState={{ selected: category === "items" }}
           disabled={category === "items"}
           onPress={() => setCategory("items")}
           style={({ pressed }) => [
@@ -228,6 +237,13 @@ function StorePanel({
                   </View>
                 </View>
                 <Pressable
+                  accessibilityLabel={
+                    owned
+                      ? `${property.name} owned`
+                      : `Buy ${property.name} for ${property.price.toLocaleString("en-US")} credit`
+                  }
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: owned }}
                   disabled={owned}
                   onPress={() => onBuyRealEstate(property)}
                   style={({ pressed }) => [
@@ -283,6 +299,13 @@ function StorePanel({
                   </View>
                 </View>
                 <Pressable
+                  accessibilityLabel={
+                    owned
+                      ? `${vehicle.name} owned`
+                      : `Buy ${vehicle.name} for ${vehicle.price.toLocaleString("en-US")} credit`
+                  }
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: owned }}
                   disabled={owned}
                   onPress={() => onBuyVehicle(vehicle)}
                   style={({ pressed }) => [
@@ -340,6 +363,13 @@ function StorePanel({
                   </View>
                 </View>
                 <Pressable
+                  accessibilityLabel={
+                    owned
+                      ? `${item.name} owned`
+                      : `Buy ${item.name} for ${item.price.toLocaleString("en-US")} credit`
+                  }
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: owned }}
                   disabled={owned}
                   onPress={() => onBuyItem(item)}
                   style={({ pressed }) => [
@@ -377,6 +407,9 @@ function StorePanel({
         </View>
         <Text style={styles.rentalPanelAmount}>${rentalIncome.toLocaleString("en-US")}</Text>
         <Pressable
+          accessibilityLabel={`Collect ${rentalIncome.toLocaleString("en-US")} rental credit`}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: rentalIncome <= 0 }}
           disabled={rentalIncome <= 0}
           onPress={onCollectRentalIncome}
           style={({ pressed }) => [
@@ -392,4 +425,4 @@ function StorePanel({
   );
 }
 
-export { ItemThumbnail, OwnedRentLabel, PropertyThumbnail, StorePanel, VehicleThumbnail };
+export { StorePanel };

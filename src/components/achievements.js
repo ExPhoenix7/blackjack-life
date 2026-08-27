@@ -28,6 +28,8 @@ function AchievementsModal({ visible, stats, isTablet, onClose, safeFrameInsets 
     >
       <View style={[styles.achievementFullHeader, isTablet && styles.achievementFullHeaderTablet]}>
         <Pressable
+          accessibilityLabel="Back to game"
+          accessibilityRole="button"
           onPress={onClose}
           style={({ pressed }) => [
             styles.profileBackButton,
@@ -58,7 +60,11 @@ function AchievementsModal({ visible, stats, isTablet, onClose, safeFrameInsets 
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.achievementSummaryCard, isTablet && styles.achievementSummaryCardTablet]}>
+        <View
+          accessibilityLabel={`Achievement completion ${Math.round(completionRatio * 100)} percent`}
+          accessible
+          style={[styles.achievementSummaryCard, isTablet && styles.achievementSummaryCardTablet]}
+        >
           <View style={styles.achievementSummaryTop}>
             <View>
               <Text
@@ -96,6 +102,8 @@ function AchievementsModal({ visible, stats, isTablet, onClose, safeFrameInsets 
 
             return (
               <View
+                accessibilityLabel={`${achievement.title}. ${unlocked ? "Completed" : `${progress} of ${achievement.goal}`}`}
+                accessible
                 key={achievement.id}
                 style={[
                   styles.achievementRow,
@@ -224,6 +232,9 @@ function AchievementToast({ achievement, onDone }) {
 
   return (
     <Animated.View
+      accessibilityLabel={`Achievement unlocked. ${achievement.title}. Reward ${achievement.reward.toLocaleString("en-US")} credit.`}
+      accessibilityLiveRegion="polite"
+      accessible
       pointerEvents="none"
       style={[
         styles.achievementToast,

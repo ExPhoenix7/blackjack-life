@@ -6,8 +6,10 @@ import Constants from "expo-constants";
 import * as NavigationBar from "expo-navigation-bar";
 import {
   Animated,
+  BackHandler,
   Image,
   ImageBackground,
+  Linking,
   Modal,
   Platform,
   Pressable,
@@ -79,6 +81,7 @@ import {
   normalizeMoneyMachine,
   normalizeMoneyMachineLevel,
   normalizeRentalIncome,
+  privacyPolicyUrl,
   realEstateListings,
   rentalIncomeCapacity,
   rentalIncomeTickMs,
@@ -91,10 +94,17 @@ import {
   startingChips,
   storeBonusesForOwned,
   sumOwnedListingPrices,
+  uniqueOwnedNames,
   vehicleListings,
   wait,
 } from "./src/core/game";
 import { styles } from "./src/styles/styles";
+
+const developerToolsEnabled = __DEV__ && isExpoGo;
+
+function normalizeCredit(value) {
+  return Number.isFinite(value) ? Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, Math.floor(value))) : 0;
+}
 
 async function readStoredJson(key) {
   const savedValue = await AsyncStorage.getItem(key);
@@ -112,26 +122,31 @@ function writeStoredJson(key, value, onError) {
 function normalizeSavedAccount(account, index) {
   const fallbackName = `Account ${index + 1}`;
   const trimmedName = typeof account.name === "string" ? account.name.trim() : "";
+  const trimmedId = typeof account.id === "string" ? account.id.trim() : "";
 
   return {
-    id: account.id,
+    id: trimmedId.slice(0, 64) || `account-${index + 1}`,
     name: trimmedName ? trimmedName.slice(0, 10) : fallbackName,
-    credit: Math.max(0, Math.floor(account.credit)),
+    credit: normalizeCredit(account.credit),
   };
 }
 
 export default function App() {
   const windowSize = useWindowDimensions();
-  const layoutWidth = getLayoutWidth(windowSize.width);
+  const layoutWidth = useMemo(() => getLayoutWidth(windowSize.width), [windowSize.width]);
   const tabPanelWidth = layoutWidth;
-  const responsiveMetrics = getResponsiveMetrics(windowSize.width, windowSize.height);
+  const responsiveMetrics = useMemo(
+    () => getResponsiveMetrics(windowSize.width, windowSize.height),
+    [windowSize.height, windowSize.width]
+  );
   const isTabletLayout = responsiveMetrics.isTablet;
-  const safeFrameInsets = getSafeFrameInsets(windowSize.width, windowSize.height);
-  const responsiveLayout = getResponsiveLayout(
-    windowSize.width,
-    windowSize.height,
-    layoutWidth,
-    safeFrameInsets
+  const safeFrameInsets = useMemo(
+    () => getSafeFrameInsets(windowSize.width, windowSize.height),
+    [windowSize.height, windowSize.width]
+  );
+  const responsiveLayout = useMemo(
+    () => getResponsiveLayout(windowSize.width, windowSize.height, layoutWidth, safeFrameInsets),
+    [layoutWidth, safeFrameInsets, windowSize.height, windowSize.width]
   );
   const chipScale = responsiveLayout.chipScale;
   const moneyMachineScale = responsiveLayout.moneyMachineScale;
@@ -209,7 +224,11 @@ export default function App() {
   const dealerScore = useMemo(() => handValue(dealer), [dealer]);
   const activeAccount = accounts.find((account) => account.id === activeAccountId);
   const totalAccountCredit = useMemo(
-    () => accounts.reduce((total, account) => total + Math.max(0, Math.floor(account.credit || 0)), 0),
+    () =>
+      Math.min(
+        Number.MAX_SAFE_INTEGER,
+        accounts.reduce((total, account) => total + normalizeCredit(account.credit), 0)
+      ),
     [accounts]
   );
   const moneyMachineStored = Math.floor(moneyMachine.stored || 0);
@@ -407,6 +426,23 @@ export default function App() {
   }, [cardSoundPlayer, chipSoundPlayer]);
 
   useEffect(() => {
+    if (Platform.OS !== "android" || (!profileScreenOpen && !achievementMenuOpen)) {
+      return undefined;
+    }
+
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (profileScreenOpen) {
+        setProfileScreenOpen(false);
+      } else {
+        setAchievementMenuOpen(false);
+      }
+      return true;
+    });
+
+    return () => subscription.remove();
+  }, [achievementMenuOpen, profileScreenOpen]);
+
+  useEffect(() => {
     let active = true;
 
     async function loadSettings() {
@@ -471,30 +507,31 @@ export default function App() {
           if (parsedSave.achievementStats) {
             loadedAchievementStats = normalizeAchievementStats(parsedSave.achievementStats);
           }
-          if (Array.isArray(parsedSave.ownedRealEstate)) {
-            loadedOwnedRealEstate = parsedSave.ownedRealEstate.filter((name) =>
-              realEstateListings.some((property) => property.name === name)
-            );
-          }
-          if (Array.isArray(parsedSave.ownedItems)) {
-            loadedOwnedItems = parsedSave.ownedItems.filter((name) =>
-              itemListings.some((item) => item.name === name)
-            );
-          }
-          if (Array.isArray(parsedSave.ownedVehicles)) {
-            loadedOwnedVehicles = parsedSave.ownedVehicles.filter((name) =>
-              vehicleListings.some((vehicle) => vehicle.name === name)
-            );
-          }
+          loadedOwnedRealEstate = uniqueOwnedNames(parsedSave.ownedRealEstate, realEstateListings);
+          loadedOwnedItems = uniqueOwnedNames(parsedSave.ownedItems, itemListings);
+          loadedOwnedVehicles = uniqueOwnedNames(parsedSave.ownedVehicles, vehicleListings);
           if (Array.isArray(parsedSave.accounts) && parsedSave.accounts.length > 0) {
+            const seenAccountIds = new Set();
             loadedAccounts = parsedSave.accounts
-              .filter(
-                (account) =>
-                  typeof account.id === "string" &&
-                  typeof account.name === "string" &&
-                  Number.isFinite(account.credit) &&
-                  account.credit >= 0
-              )
+              .filter((account) => {
+                if (
+                  typeof account.id !== "string" ||
+                  account.id.trim().length === 0 ||
+                  typeof account.name !== "string" ||
+                  !Number.isFinite(account.credit) ||
+                  account.credit < 0
+                ) {
+                  return false;
+                }
+
+                const normalizedId = account.id.trim().slice(0, 64);
+                if (seenAccountIds.has(normalizedId)) {
+                  return false;
+                }
+
+                seenAccountIds.add(normalizedId);
+                return true;
+              })
               .slice(0, accountLimit)
               .map(normalizeSavedAccount);
             loadedActiveId = parsedSave.activeAccountId;
@@ -655,9 +692,10 @@ export default function App() {
   }, []);
 
   function saveActiveAccountCredit(nextCredit) {
+    const normalizedCredit = normalizeCredit(nextCredit);
     setAccounts((current) =>
       current.map((account) =>
-        account.id === activeAccountId ? { ...account, credit: nextCredit } : account
+        account.id === activeAccountId ? { ...account, credit: normalizedCredit } : account
       )
     );
   }
@@ -940,6 +978,10 @@ export default function App() {
   }
 
   function registerDeveloperChip(amount) {
+    if (!developerToolsEnabled) {
+      return;
+    }
+
     const expectedAmount = developerCheatChips[developerCheatStep.current];
 
     if (developerDeckTaps.current === 0 && amount === expectedAmount) {
@@ -951,6 +993,10 @@ export default function App() {
   }
 
   function handleDeveloperDeckPress() {
+    if (!developerToolsEnabled) {
+      return;
+    }
+
     if (developerCheatStep.current !== developerCheatChips.length) {
       resetDeveloperCheat();
       return;
@@ -970,6 +1016,7 @@ export default function App() {
 
   function handleDeveloperCreditPress() {
     if (
+      !developerToolsEnabled ||
       developerCheatStep.current !== developerCheatChips.length ||
       developerDeckTaps.current !== 10 ||
       creditDelta !== null
@@ -1039,6 +1086,14 @@ export default function App() {
 
     storageWarningShown.current = true;
     showSystemNotice("Save failed on this device.");
+  }
+
+  async function openPrivacyPolicy() {
+    try {
+      await Linking.openURL(privacyPolicyUrl);
+    } catch {
+      showSystemNotice("Privacy policy could not be opened.");
+    }
   }
 
   function clearRewardedAdRetryTimer() {
@@ -1632,7 +1687,7 @@ export default function App() {
       <View style={styles.safeArea}>
         <StatusBar hidden barStyle="light-content" backgroundColor="transparent" translucent />
         <View
-          onTouchStart={resetDeveloperCheat}
+          onTouchStart={developerToolsEnabled ? resetDeveloperCheat : undefined}
           style={[
             styles.screen,
             {
@@ -1646,6 +1701,7 @@ export default function App() {
             <View style={[styles.inlineNameOverlay, { width: layoutWidth }]}>
               <View onTouchStart={stopDeveloperTouchPropagation} style={styles.inlineNamePanel}>
                 <TextInput
+                  accessibilityLabel="Account name"
                   autoCapitalize="words"
                   autoCorrect={false}
                   maxLength={10}
@@ -1658,6 +1714,8 @@ export default function App() {
                   value={firstAccountName}
                 />
                 <Pressable
+                  accessibilityLabel="Confirm account name"
+                  accessibilityRole="button"
                   disabled={!firstAccountName.trim()}
                   onPress={saveFirstAccountName}
                   style={({ pressed }) => [
@@ -1666,7 +1724,7 @@ export default function App() {
                     pressed && styles.pressed,
                   ]}
                 >
-                  <Text style={styles.inlineNameConfirmText}>OK</Text>
+                  <Text style={styles.inlineNameConfirmText}>START</Text>
                 </Pressable>
               </View>
             </View>
@@ -1677,6 +1735,8 @@ export default function App() {
               >
                 <View style={styles.headerLeftSlot}>
                   <Pressable
+                    accessibilityLabel="Open achievements"
+                    accessibilityRole="button"
                     onPress={() => setAchievementMenuOpen(true)}
                     onTouchStart={stopDeveloperTouchPropagation}
                     style={({ pressed }) => [styles.achievementHeaderButton, pressed && styles.pressed]}
@@ -1684,6 +1744,8 @@ export default function App() {
                     <Text style={styles.achievementHeaderIcon}>★</Text>
                   </Pressable>
                   <Pressable
+                    accessibilityLabel="Open profile"
+                    accessibilityRole="button"
                     onPress={() => setProfileScreenOpen(true)}
                     onTouchStart={stopDeveloperTouchPropagation}
                     style={({ pressed }) => [styles.profileHeaderButton, pressed && styles.pressed]}
@@ -1695,6 +1757,9 @@ export default function App() {
                   </Pressable>
                 </View>
                 <Pressable
+                  accessibilityLabel={soundEnabled ? "Mute game sound" : "Enable game sound"}
+                  accessibilityRole="button"
+                  accessibilityState={{ checked: soundEnabled }}
                   onPress={() => setSoundEnabled((current) => !current)}
                   style={({ pressed }) => [styles.soundHeaderButton, pressed && styles.pressed]}
                 >
@@ -1707,6 +1772,8 @@ export default function App() {
                 </Pressable>
                 <View style={styles.headerRight}>
                   <Pressable
+                    accessibilityLabel="Open account menu"
+                    accessibilityRole="button"
                     onPress={() => {
                       setAccountMenuMessage(accountSwitchLocked ? "Finish the round first." : "");
                       setAccountMenuOpen(true);
@@ -1725,15 +1792,19 @@ export default function App() {
                   <View style={styles.wallet}>
                     <View style={styles.walletLabelRow}>
                       <Pressable
-                        onPress={handleDeveloperCreditPress}
-                        onTouchStart={stopDeveloperTouchPropagation}
+                        disabled={!developerToolsEnabled}
+                        onPress={developerToolsEnabled ? handleDeveloperCreditPress : undefined}
+                        onTouchStart={developerToolsEnabled ? stopDeveloperTouchPropagation : undefined}
                         style={({ pressed }) => [pressed && styles.pressed]}
                       >
                         <Text style={styles.walletLabel}>Credit</Text>
                       </Pressable>
                     </View>
-                    <Text style={styles.walletValue}>{chips}</Text>
+                    <Text style={styles.walletValue}>{chips.toLocaleString("en-US")}</Text>
                     <Pressable
+                      accessibilityLabel={`Watch rewarded ad for ${rewardedAdCredit.toLocaleString("en-US")} credit`}
+                      accessibilityRole="button"
+                      accessibilityState={{ disabled: rewardedAdButtonDisabled }}
                       disabled={rewardedAdButtonDisabled}
                       onPress={handleRewardedAdPress}
                       onTouchStart={stopDeveloperTouchPropagation}
@@ -1764,7 +1835,12 @@ export default function App() {
                 <AchievementToast achievement={achievementToast} onDone={() => setAchievementToast(null)} />
               ) : null}
               {systemNotice ? (
-                <View pointerEvents="none" style={[styles.systemNotice, { width: layoutWidth }]}>
+                <View
+                  accessibilityLiveRegion="polite"
+                  accessible
+                  pointerEvents="none"
+                  style={[styles.systemNotice, { width: layoutWidth }]}
+                >
                   <Text numberOfLines={2} style={styles.systemNoticeText}>
                     {systemNotice}
                   </Text>
@@ -1784,6 +1860,7 @@ export default function App() {
                   machineStored={moneyMachineStored}
                   machineTapEarn={activeMoneyMachineTapEarn}
                   onBack={() => setProfileScreenOpen(false)}
+                  onOpenPrivacyPolicy={openPrivacyPolicy}
                   ownedCounts={{
                     realEstate: ownedRealEstate.length,
                     vehicles: ownedVehicles.length,
@@ -1798,6 +1875,7 @@ export default function App() {
                   safeFrameInsets={safeFrameInsets}
                   stats={achievementStats}
                   totalCredit={totalAccountCredit}
+                  version={Constants.expoConfig?.version || "1.0.0"}
                 />
               ) : null}
 
@@ -1826,11 +1904,15 @@ export default function App() {
                       hideDealer={inRound && !revealDealer}
                       isTablet={isTabletLayout}
                       onDeckPress={
-                        !inRound && !dealing && !betweenRounds && resultDelta === null
+                        developerToolsEnabled &&
+                        !inRound &&
+                        !dealing &&
+                        !betweenRounds &&
+                        resultDelta === null
                           ? handleDeveloperDeckPress
                           : undefined
                       }
-                      onDeckTouchStart={stopDeveloperTouchPropagation}
+                      onDeckTouchStart={developerToolsEnabled ? stopDeveloperTouchPropagation : undefined}
                       showDeck
                       showScore={inRound}
                       stacked
@@ -1960,9 +2042,13 @@ export default function App() {
                                 >
                                   {betOptions.map((amount, index) => (
                                     <Pressable
+                                      accessibilityLabel={`Add ${amount.toLocaleString("en-US")} credit chip`}
+                                      accessibilityRole="button"
                                       key={amount}
                                       onPress={() => addBetChip(amount)}
-                                      onTouchStart={stopDeveloperTouchPropagation}
+                                      onTouchStart={
+                                        developerToolsEnabled ? stopDeveloperTouchPropagation : undefined
+                                      }
                                       style={({ pressed }) => [
                                         styles.chipButton,
                                         isTabletLayout && styles.chipButtonTablet,
@@ -1985,6 +2071,9 @@ export default function App() {
                                 </View>
                                 <View style={[styles.betActions, isTabletLayout && styles.betActionsTablet]}>
                                   <Pressable
+                                    accessibilityLabel="Clear bet"
+                                    accessibilityRole="button"
+                                    accessibilityState={{ disabled: bet <= 0 }}
                                     disabled={bet <= 0}
                                     onPress={clearBet}
                                     style={({ pressed }) => [
@@ -2002,10 +2091,13 @@ export default function App() {
                                         bet >= 10000 && styles.totalBetTextCompact,
                                       ]}
                                     >
-                                      ${bet}
+                                      ${bet.toLocaleString("en-US")}
                                     </Text>
                                   </View>
                                   <Pressable
+                                    accessibilityLabel="Deal cards"
+                                    accessibilityRole="button"
+                                    accessibilityState={{ disabled: bet <= 0 }}
                                     disabled={bet <= 0}
                                     onPress={startRound}
                                     style={({ pressed }) => [
@@ -2087,6 +2179,9 @@ export default function App() {
                       <BetStack chips={betChips} chipScale={chipScale} isTablet={isTabletLayout} />
                       <View style={styles.actionRow}>
                         <Pressable
+                          accessibilityLabel="Draw another card"
+                          accessibilityRole="button"
+                          accessibilityState={{ disabled: resolvingDealer || dealing }}
                           disabled={resolvingDealer || dealing}
                           onPress={hit}
                           style={({ pressed }) => [
@@ -2099,6 +2194,9 @@ export default function App() {
                           <Text style={styles.actionText}>Hit</Text>
                         </Pressable>
                         <Pressable
+                          accessibilityLabel="Stand with current hand"
+                          accessibilityRole="button"
+                          accessibilityState={{ disabled: resolvingDealer || dealing }}
                           disabled={resolvingDealer || dealing}
                           onPress={stand}
                           style={({ pressed }) => [
@@ -2134,14 +2232,16 @@ export default function App() {
                 visible={accountMenuOpen}
               >
                 <Pressable style={styles.accountModalBackdrop} onPress={closeAccountMenu}>
-                  <Pressable onPress={() => {}} style={styles.accountPanel}>
+                  <Pressable accessible={false} onPress={() => {}} style={styles.accountPanel}>
                     <View style={styles.accountPanelHeader}>
                       <Text style={styles.accountPanelTitle}>Accounts</Text>
                       <Pressable
+                        accessibilityLabel="Close account menu"
+                        accessibilityRole="button"
                         onPress={closeAccountMenu}
                         style={({ pressed }) => [styles.accountCloseButton, pressed && styles.pressed]}
                       >
-                        <Text style={styles.accountCloseText}>X</Text>
+                        <Text style={styles.accountCloseText}>{"\u00d7"}</Text>
                       </Pressable>
                     </View>
 
@@ -2157,6 +2257,7 @@ export default function App() {
                               style={[styles.accountRow, selected && styles.accountRowActive]}
                             >
                               <TextInput
+                                accessibilityLabel={`Rename ${account.name}`}
                                 autoCapitalize="words"
                                 autoCorrect={false}
                                 autoFocus
@@ -2169,6 +2270,9 @@ export default function App() {
                               />
                               <View style={styles.accountRenameActions}>
                                 <Pressable
+                                  accessibilityLabel="Save account name"
+                                  accessibilityRole="button"
+                                  accessibilityState={{ disabled: !editingAccountName.trim() }}
                                   disabled={!editingAccountName.trim()}
                                   onPress={saveAccountName}
                                   style={({ pressed }) => [
@@ -2180,13 +2284,15 @@ export default function App() {
                                   <Text style={styles.accountRenameSaveText}>SAVE</Text>
                                 </Pressable>
                                 <Pressable
+                                  accessibilityLabel="Cancel account rename"
+                                  accessibilityRole="button"
                                   onPress={cancelRenamingAccount}
                                   style={({ pressed }) => [
                                     styles.accountRenameCancel,
                                     pressed && styles.pressed,
                                   ]}
                                 >
-                                  <Text style={styles.accountRenameCancelText}>X</Text>
+                                  <Text style={styles.accountRenameCancelText}>{"\u00d7"}</Text>
                                 </Pressable>
                               </View>
                             </View>
@@ -2203,18 +2309,25 @@ export default function App() {
                             ]}
                           >
                             <Pressable
+                              accessibilityLabel={`Switch to ${account.name}`}
+                              accessibilityRole="button"
+                              accessibilityState={{ disabled: accountSwitchLocked || selected }}
                               disabled={accountSwitchLocked || selected}
                               onPress={() => switchAccount(account)}
                               style={({ pressed }) => [styles.accountSelectArea, pressed && styles.pressed]}
                             >
                               <View>
                                 <Text style={styles.accountName}>{account.name}</Text>
-                                <Text style={styles.accountCredit}>${account.credit}</Text>
+                                <Text style={styles.accountCredit}>
+                                  ${account.credit.toLocaleString("en-US")}
+                                </Text>
                               </View>
                             </Pressable>
                             <View style={styles.accountRowActions}>
                               {selected && <Text style={styles.activeAccountText}>ACTIVE</Text>}
                               <Pressable
+                                accessibilityLabel={`Rename ${account.name}`}
+                                accessibilityRole="button"
                                 onPress={() => startRenamingAccount(account)}
                                 style={({ pressed }) => [styles.accountEditButton, pressed && styles.pressed]}
                               >
@@ -2231,6 +2344,12 @@ export default function App() {
                     )}
 
                     <Pressable
+                      accessibilityLabel="Create new account"
+                      accessibilityRole="button"
+                      accessibilityState={{
+                        disabled:
+                          accountSwitchLocked || chips < accountCost || accounts.length >= accountLimit,
+                      }}
                       disabled={accountSwitchLocked || chips < accountCost || accounts.length >= accountLimit}
                       onPress={createAccount}
                       style={({ pressed }) => [

@@ -20,7 +20,9 @@ function ProfileScreen({
   rentalRate,
   isTablet,
   onBack,
+  onOpenPrivacyPolicy,
   safeFrameInsets,
+  version,
 }) {
   const roundsPlayed = stats.roundsPlayed || 0;
   const handsWon = stats.handsWon || 0;
@@ -76,6 +78,8 @@ function ProfileScreen({
     >
       <View style={[styles.profileTopBar, isTablet && styles.profileTopBarTablet]}>
         <Pressable
+          accessibilityLabel="Back to game"
+          accessibilityRole="button"
           onPress={onBack}
           style={({ pressed }) => [
             styles.profileBackButton,
@@ -153,6 +157,22 @@ function ProfileScreen({
               </Text>
             </View>
           ))}
+        </View>
+
+        <View style={[styles.profileFooter, isTablet && styles.profileFooterTablet]}>
+          <Text style={[styles.profileFooterBrand, isTablet && styles.profileFooterBrandTablet]}>
+            Blackjack Life {version} | Couzeens
+          </Text>
+          <Pressable
+            accessibilityLabel="Open privacy policy"
+            accessibilityRole="link"
+            onPress={onOpenPrivacyPolicy}
+            style={({ pressed }) => [styles.profilePrivacyButton, pressed && styles.pressed]}
+          >
+            <Text style={[styles.profilePrivacyText, isTablet && styles.profilePrivacyTextTablet]}>
+              Privacy Policy
+            </Text>
+          </Pressable>
         </View>
       </ScrollView>
     </View>

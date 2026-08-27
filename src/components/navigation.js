@@ -31,6 +31,11 @@ function BottomTabs({ activeTab, isTablet, layoutScale = 1, onSelect }) {
 
         return (
           <Pressable
+            accessibilityLabel={
+              tab === "store" ? "Store" : tab === "blackjack" ? "Blackjack table" : "Money Machine"
+            }
+            accessibilityRole="tab"
+            accessibilityState={{ selected }}
             disabled={selected}
             key={tab}
             onPress={() => onSelect(tab)}

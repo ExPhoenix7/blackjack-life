@@ -60,6 +60,9 @@ function ResultSplash({ delta }) {
 
   return (
     <Animated.View
+      accessibilityLabel={`${won ? "Win" : lost ? "Loss" : "Push"}. ${Math.abs(delta).toLocaleString("en-US")} credit.`}
+      accessibilityLiveRegion="polite"
+      accessible
       style={[
         styles.resultSplash,
         {
@@ -72,7 +75,7 @@ function ResultSplash({ delta }) {
       ]}
     >
       <Text style={[styles.resultAmount, won && styles.resultWin, lost && styles.resultLoss]}>
-        {won ? "+" : lost ? "-" : ""}${Math.abs(delta)}
+        {won ? "+" : lost ? "-" : ""}${Math.abs(delta).toLocaleString("en-US")}
       </Text>
       <Text style={styles.resultLabel}>{won ? "Win" : lost ? "Loss" : "Push"}</Text>
     </Animated.View>
@@ -152,6 +155,7 @@ function CreditDelta({ amount, onDone }) {
 
   return (
     <Animated.Text
+      accessibilityLiveRegion="polite"
       style={[
         styles.creditDelta,
         positive ? styles.creditDeltaPositive : styles.creditDeltaNegative,
@@ -164,7 +168,7 @@ function CreditDelta({ amount, onDone }) {
         },
       ]}
     >
-      {positive ? "+" : "-"}${Math.abs(amount)}
+      {positive ? "+" : "-"}${Math.abs(amount).toLocaleString("en-US")}
     </Animated.Text>
   );
 }

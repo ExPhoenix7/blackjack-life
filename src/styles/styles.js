@@ -950,6 +950,41 @@ export const styles = StyleSheet.create({
     fontSize: 24,
     marginTop: 10,
   },
+  profileFooter: {
+    alignItems: "center",
+    borderTopColor: "rgba(255,255,255,0.16)",
+    borderTopWidth: 1,
+    gap: 10,
+    marginTop: 20,
+    paddingTop: 16,
+  },
+  profileFooterTablet: {
+    gap: 14,
+    marginTop: 28,
+    paddingTop: 22,
+  },
+  profileFooterBrand: {
+    color: "rgba(255,255,255,0.6)",
+    fontSize: 11,
+    fontWeight: "800",
+  },
+  profileFooterBrandTablet: {
+    fontSize: 15,
+  },
+  profilePrivacyButton: {
+    minHeight: 36,
+    justifyContent: "center",
+    paddingHorizontal: 12,
+  },
+  profilePrivacyText: {
+    color: "#d6ffe7",
+    fontSize: 12,
+    fontWeight: "900",
+    textDecorationLine: "underline",
+  },
+  profilePrivacyTextTablet: {
+    fontSize: 16,
+  },
   wallet: {
     alignItems: "flex-end",
     paddingVertical: 6,

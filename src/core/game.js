@@ -13,6 +13,7 @@ const accountCost = 3000;
 const accountLimit = 3;
 const developerCheatChips = [100, 200, 500];
 const developerCheatReward = 50000;
+const privacyPolicyUrl = "https://exphoenix7.github.io/blackjack-life/release/privacy-policy.html";
 const rewardedAdCredit = 10000;
 const rewardedAdMidCredit = 30000;
 const rewardedAdHighCredit = 50000;
@@ -604,11 +605,14 @@ function bonusLabel(bonus) {
 }
 
 function storeBonusesForOwned(ownedItems = [], ownedVehicles = []) {
+  const ownedItemNames = new Set(ownedItems);
+  const ownedVehicleNames = new Set(ownedVehicles);
+
   return [...itemListings, ...vehicleListings].reduce(
     (total, listing) => {
       const owned = itemListings.includes(listing)
-        ? ownedItems.includes(listing.name)
-        : ownedVehicles.includes(listing.name);
+        ? ownedItemNames.has(listing.name)
+        : ownedVehicleNames.has(listing.name);
 
       if (!owned || !listing.bonus) {
         return total;
@@ -667,7 +671,9 @@ function normalizeMoneyMachine(
   const currentStored = Number.isFinite(machine?.stored)
     ? Math.max(0, Math.min(capacity, Math.floor(machine.stored)))
     : 0;
-  const currentLastUpdated = Number.isFinite(machine?.lastUpdated) ? machine.lastUpdated : now;
+  const currentLastUpdated = Number.isFinite(machine?.lastUpdated)
+    ? Math.min(now, Math.max(0, machine.lastUpdated))
+    : now;
   const elapsed = Math.max(0, now - currentLastUpdated);
   const ticks = Math.floor(elapsed / moneyMachineTickMs);
   const earned = ticks * passiveEarn;
@@ -690,8 +696,9 @@ function createRentalIncome(now = Date.now()) {
 }
 
 function rentalRateForProperties(ownedRealEstate, rentalPercentBonus = 0) {
+  const ownedPropertyNames = new Set(ownedRealEstate);
   const baseRate = realEstateListings.reduce(
-    (total, property) => total + (ownedRealEstate.includes(property.name) ? property.rentPerHour : 0),
+    (total, property) => total + (ownedPropertyNames.has(property.name) ? property.rentPerHour : 0),
     0
   );
   return Math.floor(baseRate * (1 + rentalPercentBonus / 100));
@@ -699,7 +706,9 @@ function rentalRateForProperties(ownedRealEstate, rentalPercentBonus = 0) {
 
 function normalizeRentalIncome(income, ownedRealEstate = [], now = Date.now(), rentalPercentBonus = 0) {
   const stored = Number.isFinite(income?.stored) ? Math.max(0, Math.floor(income.stored)) : 0;
-  const lastUpdated = Number.isFinite(income?.lastUpdated) ? income.lastUpdated : now;
+  const lastUpdated = Number.isFinite(income?.lastUpdated)
+    ? Math.min(now, Math.max(0, income.lastUpdated))
+    : now;
   const elapsed = Math.max(0, now - lastUpdated);
   const hourlyRate = rentalRateForProperties(ownedRealEstate, rentalPercentBonus);
   const completedHours = Math.floor(elapsed / rentalIncomeTickMs);
@@ -734,13 +743,17 @@ function formatRentalCountdown(ms) {
 }
 
 function normalizeAchievementStats(stats) {
-  return Object.keys(defaultAchievementStats).reduce((normalized, key) => {
+  const normalized = {};
+
+  Object.keys(defaultAchievementStats).forEach((key) => {
     const value = Number(stats?.[key]);
-    return {
-      ...normalized,
-      [key]: Number.isFinite(value) && value > 0 ? Math.floor(value) : defaultAchievementStats[key],
-    };
-  }, {});
+    normalized[key] =
+      Number.isFinite(value) && value > 0
+        ? Math.min(Number.MAX_SAFE_INTEGER, Math.floor(value))
+        : defaultAchievementStats[key];
+  });
+
+  return normalized;
 }
 
 function achievementProgress(achievement, stats) {
@@ -752,10 +765,17 @@ function formatAchievementValue(value, achievement) {
 }
 
 function sumOwnedListingPrices(ownedNames, listings) {
-  return listings.reduce(
-    (total, listing) => total + (ownedNames.includes(listing.name) ? listing.price : 0),
-    0
-  );
+  const ownedNameSet = new Set(ownedNames);
+  return listings.reduce((total, listing) => total + (ownedNameSet.has(listing.name) ? listing.price : 0), 0);
+}
+
+function uniqueOwnedNames(ownedNames, listings) {
+  if (!Array.isArray(ownedNames)) {
+    return [];
+  }
+
+  const allowedNames = new Set(listings.map((listing) => listing.name));
+  return [...new Set(ownedNames.filter((name) => typeof name === "string" && allowedNames.has(name)))];
 }
 
 function rewardedAdCreditForWealth(wealth) {
@@ -794,7 +814,6 @@ export {
   betOptions,
   bonusLabel,
   chipColors,
-  clamp,
   createDeck,
   createMoneyMachine,
   createRentalIncome,
@@ -816,28 +835,20 @@ export {
   itemListings,
   mainTabIndex,
   mainTabs,
-  moneyMachineBaseCapacity,
-  moneyMachineBaseTapEarn,
   moneyMachineCapacityForLevel,
   moneyMachineCapacityStep,
-  moneyMachineCapacityUpgradeBaseCost,
-  moneyMachineCapacityUpgradeCostStep,
-  moneyMachineEarnPerTick,
   moneyMachineMaxCapacityLevel,
-  moneyMachineMaxTapEarn,
   moneyMachineMaxTapLevel,
   moneyMachinePassiveEarnForBonuses,
   moneyMachineTapEarnForLevel,
   moneyMachineTapEarnStep,
-  moneyMachineTapUpgradeBaseCost,
-  moneyMachineTapUpgradeCostStep,
   moneyMachineTickMs,
   moneyMachineUpgradeCost,
   normalizeAchievementStats,
   normalizeMoneyMachine,
   normalizeMoneyMachineLevel,
   normalizeRentalIncome,
-  ranks,
+  privacyPolicyUrl,
   realEstateListings,
   rentalIncomeCapacity,
   rentalIncomeTickMs,
@@ -849,10 +860,8 @@ export {
   shuffle,
   startingChips,
   storeBonusesForOwned,
-  suitLabel,
-  suits,
   sumOwnedListingPrices,
-  valueOf,
+  uniqueOwnedNames,
   vehicleListings,
   wait,
 };

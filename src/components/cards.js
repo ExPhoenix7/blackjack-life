@@ -191,4 +191,4 @@ function Hand({
   );
 }
 
-export { Card, DeckShoe, Hand };
+export { Hand };

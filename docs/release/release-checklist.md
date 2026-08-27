@@ -1,20 +1,25 @@
 # Release Checklist
 
-## Current Stable Test Build
+## Historical Test Build Reference
 
 - Last known good APK build page: https://expo.dev/accounts/emrechavo/projects/blackjack-life/builds/a87efd5a-958d-400c-9384-6c2b83176316
 - Last known good APK commit before release-mode guard: `d1c56db`
 - Current release guard commit: `0cc5d73`
+- These are historical references only. Build the next candidate from the current reviewed Git HEAD.
 
 ## Code And Config
 
 - `npm run doctor` passes.
 - `npm run format:check` passes.
+- `npm run security:check` passes.
+- `npm run economy:sim` passes.
 - Android export passes.
 - iOS export passes.
 - `EAS_BUILD_PROFILE=production` resolves `extra.adMob.useTestAds` to `false`.
 - Preview/local config resolves `extra.adMob.useTestAds` to `true`.
 - `android.permissions` remains minimal in `app.json`.
+- Unused camera, location, contacts, storage, and recording permissions remain blocked.
+- Developer credit tools remain available only in Expo Go development mode.
 - No camera, contacts, location, microphone, photo, or file permissions are intentionally requested.
 
 ## Advertising
@@ -31,7 +36,7 @@
 - Privacy contact: `couzeensdev@gmail.com`.
 - Publish privacy policy at a public URL: `https://exphoenix7.github.io/blackjack-life/release/privacy-policy.html`.
 - Add privacy policy URL to Play Console.
-- Add in-app privacy policy access/text before public Play release.
+- Confirm the in-app Profile > Privacy Policy link opens the published policy.
 - Complete Google Play Data safety form.
 - Mark "Contains ads" as yes.
 - Declare no real-money gambling.
@@ -68,4 +73,4 @@
 
 ## Known Risk Accepted For Now
 
-`npm audit` reports Expo/Metro `image-size` advisories that require a breaking Expo major upgrade to fully resolve. Do not run `npm audit fix --force` on the release branch without a separate Expo migration test pass.
+`npm audit --omit=dev` reports 8 high-severity Expo/Metro `image-size` advisories. The vulnerable parser is in the local bundler/build toolchain, and this project only feeds repository-controlled image assets into Metro. The available automatic fix upgrades Expo to a new major version. Do not run `npm audit fix --force` on the release branch; handle the Expo migration in an isolated branch with full native regression testing.

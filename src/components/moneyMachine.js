@@ -65,6 +65,11 @@ function MoneyMachinePanel({
   const content = (
     <>
       <Pressable
+        accessibilityLabel={
+          machineFull ? "Money Machine storage full" : `Earn ${tapEarn.toLocaleString("en-US")} credit`
+        }
+        accessibilityRole="button"
+        accessibilityState={{ disabled: machineFull }}
         disabled={machineFull}
         onPress={onTapEarn}
         style={({ pressed }) => [
@@ -116,6 +121,13 @@ function MoneyMachinePanel({
         ]}
       >
         <Pressable
+          accessibilityLabel={
+            tapAtMax
+              ? "Tap power at maximum level"
+              : `Upgrade tap power for ${tapUpgradeCost.toLocaleString("en-US")} credit`
+          }
+          accessibilityRole="button"
+          accessibilityState={{ disabled: tapAtMax }}
           disabled={tapAtMax}
           onPress={onUpgradeTap}
           style={({ pressed }) => [
@@ -160,6 +172,13 @@ function MoneyMachinePanel({
           </Text>
         </Pressable>
         <Pressable
+          accessibilityLabel={
+            capacityAtMax
+              ? "Storage at maximum level"
+              : `Upgrade storage for ${capacityUpgradeCost.toLocaleString("en-US")} credit`
+          }
+          accessibilityRole="button"
+          accessibilityState={{ disabled: capacityAtMax }}
           disabled={capacityAtMax}
           onPress={onUpgradeCapacity}
           style={({ pressed }) => [
@@ -314,6 +333,9 @@ function MoneyMachinePanel({
           </Text>
         </View>
         <Pressable
+          accessibilityLabel={`Collect ${stored.toLocaleString("en-US")} Money Machine credit`}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: stored <= 0 }}
           disabled={stored <= 0}
           onPress={onCollect}
           style={({ pressed }) => [
