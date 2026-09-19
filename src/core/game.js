@@ -36,6 +36,12 @@ function getGoogleMobileAdsModule() {
   try {
     googleMobileAdsModule = {
       AdEventType: require("react-native-google-mobile-ads/lib/commonjs/AdEventType").AdEventType,
+      AdsConsent: require("react-native-google-mobile-ads/lib/commonjs/AdsConsent").AdsConsent,
+      AdsConsentPrivacyOptionsRequirementStatus:
+        require("react-native-google-mobile-ads/lib/commonjs/specs/modules/NativeConsentModule")
+          .AdsConsentPrivacyOptionsRequirementStatus,
+      MaxAdContentRating: require("react-native-google-mobile-ads/lib/commonjs/MaxAdContentRating")
+        .MaxAdContentRating,
       RewardedAd: require("react-native-google-mobile-ads/lib/commonjs/ads/RewardedAd").RewardedAd,
       RewardedAdEventType: require("react-native-google-mobile-ads/lib/commonjs/RewardedAdEventType")
         .RewardedAdEventType,
@@ -364,6 +370,15 @@ const achievementDefinitions = [
     goal: 25000,
     reward: 6000,
     stat: "rentalCollected",
+    money: true,
+  },
+  {
+    id: "millionaire",
+    title: "Millionaire",
+    description: "Reach $1,000,000 net worth.",
+    goal: 1000000,
+    reward: 50000,
+    stat: "highestWealth",
     money: true,
   },
   {

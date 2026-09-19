@@ -6,11 +6,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "cover",
-      "backgroundColor": "#031f09"
-    },
     "plugins": [
       [
         "expo-splash-screen",
@@ -43,18 +38,16 @@
       [
         "expo-navigation-bar",
         {
-          "visibility": "hidden",
-          "behavior": "overlay-swipe",
-          "position": "absolute",
-          "barStyle": "light",
-          "backgroundColor": "#031f09"
+          "hidden": true,
+          "style": "light",
+          "enforceContrast": false
         }
       ],
       [
         "react-native-google-mobile-ads",
         {
-          "androidAppId": "ca-app-pub-9293916365182641~1844805950",
-          "iosAppId": "ca-app-pub-9293916365182641~6099324278",
+          "androidAppId": "ca-app-pub-6630867692166696~7008355885",
+          "iosAppId": "ca-app-pub-6630867692166696~9854011075",
           "optimizeInitialization": true,
           "optimizeAdLoading": true
         }
@@ -63,8 +56,8 @@
     "extra": {
       "adMob": {
         "useTestAds": true,
-        "androidRewardedAdUnitId": "ca-app-pub-9293916365182641/5536638959",
-        "iosRewardedAdUnitId": "ca-app-pub-9293916365182641/5580449520"
+        "androidRewardedAdUnitId": "ca-app-pub-6630867692166696/9519416268",
+        "iosRewardedAdUnitId": "ca-app-pub-6630867692166696/3701956681"
       },
       "eas": {
         "projectId": "3e79624b-1832-43e6-9b3c-8016db59ec39"
@@ -83,22 +76,19 @@
         "android.permission.READ_CONTACTS",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.RECORD_AUDIO",
+        "android.permission.SYSTEM_ALERT_WINDOW",
         "android.permission.WRITE_EXTERNAL_STORAGE"
       ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#031f09"
       },
-      "permissions": []
+      "permissions": [],
+      "versionCode": 2
     },
     "androidStatusBar": {
       "hidden": true,
       "translucent": true,
-      "backgroundColor": "#031f09"
-    },
-    "androidNavigationBar": {
-      "visible": "sticky-immersive",
-      "barStyle": "light-content",
       "backgroundColor": "#031f09"
     }
   }

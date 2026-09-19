@@ -64,6 +64,7 @@ const requiredBlockedPermissions = [
   "android.permission.CAMERA",
   "android.permission.READ_CONTACTS",
   "android.permission.RECORD_AUDIO",
+  "android.permission.SYSTEM_ALERT_WINDOW",
 ];
 
 check(packageJson.private === true, "package.json must remain private to prevent accidental npm publishing.");
@@ -83,6 +84,11 @@ check(
 check(
   runtimeSource.includes('const privacyPolicyUrl = "https://'),
   "The in-app privacy policy must use HTTPS."
+);
+check(runtimeSource.includes("AdsConsent.gatherConsent"), "Production ads must wait for UMP consent status.");
+check(
+  runtimeSource.includes("AdsConsent.showPrivacyOptionsForm"),
+  "The app must expose the UMP privacy choices form when required."
 );
 check(!/http:\/\//i.test(runtimeSource), "Runtime code must not contain cleartext HTTP URLs.");
 check(

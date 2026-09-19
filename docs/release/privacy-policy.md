@@ -1,6 +1,6 @@
 # Privacy Policy
 
-Last updated: August 24, 2026
+Last updated: September 18, 2026
 
 Blackjack Life is a mobile blackjack and money management game.
 
@@ -12,7 +12,7 @@ App package: `com.exphoenix.blackjacklife`
 
 Blackjack Life stores game progress locally on your device, including:
 
-- Account names created inside the game
+- Local player profile names created inside the game
 - Credit balance
 - Store purchases
 - Money Machine progress
@@ -21,6 +21,9 @@ Blackjack Life stores game progress locally on your device, including:
 - Sound setting
 
 This local game data is stored on your device using the app's local storage. Blackjack Life does not operate its own backend server and does not upload this local game progress to a developer-controlled server.
+
+Blackjack Life does not provide account registration, cloud accounts, or sign-in. References to
+profiles in the app mean local player profiles stored only on the device.
 
 ## Advertising
 
@@ -34,6 +37,10 @@ Google Mobile Ads SDK may collect and share data for advertising, analytics, and
 - Device and account identifiers, such as the Android advertising ID and app set ID
 
 Google states that data collected by Google Mobile Ads SDK is encrypted in transit.
+
+Where required, Blackjack Life uses Google's User Messaging Platform to request and manage privacy
+choices before ads are requested. A Privacy Choices entry is available in the app when Google
+requires users to be able to reopen the privacy-options form.
 
 Learn more:
 

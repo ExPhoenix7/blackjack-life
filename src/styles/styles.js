@@ -2305,6 +2305,8 @@ export const styles = StyleSheet.create({
     color: "#063226",
     fontSize: 18,
     fontWeight: "900",
+    textAlign: "center",
+    width: 58,
   },
   totalBetTextCompact: {
     fontSize: 14,

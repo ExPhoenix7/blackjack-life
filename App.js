@@ -3,7 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Asset } from "expo-asset";
 import { setAudioModeAsync, useAudioPlayer } from "expo-audio";
 import Constants from "expo-constants";
-import * as NavigationBar from "expo-navigation-bar";
+import { NavigationBar } from "expo-navigation-bar";
 import {
   Animated,
   BackHandler,
@@ -120,13 +120,14 @@ function writeStoredJson(key, value, onError) {
 }
 
 function normalizeSavedAccount(account, index) {
-  const fallbackName = `Account ${index + 1}`;
+  const fallbackName = `Profile ${index + 1}`;
   const trimmedName = typeof account.name === "string" ? account.name.trim() : "";
   const trimmedId = typeof account.id === "string" ? account.id.trim() : "";
+  const profileName = /^Account \d+$/.test(trimmedName) ? fallbackName : trimmedName;
 
   return {
     id: trimmedId.slice(0, 64) || `account-${index + 1}`,
-    name: trimmedName ? trimmedName.slice(0, 10) : fallbackName,
+    name: profileName ? profileName.slice(0, 10) : fallbackName,
     credit: normalizeCredit(account.credit),
   };
 }
@@ -194,6 +195,9 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("blackjack");
   const [rewardedAdReady, setRewardedAdReady] = useState(false);
   const [rewardedAdLoading, setRewardedAdLoading] = useState(false);
+  const [adConsentResolved, setAdConsentResolved] = useState(isExpoGo);
+  const [adsCanRequest, setAdsCanRequest] = useState(isExpoGo);
+  const [privacyOptionsRequired, setPrivacyOptionsRequired] = useState(false);
   const [adStatusMessage, setAdStatusMessage] = useState("");
   const [systemNotice, setSystemNotice] = useState("");
   const [startupSplashVisible, setStartupSplashVisible] = useState(true);
@@ -209,6 +213,9 @@ export default function App() {
   const rewardedAdShowWhenLoaded = useRef(false);
   const rewardedAdRewardEarned = useRef(false);
   const rewardedAdUnsubscribers = useRef([]);
+  const adConsentCanRequest = useRef(isExpoGo);
+  const mobileAdsInitialized = useRef(false);
+  const mobileAdsInitializationPromise = useRef(null);
   const rewardedAdAward = useRef({ activeAccountId: null, chips: 0, credit: 0 });
   const startupSplashTimer = useRef(null);
   const storageWarningShown = useRef(false);
@@ -277,13 +284,17 @@ export default function App() {
     ownedItemsValue;
   const rewardedAdCredit = rewardedAdCreditForWealth(currentWealth);
   const rewardedAdLabel = `+${rewardedAdCredit / 1000}K`;
-  const rewardedAdButtonDisabled = creditDelta !== null || rewardedAdLoading;
+  const rewardedAdButtonDisabled = creditDelta !== null || rewardedAdLoading || (!isExpoGo && !adsCanRequest);
   const rewardedAdButtonText =
-    rewardedAdLoading || (!isExpoGo && rewardedAdPreloading.current)
-      ? "LOADING"
-      : isExpoGo || rewardedAdReady
-        ? rewardedAdLabel
-        : "LOAD";
+    !isExpoGo && !adConsentResolved
+      ? "CHECK"
+      : !isExpoGo && !adsCanRequest
+        ? "OFF"
+        : rewardedAdLoading || (!isExpoGo && rewardedAdPreloading.current)
+          ? "LOADING"
+          : isExpoGo || rewardedAdReady
+            ? rewardedAdLabel
+            : "LOAD";
   const achievementDisplayStats = useMemo(
     () => ({
       ...achievementStats,
@@ -348,8 +359,8 @@ export default function App() {
     StatusBar.setTranslucent(true);
     StatusBar.setBackgroundColor("transparent", true);
 
-    NavigationBar.setVisibilityAsync("hidden").catch(() => {});
-    NavigationBar.setButtonStyleAsync("light").catch(() => {});
+    NavigationBar.setHidden(true);
+    NavigationBar.setStyle("light");
   }, []);
 
   useEffect(() => {
@@ -357,7 +368,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    loadRewardedAd();
+    initializeAdvertising();
   }, []);
 
   useEffect(() => {
@@ -539,7 +550,7 @@ export default function App() {
         }
 
         if (loadedAccounts.length === 0) {
-          loadedAccounts = [{ id: "account-1", name: "Account 1", credit: firstAccountChips }];
+          loadedAccounts = [{ id: "account-1", name: "Profile 1", credit: firstAccountChips }];
           loadedActiveId = "account-1";
         }
 
@@ -576,7 +587,7 @@ export default function App() {
       } catch {
         const fallbackAccount = {
           id: "account-1",
-          name: "Account 1",
+          name: "Profile 1",
           credit: firstAccountChips,
         };
         if (active) {
@@ -1096,6 +1107,93 @@ export default function App() {
     }
   }
 
+  function applyConsentInfo(ads, consentInfo) {
+    const canRequestAds = consentInfo?.canRequestAds === true;
+    const requiresPrivacyOptions =
+      consentInfo?.privacyOptionsRequirementStatus ===
+      ads.AdsConsentPrivacyOptionsRequirementStatus?.REQUIRED;
+
+    adConsentCanRequest.current = canRequestAds;
+    setAdsCanRequest(canRequestAds);
+    setAdConsentResolved(true);
+    setPrivacyOptionsRequired(requiresPrivacyOptions);
+    return canRequestAds;
+  }
+
+  async function ensureMobileAdsInitialized(ads) {
+    if (mobileAdsInitialized.current) {
+      return;
+    }
+
+    if (!mobileAdsInitializationPromise.current) {
+      mobileAdsInitializationPromise.current = (async () => {
+        const mobileAds = ads.mobileAds();
+        await mobileAds.setRequestConfiguration({
+          maxAdContentRating: ads.MaxAdContentRating.T,
+          tagForChildDirectedTreatment: false,
+          tagForUnderAgeOfConsent: false,
+        });
+        await mobileAds.initialize();
+        mobileAdsInitialized.current = true;
+      })().finally(() => {
+        mobileAdsInitializationPromise.current = null;
+      });
+    }
+
+    await mobileAdsInitializationPromise.current;
+  }
+
+  async function initializeAdvertising() {
+    if (isExpoGo) {
+      adConsentCanRequest.current = true;
+      setAdsCanRequest(true);
+      setAdConsentResolved(true);
+      loadRewardedAd();
+      return;
+    }
+
+    const ads = getGoogleMobileAdsModule();
+    if (!ads?.AdsConsent || !ads?.AdsConsentPrivacyOptionsRequirementStatus) {
+      setAdConsentResolved(true);
+      return;
+    }
+
+    let consentInfo = null;
+    try {
+      consentInfo = await ads.AdsConsent.gatherConsent({ tagForUnderAgeOfConsent: false });
+    } catch {
+      try {
+        consentInfo = await ads.AdsConsent.getConsentInfo();
+      } catch {
+        setAdConsentResolved(true);
+        return;
+      }
+    }
+
+    if (applyConsentInfo(ads, consentInfo)) {
+      loadRewardedAd({ adsModule: ads });
+    }
+  }
+
+  async function openPrivacyChoices() {
+    const ads = getGoogleMobileAdsModule();
+    if (!ads?.AdsConsent) {
+      showSystemNotice("Privacy choices are unavailable on this build.");
+      return;
+    }
+
+    try {
+      const consentInfo = await ads.AdsConsent.showPrivacyOptionsForm();
+      const canRequestAds = applyConsentInfo(ads, consentInfo);
+      resetRewardedAdInstance();
+      if (canRequestAds) {
+        loadRewardedAd({ adsModule: ads });
+      }
+    } catch {
+      showSystemNotice("Privacy choices could not be opened.");
+    }
+  }
+
   function clearRewardedAdRetryTimer() {
     if (rewardedAdRetryTimer.current) {
       clearTimeout(rewardedAdRetryTimer.current);
@@ -1138,7 +1236,7 @@ export default function App() {
   }
 
   function scheduleRewardedAdPreload(delayMs = 5000) {
-    if (isExpoGo || rewardedAdRetryTimer.current) {
+    if (isExpoGo || !adConsentCanRequest.current || rewardedAdRetryTimer.current) {
       return;
     }
 
@@ -1148,14 +1246,22 @@ export default function App() {
     }, delayMs);
   }
 
-  async function loadRewardedAd({ showWhenLoaded = false } = {}) {
+  async function loadRewardedAd({ showWhenLoaded = false, adsModule = null } = {}) {
     if (isExpoGo) {
       setRewardedAdReady(true);
       setRewardedAdLoading(false);
       return;
     }
 
-    const ads = getGoogleMobileAdsModule();
+    if (!adConsentCanRequest.current) {
+      if (showWhenLoaded) {
+        setTemporaryAdStatus("Ads disabled by privacy settings");
+        setRewardedAdLoading(false);
+      }
+      return;
+    }
+
+    const ads = adsModule || getGoogleMobileAdsModule();
     if (!ads?.RewardedAd || !ads?.RewardedAdEventType || !ads?.AdEventType || !ads?.TestIds) {
       if (showWhenLoaded) {
         setTemporaryAdStatus("Ad unavailable offline");
@@ -1189,7 +1295,7 @@ export default function App() {
 
     try {
       if (typeof ads.mobileAds === "function") {
-        await ads.mobileAds().initialize();
+        await ensureMobileAdsInitialized(ads);
       }
 
       const rewardedAdUnitId = getRewardedAdUnitId(ads);
@@ -1285,6 +1391,11 @@ export default function App() {
 
     if (isExpoGo) {
       awardRewardedAdCredit();
+      return;
+    }
+
+    if (!adConsentResolved || !adsCanRequest) {
+      setTemporaryAdStatus("Ads disabled by privacy settings");
       return;
     }
 
@@ -1385,7 +1496,7 @@ export default function App() {
       return;
     }
     if (accounts.length >= accountLimit) {
-      setAccountMenuMessage(`Max ${accountLimit} accounts.`);
+      setAccountMenuMessage(`Max ${accountLimit} profiles.`);
       return;
     }
     if (chips < accountCost) {
@@ -1395,7 +1506,7 @@ export default function App() {
 
     const nextAccount = {
       id: `account-${Date.now()}`,
-      name: `Account ${accounts.length + 1}`,
+      name: `Profile ${accounts.length + 1}`,
       credit: startingChips,
     };
     const remainingCredit = chips - accountCost;
@@ -1701,7 +1812,7 @@ export default function App() {
             <View style={[styles.inlineNameOverlay, { width: layoutWidth }]}>
               <View onTouchStart={stopDeveloperTouchPropagation} style={styles.inlineNamePanel}>
                 <TextInput
-                  accessibilityLabel="Account name"
+                  accessibilityLabel="Profile name"
                   autoCapitalize="words"
                   autoCorrect={false}
                   maxLength={10}
@@ -1714,7 +1825,7 @@ export default function App() {
                   value={firstAccountName}
                 />
                 <Pressable
-                  accessibilityLabel="Confirm account name"
+                  accessibilityLabel="Confirm profile name"
                   accessibilityRole="button"
                   disabled={!firstAccountName.trim()}
                   onPress={saveFirstAccountName}
@@ -1772,7 +1883,7 @@ export default function App() {
                 </Pressable>
                 <View style={styles.headerRight}>
                   <Pressable
-                    accessibilityLabel="Open account menu"
+                    accessibilityLabel="Open profile menu"
                     accessibilityRole="button"
                     onPress={() => {
                       setAccountMenuMessage(accountSwitchLocked ? "Finish the round first." : "");
@@ -1786,7 +1897,7 @@ export default function App() {
                       <View style={styles.menuIconLine} />
                     </View>
                     <Text numberOfLines={1} style={styles.accountMenuButtonText}>
-                      {activeAccount?.name || "Account"}
+                      {activeAccount?.name || "Profile"}
                     </Text>
                   </Pressable>
                   <View style={styles.wallet}>
@@ -1849,7 +1960,7 @@ export default function App() {
 
               {profileScreenOpen ? (
                 <ProfileScreen
-                  accountName={activeAccount?.name || "Account"}
+                  accountName={activeAccount?.name || "Profile"}
                   activeCredit={chips}
                   achievementsUnlocked={unlockedAchievementCount}
                   totalAchievements={achievementDefinitions.length}
@@ -1860,6 +1971,7 @@ export default function App() {
                   machineStored={moneyMachineStored}
                   machineTapEarn={activeMoneyMachineTapEarn}
                   onBack={() => setProfileScreenOpen(false)}
+                  onOpenPrivacyChoices={openPrivacyChoices}
                   onOpenPrivacyPolicy={openPrivacyPolicy}
                   ownedCounts={{
                     realEstate: ownedRealEstate.length,
@@ -1873,6 +1985,7 @@ export default function App() {
                   }}
                   rentalRate={rentalRate}
                   safeFrameInsets={safeFrameInsets}
+                  showPrivacyChoices={privacyOptionsRequired}
                   stats={achievementStats}
                   totalCredit={totalAccountCredit}
                   version={Constants.expoConfig?.version || "1.0.0"}
@@ -2086,6 +2199,10 @@ export default function App() {
                                   </Pressable>
                                   <View style={styles.totalBetBadge}>
                                     <Text
+                                      adjustsFontSizeToFit
+                                      allowFontScaling={false}
+                                      minimumFontScale={0.5}
+                                      numberOfLines={1}
                                       style={[
                                         styles.totalBetText,
                                         bet >= 10000 && styles.totalBetTextCompact,
@@ -2234,9 +2351,9 @@ export default function App() {
                 <Pressable style={styles.accountModalBackdrop} onPress={closeAccountMenu}>
                   <Pressable accessible={false} onPress={() => {}} style={styles.accountPanel}>
                     <View style={styles.accountPanelHeader}>
-                      <Text style={styles.accountPanelTitle}>Accounts</Text>
+                      <Text style={styles.accountPanelTitle}>Profiles</Text>
                       <Pressable
-                        accessibilityLabel="Close account menu"
+                        accessibilityLabel="Close profile menu"
                         accessibilityRole="button"
                         onPress={closeAccountMenu}
                         style={({ pressed }) => [styles.accountCloseButton, pressed && styles.pressed]}
@@ -2270,7 +2387,7 @@ export default function App() {
                               />
                               <View style={styles.accountRenameActions}>
                                 <Pressable
-                                  accessibilityLabel="Save account name"
+                                  accessibilityLabel="Save profile name"
                                   accessibilityRole="button"
                                   accessibilityState={{ disabled: !editingAccountName.trim() }}
                                   disabled={!editingAccountName.trim()}
@@ -2284,7 +2401,7 @@ export default function App() {
                                   <Text style={styles.accountRenameSaveText}>SAVE</Text>
                                 </Pressable>
                                 <Pressable
-                                  accessibilityLabel="Cancel account rename"
+                                  accessibilityLabel="Cancel profile rename"
                                   accessibilityRole="button"
                                   onPress={cancelRenamingAccount}
                                   style={({ pressed }) => [
@@ -2344,7 +2461,7 @@ export default function App() {
                     )}
 
                     <Pressable
-                      accessibilityLabel="Create new account"
+                      accessibilityLabel="Create new local profile"
                       accessibilityRole="button"
                       accessibilityState={{
                         disabled:
@@ -2359,7 +2476,7 @@ export default function App() {
                         pressed && styles.pressed,
                       ]}
                     >
-                      <Text style={styles.createAccountButtonText}>New account</Text>
+                      <Text style={styles.createAccountButtonText}>New profile</Text>
                       <Text style={styles.createAccountCost}>
                         {accounts.length >= accountLimit ? "MAX" : `$${accountCost}`}
                       </Text>

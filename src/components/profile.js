@@ -20,8 +20,10 @@ function ProfileScreen({
   rentalRate,
   isTablet,
   onBack,
+  onOpenPrivacyChoices,
   onOpenPrivacyPolicy,
   safeFrameInsets,
+  showPrivacyChoices,
   version,
 }) {
   const roundsPlayed = stats.roundsPlayed || 0;
@@ -173,6 +175,18 @@ function ProfileScreen({
               Privacy Policy
             </Text>
           </Pressable>
+          {showPrivacyChoices ? (
+            <Pressable
+              accessibilityLabel="Open advertising privacy choices"
+              accessibilityRole="button"
+              onPress={onOpenPrivacyChoices}
+              style={({ pressed }) => [styles.profilePrivacyButton, pressed && styles.pressed]}
+            >
+              <Text style={[styles.profilePrivacyText, isTablet && styles.profilePrivacyTextTablet]}>
+                Privacy Choices
+              </Text>
+            </Pressable>
+          ) : null}
         </View>
       </ScrollView>
     </View>

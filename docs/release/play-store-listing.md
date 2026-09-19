@@ -22,7 +22,7 @@ Features:
 
 - Play classic blackjack hands with virtual credit
 - Place bets, hit, stand, and chase 21
-- Manage up to 3 in-game accounts
+- Manage up to 3 local player profiles with no registration or sign-in
 - Buy properties, vehicles, and lifestyle items
 - Upgrade the Money Machine for tap and passive income
 - Collect rental income from real estate
@@ -39,7 +39,9 @@ Rewarded ads are optional and only provide bonus virtual credit inside the game.
 - Contains ads: Yes
 - In-app purchases: No, unless added later
 - Real-money gambling: No
-- Target audience: TODO choose age rating after Play Console questionnaire
+- Recommended target audience: 18 and over
+- Restrict Minor Access: Enable
+- Designed for Families: No
 - Developer: Couzeens
 - Privacy contact: `couzeensdev@gmail.com`
 - Privacy policy URL: `https://exphoenix7.github.io/blackjack-life/release/privacy-policy.html`
@@ -56,8 +58,8 @@ This first release includes blackjack gameplay, virtual credit progression, the 
 - Android adaptive icon foreground: `assets/adaptive-icon.png`
 - Splash image: `assets/splash.png`
 - Feature graphic source: `docs/release/store-assets/feature-graphic-source/blackjack-life-poster.png`
-- Feature graphic: `docs/release/store-assets/feature-graphic-1024x500.png`
-- Feature graphic JPG fallback: `docs/release/store-assets/feature-graphic-1024x500.jpg`
+- Feature graphic: `docs/release/store-assets/feature-graphic-1024x500-v2.png`
+- Feature graphic JPG fallback: `docs/release/store-assets/feature-graphic-1024x500-v2.jpg`
 - Phone screenshots:
   - `docs/release/store-assets/phone-screenshots/01-blackjack-bet.jpg`
   - `docs/release/store-assets/phone-screenshots/02-blackjack-win.jpg`
@@ -65,8 +67,8 @@ This first release includes blackjack gameplay, virtual credit progression, the 
   - `docs/release/store-assets/phone-screenshots/04-money-machine.jpg`
 - Optional additional screenshots:
   - Profile or Achievements
-  - Account menu
-- Tablet screenshots: TODO optional
+  - Profiles menu
+- Tablet screenshots: Optional
 
 ## Play Console Data Safety Draft
 
@@ -75,6 +77,9 @@ Use this as a Play Console draft, then verify against the current Google Play fo
 ### Collects or shares user data?
 
 Yes, because Google Mobile Ads SDK collects and shares data for ads, analytics, diagnostics, and fraud prevention.
+
+Local player profile names and game progress remain on the device and are not transmitted to a
+Couzeens server. Blackjack Life does not provide account registration or sign-in.
 
 ### Data Types To Declare Because Of Google Mobile Ads SDK
 
@@ -107,6 +112,12 @@ The app does not share local game progress with a Couzeens backend. Advertising-
 
 Data collected by Google Mobile Ads SDK is encrypted in transit according to Google's SDK disclosure.
 
+### Required Or Optional
+
+Declare Google Mobile Ads SDK data collection as required unless every user in every region can opt
+out of all relevant collection. Rewarded-ad interaction remains optional, but the SDK data handling
+must be declared based on the final production behavior.
+
 ### Deletion
 
 Local game progress can be deleted by clearing app storage or uninstalling the app. Privacy questions can be sent to `couzeensdev@gmail.com`.
@@ -120,6 +131,10 @@ Local game progress can be deleted by clearing app storage or uninstalling the a
 - Virtual credit is only used inside Blackjack Life.
 - Rewarded ads are optional and only grant virtual in-game credit.
 - The app is not child-directed unless later reviewed and configured for child-directed policies.
+- Recommended Play Console target audience is 18 and over, with Restrict Minor Access enabled.
+- Answer yes to simulated gambling in the content-rating questionnaire.
+- Answer no to real-money gambling, cash prizes, cash-out, and purchasable wagering credit.
+- Exclude South Korea unless the required GRAC process has been completed.
 
 ## Before Publishing
 
@@ -128,3 +143,6 @@ Local game progress can be deleted by clearing app storage or uninstalling the a
 - Add an in-app privacy policy access point or text before public Play release.
 - Complete the Play Console Data safety form using the final SDK/config state.
 - Confirm AdMob app and rewarded ad unit are approved and serving real ads.
+- Create and publish the required AdMob Privacy & Messaging consent messages.
+- Block Gambling & Betting (18+) and Social Casino Games in AdMob blocking controls.
+- Confirm the in-app Privacy Choices entry appears when required by UMP.
