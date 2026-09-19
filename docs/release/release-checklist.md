@@ -34,6 +34,15 @@
 
 ## Advertising
 
+Account-side setup verified on September 19, 2026:
+
+- The Couzeens AdMob account is approved and its payment profile is complete.
+- The public privacy policy URL is assigned to both Android and iOS app entries.
+- `Blackjack Life EU Consent` is published in English for both app entries with consent, refusal,
+  and preference-management choices.
+- Social Casino Games and Gambling & Betting (18+) are blocked at account level.
+- The maximum ad content rating is set to `T`, which blocks `MA` ads.
+
 - Preview APK uses Google test rewarded ads.
 - Production profile uses real AdMob rewarded ad unit IDs.
 - Confirm AdMob account approval before production release.
