@@ -58,10 +58,16 @@ const runtimeSource = runtimeFiles
   .map((relativePath) => fs.readFileSync(path.join(projectRoot, relativePath), "utf8"))
   .join("\n");
 const blockedPermissions = new Set(appJson.expo.android?.blockedPermissions || []);
+const audioPlugin = appJson.expo.plugins.find(
+  (plugin) => Array.isArray(plugin) && plugin[0] === "expo-audio"
+);
+const audioOptions = audioPlugin?.[1] || {};
 const requiredBlockedPermissions = [
   "android.permission.ACCESS_COARSE_LOCATION",
   "android.permission.ACCESS_FINE_LOCATION",
   "android.permission.CAMERA",
+  "android.permission.FOREGROUND_SERVICE",
+  "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
   "android.permission.READ_CONTACTS",
   "android.permission.RECORD_AUDIO",
   "android.permission.SYSTEM_ALERT_WINDOW",
@@ -74,6 +80,9 @@ check(
   Array.isArray(appJson.expo.android?.permissions) && appJson.expo.android.permissions.length === 0,
   "Android permissions must stay explicitly minimal."
 );
+check(audioOptions.enableBackgroundPlayback === false, "Background audio playback must stay disabled.");
+check(audioOptions.enableBackgroundRecording === false, "Background audio recording must stay disabled.");
+check(audioOptions.recordAudioAndroid === false, "Android audio recording must stay disabled.");
 for (const permission of requiredBlockedPermissions) {
   check(blockedPermissions.has(permission), `${permission} must stay blocked.`);
 }
