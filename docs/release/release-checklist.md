@@ -2,34 +2,37 @@
 
 ## Current Preview Candidate
 
-- EAS build page: https://expo.dev/accounts/emrechavo/projects/blackjack-life/builds/43ddb083-08d5-4f31-8619-b0cd641d5b07
-- Status: finished successfully on September 18, 2026.
+- EAS build page: https://expo.dev/accounts/emrechavo/projects/blackjack-life/builds/02cdb63e-20c1-4fe3-a094-e3a66d90277d
+- Status: finished successfully on September 19, 2026 from Git commit `ab93f63`.
 - Platform: Android APK, Expo SDK 57, app version `1.0.0`, version code `2`.
-- Local verification copy: `artifacts/blackjack-life-preview-sdk57-admob.apk` (excluded from Git).
-- SHA-256: `474A9CCD2D7F3C288A32F29D81A1AEAC27191A231602BD185E3B286185B74AB7`.
+- Local verification copy: `artifacts/blackjack-life-preview-sdk57-release.apk` (excluded from Git).
+- SHA-256: `6A408E7E39254ADB74500DA9EA7EE1B0615316F13F47C91F67A8C4C38536C07C`.
 
 ## Historical Test Build Reference
 
 - Last known good APK build page: https://expo.dev/accounts/emrechavo/projects/blackjack-life/builds/a87efd5a-958d-400c-9384-6c2b83176316
 - Last known good APK commit before release-mode guard: `d1c56db`
-- Current release guard commit: `0cc5d73`
-- These are historical references only. Build the next candidate from the current reviewed Git HEAD.
+- These are historical references only. Use the current preview candidate above for testing.
 
 ## Code And Config
 
 - `npm run doctor` passes.
 - `npm run format:check` passes.
-- `npm run security:check` passes.
+- `npm run security:check` passes all 22 checks.
 - `npm run economy:sim` passes.
 - Android export passes.
 - iOS export passes.
 - `EAS_BUILD_PROFILE=production` resolves `extra.adMob.useTestAds` to `false`.
 - Preview/local config resolves `extra.adMob.useTestAds` to `true`.
 - `android.permissions` remains minimal in `app.json`.
-- Unused camera, location, contacts, storage, recording, and system alert window permissions remain blocked.
+- Unused camera, location, contacts, storage, recording, system alert window, and foreground-service
+  permissions remain blocked.
+- Background audio playback and recording remain explicitly disabled.
 - Developer credit tools remain available only in Expo Go development mode.
 - No camera, contacts, location, microphone, photo, or file permissions are intentionally requested.
-- Inspect the final production AAB merged manifest and confirm `SYSTEM_ALERT_WINDOW` is absent.
+- The preview APK manifest has been inspected and contains no camera, location, contacts, storage,
+  microphone, system alert window, or foreground-service permission.
+- Inspect the final production AAB merged manifest and confirm the same minimal permission set.
 - Confirm any `AD_ID` permission in the final AAB matches the advertising and Data safety declarations.
 
 ## Advertising
@@ -45,15 +48,11 @@ Account-side setup verified on September 19, 2026:
 
 - Preview APK uses Google test rewarded ads.
 - Production profile uses real AdMob rewarded ad unit IDs.
-- Confirm AdMob account approval before production release.
 - Confirm real rewarded ads fill on at least one physical Android device.
 - Keep `BLACKJACK_USE_TEST_ADS=true` available only for controlled testing.
-- Create and publish the appropriate messages in AdMob > Privacy & messaging.
 - Test UMP with EEA debug geography in a native preview build.
 - Confirm ads are not requested until UMP reports `canRequestAds`.
 - Confirm Profile > Privacy Choices appears whenever UMP requires an entry point.
-- In AdMob blocking controls, block Gambling & Betting (18+) and Social Casino Games.
-- Keep the maximum ad content rating at `T` or stricter.
 
 ## Privacy And Play Console
 
