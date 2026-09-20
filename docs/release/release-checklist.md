@@ -1,5 +1,16 @@
 # Release Checklist
 
+## Current Production Candidate
+
+- EAS build page: https://expo.dev/accounts/emrechavo/projects/blackjack-life/builds/c6bf3639-d5ee-42b3-b7d2-7e22ac60a078
+- Status: finished successfully on September 20, 2026 from Git commit `923e6a7`.
+- Platform: Android App Bundle, Expo SDK 57, app version `1.0.0`, version code `3`.
+- Local verification copy: `artifacts/blackjack-life-production-v1.0.0-3.aab` (excluded from Git).
+- SHA-256: `8ACCF0AB7A7DC6F257C6FBB03C5BEB0F4EA9674F7E802FA3ABABE9FD99144A18`.
+- Production config uses real AdMob IDs and has Google test ads disabled.
+- The bundled manifest was inspected and contains no camera, location, contacts, storage,
+  microphone, system alert window, or foreground-service permission.
+
 ## Current Preview Candidate
 
 - EAS build page: https://expo.dev/accounts/emrechavo/projects/blackjack-life/builds/02cdb63e-20c1-4fe3-a094-e3a66d90277d
@@ -32,7 +43,7 @@
 - No camera, contacts, location, microphone, photo, or file permissions are intentionally requested.
 - The preview APK manifest has been inspected and contains no camera, location, contacts, storage,
   microphone, system alert window, or foreground-service permission.
-- Inspect the final production AAB merged manifest and confirm the same minimal permission set.
+- The production AAB manifest has been inspected and confirms the same minimal permission set.
 - Confirm any `AD_ID` permission in the final AAB matches the advertising and Data safety declarations.
 
 ## Advertising
